@@ -1,0 +1,37 @@
+# --- Python / backend ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+venv/
+.venv/
+.pytest_cache/
+.mypy_cache/
+*.db
+
+# --- Node / frontend ---
+node_modules/
+.next/
+out/
+.turbo/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# --- Env & secrets ---
+.env
+.env.local
+.env.*.local
+*.pem
+
+# --- OS / editor ---
+.DS_Store
+.vscode/
+.idea/
+*.swp
+
+# --- Data (keep processed/small files, ignore huge raw exports if needed) ---
+data/raw/*.osm
+data/raw/*.pbf
+
+# --- Docker ---
+*.log
