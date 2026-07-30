@@ -1,54 +1,60 @@
 import os
-import sys
 from logging.config import fileConfig
-
-from alembic import context
+from app.models.base import Base
 from sqlalchemy import engine_from_config, pool
-
-# Make `app` importable from migrations/
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+from alembic import context
 
 from dotenv import load_dotenv
 
+# 👇 load .env
 load_dotenv()
 
-# Import your models' Base here once they exist, e.g.:
-# from app.models.base import Base
-# target_metadata = Base.metadata
-target_metadata = None
-
+# this is the Alembic Config object
 config = context.config
 
-db_url = os.getenv(
-    "DATABASE_URL",
-    "postgresql://ktm_bus:ktm_bus_dev@localhost:5432/ktm_bus_route_finder",
-)
-config.set_main_option("sqlalchemy.url", db_url)
+# 👇 override DB URL from .env
+database_url = os.getenv("DATABASE_URL")
+if not database_url:
+    raise ValueError("DATABASE_URL is not set in .env")
 
+config.set_main_option("sqlalchemy.url", database_url)
+
+# logging
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
+# 👇 import your models here
+from app.models import Base  # adjust if needed
 
-def run_migrations_offline() -> None:
-    url = config.get_main_option("sqlalchemy.url")
+target_metadata = Base.metadata
+
+
+def run_migrations_offline():
     context.configure(
-        url=url,
+        url=database_url,
         target_metadata=target_metadata,
         literal_binds=True,
-        dialect_opts={"paramstyle": "named"},
+        compare_type=True,
     )
+
     with context.begin_transaction():
         context.run_migrations()
 
 
-def run_migrations_online() -> None:
+def run_migrations_online():
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        config.get_section(config.config_ini_section),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
+
     with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+        context.configure(
+            connection=connection,
+            target_metadata=target_metadata,
+            compare_type=True,
+        )
+
         with context.begin_transaction():
             context.run_migrations()
 
