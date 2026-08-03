@@ -26,7 +26,10 @@ Network:
   Budhanilkantha is included as a deliberately disconnected stop, for
   the "no route exists" edge case.
 """
-from models import RouteStop, Stop
+"""Compact sample network for tests and demos."""
+
+from .models import RouteStop, Stop
+
 
 STOPS = [
     # --- Route 1: Ratnapark -> New Road -> Tripureshwor ---
@@ -42,6 +45,7 @@ STOPS = [
     # --- Deliberately disconnected ---
     Stop(99, "Budhanilkantha", 27.7807, 85.3617),
 ]
+
 
 ROUTE_STOPS = [
     RouteStop(route_id=1, stop_id=1, sequence_order=1),
