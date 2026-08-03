@@ -51,6 +51,3 @@ def test_no_transfer_edge_between_same_route_stops():
     # (they're already connected via route edges through stop 2)
     assert graph.get_edge_data(1, 3) is None
     
-
-import sys
-print(sys.executable)
