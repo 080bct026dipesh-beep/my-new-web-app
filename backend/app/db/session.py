@@ -1,4 +1,10 @@
-"""SQLAlchemy engine/session setup and the `get_db` FastAPI dependency."""
+"""
+db/session.py
+
+Engine + session factory for the app. Everything that talks to Postgres
+(queries.py, API dependency injection, routing graph loader) should get
+its Session from `get_db`, not create engines/sessions of its own.
+"""
 
 from collections.abc import Generator
 
@@ -9,15 +15,22 @@ from app.core.config import get_settings
 
 settings = get_settings()
 
-# pool_pre_ping avoids handing out dead connections after the DB
-# restarts or an idle connection is dropped by a proxy/firewall.
-engine = create_engine(settings.database_url, pool_pre_ping=True)
+engine = create_engine(
+    settings.DATABASE_URL,
+    pool_pre_ping=True,  # avoids stale-connection errors after DB restarts
+    future=True,
+)
 
-SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+SessionLocal = sessionmaker(
+    bind=engine,
+    autocommit=False,
+    autoflush=False,
+    future=True,
+)
 
 
 def get_db() -> Generator[Session, None, None]:
-    """FastAPI dependency yielding a request-scoped DB session."""
+    """FastAPI dependency: yields a Session, always closes it after the request."""
     db = SessionLocal()
     try:
         yield db

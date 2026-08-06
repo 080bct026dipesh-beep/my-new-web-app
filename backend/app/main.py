@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 
+from app.api import route_finder, routes, stops
+
 app = FastAPI(
     title="Kathmandu Bus Route Finder API",
     description="Origin-destination bus route search for the Kathmandu Valley.",
@@ -12,7 +14,6 @@ def health_check():
     return {"status": "ok"}
 
 
-# Routers will be included here as they're built, e.g.:
-# from app.api import routes, stops
-# app.include_router(routes.router, prefix="/api/route", tags=["route"])
-# app.include_router(stops.router, prefix="/api/stops", tags=["stops"])
+app.include_router(stops.router)
+app.include_router(routes.router)
+app.include_router(route_finder.router)

@@ -5,12 +5,20 @@ The graph is expensive to rebuild (O(stops^2) for the transfer-edge
 pass) relative to a single route lookup, so we build it once and cache
 it in memory. Call `reload_graph()` after admin writes (new stop,
 new route, etc.) to invalidate the cache -- see api/admin.py.
+
+Column mapping note: the production schema (migration 0002) has Text
+IDs and columns named `stop_name` / `sequence_no`, not the `Integer`
+IDs and `name` / `sequence_order` columns this loader originally
+targeted (that was the 0001 scaffold schema). graph_engine's own
+dataclass field names (`name`, `sequence_order`) are unchanged -- only
+the DB column names being read here changed. Also: the production
+`stops` table has explicit `lat`/`lng` float columns, so there's no
+need to parse them back out of `geom` via shapely anymore.
 """
 
 import threading
 
 import networkx as nx
-from geoalchemy2.shape import to_shape
 from sqlalchemy.orm import Session
 
 from app.graph_engine import build_graph
@@ -24,16 +32,15 @@ _cached_graph: nx.DiGraph | None = None
 
 
 def _load_stops(db: Session) -> list[GraphStop]:
-    stops: list[GraphStop] = []
-    for row in db.query(StopORM).all():
-        point = to_shape(row.geom)  # shapely Point; .x = lng, .y = lat
-        stops.append(GraphStop(stop_id=row.stop_id, name=row.name, lat=point.y, lng=point.x))
-    return stops
+    return [
+        GraphStop(stop_id=row.stop_id, name=row.stop_name, lat=row.lat, lng=row.lng)
+        for row in db.query(StopORM).filter(StopORM.status == "active").all()
+    ]
 
 
 def _load_route_stops(db: Session) -> list[GraphRouteStop]:
     return [
-        GraphRouteStop(route_id=row.route_id, stop_id=row.stop_id, sequence_order=row.sequence_order)
+        GraphRouteStop(route_id=row.route_id, stop_id=row.stop_id, sequence_order=row.sequence_no)
         for row in db.query(RouteStopORM).all()
     ]
 
