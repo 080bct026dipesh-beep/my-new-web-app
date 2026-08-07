@@ -1,12 +1,6 @@
-"""
-schemas.py
+from typing import Optional
 
-Pydantic response models for the API layer. Kept separate from the
-SQLAlchemy models in models/ — these define what the API returns, not
-what the DB stores (e.g. no created_at/updated_at noise on read endpoints).
-"""
-
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class StopOut(BaseModel):
@@ -16,18 +10,41 @@ class StopOut(BaseModel):
     stop_name: str
     lat: float
     lng: float
-    zone: str | None = None
-    district: str | None = None
+    zone: Optional[str] = None
+    district: Optional[str] = None
     is_major_stop: bool
     is_interchange: bool
     status: str
 
 
-class StopListOut(BaseModel):
-    total: int
-    limit: int
-    offset: int
-    items: list[StopOut]
+class StopWithDistance(StopOut):
+    distance_m: Optional[float] = None
+
+
+class OperatorOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    operator_id: str
+    name: str
+    service_type: Optional[str] = None
+
+
+class RouteOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    route_id: str
+    route_name: str
+    short_name: Optional[str] = None
+    vehicle_type: str
+    start_stop_id: str
+    end_stop_id: str
+    total_stops: int
+    approx_distance_km: Optional[float] = None
+    status: str
+    # Route.operator (the column) is the free-text name as originally
+    # recorded in the source data; the *linked* operator row lives on the
+    # relationship Route.operator_ref, so pull from there instead.
+    operator: Optional[OperatorOut] = Field(default=None, validation_alias="operator_ref")
 
 
 class RouteStopOut(BaseModel):
@@ -37,43 +54,19 @@ class RouteStopOut(BaseModel):
     stop: StopOut
 
 
-class RouteOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+class RouteLeg(BaseModel):
+    """One uninterrupted ride on a single route, part of a route-finder result."""
 
     route_id: str
     route_name: str
-    short_name: str | None = None
-    vehicle_type: str
-    operator: str | None = None
-    start_stop_id: str
-    end_stop_id: str
-    total_stops: int
-    approx_distance_km: float | None = None
-    is_bidirectional: bool
-    status: str
+    board_stop: StopOut
+    alight_stop: StopOut
+    num_stops: int
 
 
-class RouteDetailOut(RouteOut):
-    route_stops: list[RouteStopOut]
-
-
-class RouteStopsOut(BaseModel):
-    route_id: str
-    stops: list[RouteStopOut]
-
-
-class RouteFinderSegmentOut(BaseModel):
-    route_id: str | None  # None => walking transfer between stops
-    is_transfer: bool
-    distance_m: float
-    from_stop: StopOut
-    to_stop: StopOut
-
-
-class RouteFinderResponse(BaseModel):
+class RouteFinderResult(BaseModel):
     origin_stop_id: str
     destination_stop_id: str
-    total_distance_m: float
+    total_cost: float
     transfer_count: int
-    stop_sequence: list[str]
-    segments: list[RouteFinderSegmentOut]
+    legs: list[RouteLeg]
