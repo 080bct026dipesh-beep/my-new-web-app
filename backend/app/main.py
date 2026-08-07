@@ -5,21 +5,21 @@ from fastapi import FastAPI
 
 from app.api import routes, routing, stops
 from app.db.session import SessionLocal
-from app.routing.graph_builder import build_graph
+from app.routing import graph_builder
 
 logger = logging.getLogger("uvicorn.error")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    app.state.graph = None
+    # Warm the graph cache at startup instead of on the first request.
     db = SessionLocal()
     try:
-        app.state.graph = build_graph(db)
+        graph = graph_builder.get_cached_graph(db)
         logger.info(
             "Routing graph built: %d stops, %d edges",
-            app.state.graph.number_of_nodes(),
-            app.state.graph.number_of_edges(),
+            graph.number_of_nodes(),
+            graph.number_of_edges(),
         )
     except Exception:
         logger.exception("Failed to build routing graph at startup")
@@ -44,16 +44,10 @@ def health_check():
 
 @app.post("/admin/rebuild-graph")
 def rebuild_graph():
-    """Rebuild the routing graph on demand — call after any data change
-    instead of restarting the whole API."""
     db = SessionLocal()
     try:
-        app.state.graph = build_graph(db)
-        return {
-            "status": "ok",
-            "stops": app.state.graph.number_of_nodes(),
-            "edges": app.state.graph.number_of_edges(),
-        }
+        graph = graph_builder.get_cached_graph(db, refresh=True)
+        return {"status": "ok", "stops": graph.number_of_nodes(), "edges": graph.number_of_edges()}
     finally:
         db.close()
 

@@ -1,92 +1,72 @@
 """
-Shortest-path search over the routing graph built by graph_builder, plus the
-logic to turn a raw stop_id path into ride-by-ride legs.
+routing/pathfinder.py
 
-Example (manual verification, once the graph is built against a live DB):
-
-    >>> G = build_graph(session)
-    >>> nx.shortest_path(G, source="S0198", target="S0021", weight="weight")
-
-Compare that against a route you know by hand before trusting the
-/route-finder endpoint.
+Shortest-path search over the graph built by graph_builder.py, exposed as
+find_shortest_path() — session in, a fully-described result out (or
+NoRouteFoundError if either stop is unknown or nothing connects them).
 """
 
-from typing import Optional, TypedDict
+from dataclasses import dataclass
+from typing import List, Optional
 
 import networkx as nx
+from sqlalchemy.orm import Session
+
+from app.routing import graph_builder as gb
 
 
-class Leg(TypedDict):
-    route_id: str
-    route_name: str
-    board_stop_id: str
-    alight_stop_id: str
-    num_stops: int
+class NoRouteFoundError(Exception):
+    """Raised when origin/destination isn't in the graph, or no path connects them."""
 
 
-def shortest_path(G: nx.DiGraph, source: str, target: str) -> Optional[list[str]]:
-    """List of stop_ids from source to target (inclusive), or None if either
-    stop isn't in the graph or no path exists."""
+@dataclass(frozen=True)
+class PathSegment:
+    from_stop_id: str
+    to_stop_id: str
+    route_id: Optional[str]
+    is_transfer: bool
+    weight: float
+
+
+@dataclass(frozen=True)
+class RouteFinderResult:
+    stop_sequence: List[str]
+    segments: List[PathSegment]
+    total_cost: float
+    transfer_count: int
+
+
+def find_shortest_path(
+    session: Session, origin_stop_id: str, destination_stop_id: str
+) -> RouteFinderResult:
+    graph = gb.get_cached_graph(session)
+
+    if origin_stop_id not in graph:
+        raise NoRouteFoundError(f"Origin stop '{origin_stop_id}' not found in routing graph")
+    if destination_stop_id not in graph:
+        raise NoRouteFoundError(f"Destination stop '{destination_stop_id}' not found in routing graph")
+
     try:
-        return nx.shortest_path(G, source=source, target=target, weight="weight")
-    except (nx.NodeNotFound, nx.NetworkXNoPath):
-        return None
+        path = nx.shortest_path(graph, origin_stop_id, destination_stop_id, weight="weight")
+    except nx.NetworkXNoPath as exc:
+        raise NoRouteFoundError(
+            f"No route found between '{origin_stop_id}' and '{destination_stop_id}'"
+        ) from exc
 
-
-def total_cost(G: nx.DiGraph, path: list[str]) -> float:
-    """Sum of edge weights (meters) along the path -- what shortest_path
-    actually optimized for."""
-    return sum(G[u][v]["weight"] for u, v in zip(path, path[1:]))
-
-
-def path_to_legs(G: nx.DiGraph, path: list[str]) -> list[Leg]:
-    """Collapse a stop_id path into legs. A leg is a maximal run of
-    consecutive edges sharing the same route_id -- switching route_id
-    mid-path is a transfer."""
-    if not path or len(path) < 2:
-        return []
-
-    legs: list[Leg] = []
-    board_stop = path[0]
-    current_route_id: Optional[str] = None
-    current_route_name: Optional[str] = None
-    num_stops = 0
-
-    for u, v in zip(path, path[1:]):
-        edge = G.get_edge_data(u, v)
-        route_id = edge["route_id"]
-
-        if current_route_id is None:
-            current_route_id = route_id
-            current_route_name = edge["route_name"]
-        elif route_id != current_route_id:
-            legs.append(
-                Leg(
-                    route_id=current_route_id,
-                    route_name=current_route_name,
-                    board_stop_id=board_stop,
-                    alight_stop_id=u,
-                    num_stops=num_stops,
-                )
-            )
-            board_stop = u
-            current_route_id = route_id
-            current_route_name = edge["route_name"]
-            num_stops = 0
-
-        num_stops += 1
-
-    legs.append(
-        Leg(
-            route_id=current_route_id,
-            route_name=current_route_name,
-            board_stop_id=board_stop,
-            alight_stop_id=path[-1],
-            num_stops=num_stops,
+    segments = [
+        PathSegment(
+            from_stop_id=u,
+            to_stop_id=v,
+            route_id=graph[u][v]["route_id"],
+            is_transfer=graph[u][v]["is_transfer"],
+            weight=graph[u][v]["weight"],
         )
+        for u, v in zip(path, path[1:])
+    ]
+
+    return RouteFinderResult(
+        stop_sequence=path,
+        segments=segments,
+        total_cost=sum(s.weight for s in segments),
+        transfer_count=sum(1 for s in segments if s.is_transfer),
     )
-    return legs
-
-
-def transfer_count(legs: list[Leg]) -> int:
-    return max(len(legs) - 1, 0)
