@@ -1,6 +1,6 @@
 # Orphan-pair audit & cleanup report — Kathmandu Bus Route Finder
 
-_Generated 2026-08-17T20:29:13Z by scripts/clean_data.py_
+_Generated 2026-08-18T09:07:45Z by scripts/clean_data.py_
 
 | Table | Rows before | Rows after |
 |---|---|---|

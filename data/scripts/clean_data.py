@@ -479,7 +479,10 @@ def clean_stops(stops: pd.DataFrame) -> pd.DataFrame:
 
     df["status"] = df["status"].fillna("active")
     df.setdefault = None  # no-op, keeps linters quiet about unused import path
-    df["created_at"] = df.get("created_at", pd.Series([None] * len(df))).fillna(UTC_NOW)
+    if "created_at" not in df.columns:
+        df["created_at"] = UTC_NOW
+    else:
+        df["created_at"] = df["created_at"].replace("", pd.NA).fillna(UTC_NOW)
     df["updated_at"] = UTC_NOW
 
     # unverified_fields: any optional field that was blank in the raw export.
@@ -653,6 +656,8 @@ def clean_routes(
     df["updated_at"] = UTC_NOW
     if "created_at" not in df.columns:
         df["created_at"] = UTC_NOW
+    else:
+        df["created_at"] = df["created_at"].replace("", pd.NA).fillna(UTC_NOW)
 
     return df
 
@@ -894,6 +899,14 @@ def main() -> int:
 
     ok = verify(routes, stops, route_stops, operators, route_operators, stats)
 
+    if "unverified_fields" in operators.columns:
+        operators["unverified_fields"] = operators["unverified_fields"].apply(
+            lambda x: (
+                "{" + ",".join(
+                    f.strip() for f in str(x).split(",") if f.strip()
+                ) + "}"
+            ) if str(x).strip() else ""
+        )
     operators.to_csv(args.out_dir / "operators_clean.csv", index=False)
     stops.to_csv(args.out_dir / "stops_clean.csv", index=False)
     routes.to_csv(args.out_dir / "routes_clean.csv", index=False)
