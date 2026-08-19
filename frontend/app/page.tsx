@@ -4,10 +4,13 @@ import { useCallback, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import SearchForm from "@/components/SearchForm";
 import CongestionPanel from "@/components/CongestionPanel";
+import RoutesPanel from "@/components/RoutesPanel";
 import {
   CongestionSegment,
   LatLng,
   RouteSearchResult,
+  RouteStopEntry,
+  RouteSummary,
   Stop,
   StopPickTarget,
   WalkingRoute,
@@ -197,6 +200,104 @@ export default function Home() {
 
   const hasSeededOnly = congestionSegments.length > 0 && congestionSegments.every((s) => s.is_seeded);
 
+  // Route browser: paged/searchable list of routes, with one route at a
+  // time toggle-able "visible" (its ordered stops shown both inline in
+  // the panel and drawn on the map). Only one visible at a time keeps the
+  // map readable -- matches the congestion/walking overlays' approach.
+  const ROUTES_PAGE_SIZE = 50;
+  const [routes, setRoutes] = useState<RouteSummary[]>([]);
+  const [routesTotal, setRoutesTotal] = useState(0);
+  const [routesLoading, setRoutesLoading] = useState(false);
+  const [routesLoadingMore, setRoutesLoadingMore] = useState(false);
+  const [routeSearchQuery, setRouteSearchQuery] = useState("");
+  const [visibleRouteId, setVisibleRouteId] = useState<string | null>(null);
+  const [visibleRouteStops, setVisibleRouteStops] = useState<RouteStopEntry[]>([]);
+  const [visibleRouteStopsLoading, setVisibleRouteStopsLoading] = useState(false);
+  const [routeStopsCache, setRouteStopsCache] = useState<Record<string, RouteStopEntry[]>>({});
+
+  // Debounced search -- re-fetch page 1 whenever the query settles, rather
+  // than on every keystroke.
+  useEffect(() => {
+    let cancelled = false;
+
+    const timer = setTimeout(async () => {
+      setRoutesLoading(true);
+      try {
+        const params = new URLSearchParams({ limit: String(ROUTES_PAGE_SIZE), offset: "0" });
+        if (routeSearchQuery.trim()) params.set("q", routeSearchQuery.trim());
+        const res = await fetch(`${API_BASE}/routes?${params.toString()}`);
+        if (!res.ok || cancelled) return;
+        const data: { items: RouteSummary[]; total: number } = await res.json();
+        if (!cancelled) {
+          setRoutes(data.items);
+          setRoutesTotal(data.total);
+        }
+      } catch {
+        // Route browser is supplementary -- fail silently, panel just
+        // shows "no routes" rather than an error banner.
+      } finally {
+        if (!cancelled) setRoutesLoading(false);
+      }
+    }, 300);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [routeSearchQuery]);
+
+  async function handleLoadMoreRoutes() {
+    setRoutesLoadingMore(true);
+    try {
+      const params = new URLSearchParams({
+        limit: String(ROUTES_PAGE_SIZE),
+        offset: String(routes.length),
+      });
+      if (routeSearchQuery.trim()) params.set("q", routeSearchQuery.trim());
+      const res = await fetch(`${API_BASE}/routes?${params.toString()}`);
+      if (res.ok) {
+        const data: { items: RouteSummary[]; total: number } = await res.json();
+        setRoutes((prev) => [...prev, ...data.items]);
+        setRoutesTotal(data.total);
+      }
+    } catch {
+      // supplementary feature -- ignore
+    } finally {
+      setRoutesLoadingMore(false);
+    }
+  }
+
+  async function handleToggleRouteVisible(route: RouteSummary) {
+    if (visibleRouteId === route.route_id) {
+      setVisibleRouteId(null);
+      setVisibleRouteStops([]);
+      return;
+    }
+
+    setVisibleRouteId(route.route_id);
+
+    const cached = routeStopsCache[route.route_id];
+    if (cached) {
+      setVisibleRouteStops(cached);
+      return;
+    }
+
+    setVisibleRouteStopsLoading(true);
+    setVisibleRouteStops([]);
+    try {
+      const res = await fetch(`${API_BASE}/routes/${route.route_id}/stops`);
+      if (res.ok) {
+        const data: RouteStopEntry[] = await res.json();
+        setVisibleRouteStops(data);
+        setRouteStopsCache((prev) => ({ ...prev, [route.route_id]: data }));
+      }
+    } catch {
+      // supplementary feature -- leave the list empty rather than erroring
+    } finally {
+      setVisibleRouteStopsLoading(false);
+    }
+  }
+
   // Load the full stop list for the autocomplete datalist, paging through
   // /stops since `limit` is capped server-side by settings.MAX_PAGE_SIZE.
   useEffect(() => {
@@ -304,6 +405,21 @@ export default function Home() {
           hasSeededOnly={hasSeededOnly}
         />
 
+        <RoutesPanel
+          routes={routes}
+          routesLoading={routesLoading}
+          total={routesTotal}
+          searchQuery={routeSearchQuery}
+          onSearchChange={setRouteSearchQuery}
+          visibleRouteId={visibleRouteId}
+          visibleRouteStops={visibleRouteStops}
+          visibleRouteStopsLoading={visibleRouteStopsLoading}
+          onToggleVisible={handleToggleRouteVisible}
+          hasMore={routes.length < routesTotal}
+          onLoadMore={handleLoadMoreRoutes}
+          loadingMore={routesLoadingMore}
+        />
+
         {stopsError && (
           <p className="rounded-md border border-amber-900 bg-amber-950/40 px-3 py-2 text-sm text-amber-300">
             Couldn&apos;t load the stop list from the server. You can still search if you know
@@ -381,6 +497,7 @@ export default function Home() {
           walkingRoute={walkingRoute}
           nearestStop={nearestStop}
           congestionSegments={congestionEnabled ? congestionSegments : []}
+          browseRouteStops={visibleRouteStops}
         />
       </div>
     </main>

@@ -61,6 +61,13 @@ class StopListOut(BaseModel):
     items: list[StopOut]
 
 
+class RouteListOut(BaseModel):
+    total: int
+    limit: int
+    offset: int
+    items: list[RouteOut]
+
+
 class RouteLeg(BaseModel):
     """One uninterrupted ride on a single route, part of a route-finder result."""
     route_id: str

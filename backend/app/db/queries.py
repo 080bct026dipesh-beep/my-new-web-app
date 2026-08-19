@@ -126,6 +126,33 @@ def get_active_routes(session: Session) -> Sequence[Route]:
     return session.execute(stmt).scalars().all()
 
 
+def list_routes(
+    session: Session,
+    status: str = "active",
+    q: Optional[str] = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> Sequence[Route]:
+    """Paged route listing for the route browser (app/api/routes.py::list_routes
+    endpoint), optionally filtered by a case-insensitive substring match on
+    route_name. Deliberately lean -- no route_stops eager-loaded here, unlike
+    get_active_routes/get_route, since the browser only needs stops for
+    whichever single route the user expands (GET /routes/{route_id}/stops)."""
+    stmt = select(Route).where(Route.status == status)
+    if q:
+        stmt = stmt.where(Route.route_name.ilike(f"%{q}%"))
+    stmt = stmt.order_by(Route.route_name).limit(limit).offset(offset)
+    return session.execute(stmt).scalars().all()
+
+
+def count_routes(session: Session, status: str = "active", q: Optional[str] = None) -> int:
+    """Total routes matching `status`/`q`, for pagination totals alongside list_routes()."""
+    stmt = select(func.count()).select_from(Route).where(Route.status == status)
+    if q:
+        stmt = stmt.where(Route.route_name.ilike(f"%{q}%"))
+    return session.execute(stmt).scalar_one()
+
+
 # --- Historical congestion stats (app/api/congestion.py) ---
 #
 # segment_congestion_stats is an *aggregate* table (see the model

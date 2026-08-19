@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import L from "leaflet";
-import { CongestionSegment, LatLng, RouteSearchResult, Stop, StopPickTarget, WalkingRoute } from "@/types/route";
+import { CongestionSegment, LatLng, RouteSearchResult, RouteStopEntry, Stop, StopPickTarget, WalkingRoute } from "@/types/route";
 
 const VALLEY_CENTER: [number, number] = [27.7041, 85.32];
 
@@ -22,6 +22,11 @@ const CONGESTION_COLORS: Record<string, string> = {
   heavy: "#EF4444",
   unknown: "#6B7280",
 };
+
+// Route-browser overlay (numbered stops + connecting line for whichever
+// route is toggled visible in RoutesPanel) gets its own color too, distinct
+// from every other layer this map draws.
+const BROWSE_ROUTE_COLOR = "#A78BFA";
 
 function dotIcon(color: string, size: number): L.DivIcon {
   return L.divIcon({
@@ -68,6 +73,10 @@ interface BusMapProps {
    * congestion_level. Independent of `result`; shows regardless of
    * whether a route is currently searched. */
   congestionSegments?: CongestionSegment[];
+  /** Route browser overlay: whichever route is toggled visible via the eye
+   * button in RoutesPanel, drawn as numbered stops in ride order + a
+   * connecting line. Independent of `result` and congestion. */
+  browseRouteStops?: RouteStopEntry[];
 }
 
 export default function BusMap({
@@ -79,6 +88,7 @@ export default function BusMap({
   walkingRoute,
   nearestStop,
   congestionSegments = [],
+  browseRouteStops = [],
 }: BusMapProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -207,6 +217,75 @@ export default function BusMap({
       layer.remove();
     };
   }, [congestionSegments, allStops]);
+
+  // Route-browser overlay: numbered markers in ride order + a connecting
+  // line for whichever route is toggled visible via RoutesPanel's eye
+  // button. Straight lines between consecutive stops, same tradeoff as the
+  // congestion overlay -- no per-hop road geometry is fetched just to
+  // preview a route's stop order. Auto-fits the map to the route so the
+  // user doesn't have to hunt for it.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || browseRouteStops.length === 0) return;
+
+    console.log("[BusMap] browseRouteStops received:", browseRouteStops);
+
+    // Coerce + validate -- some API responses send lat/lng as strings, and
+    // a single bad/missing coordinate would otherwise throw inside this
+    // effect and silently kill the marker + polyline + fitBounds below it,
+    // with nothing but a swallowed error to show for it.
+    const validEntries = browseRouteStops
+      .map((entry) => ({
+        entry,
+        lat: Number(entry.stop?.lat),
+        lng: Number(entry.stop?.lng),
+      }))
+      .filter(({ lat, lng }) => Number.isFinite(lat) && Number.isFinite(lng));
+
+    if (validEntries.length < browseRouteStops.length) {
+      console.warn(
+        `[BusMap] Dropped ${browseRouteStops.length - validEntries.length} route stop(s) with invalid lat/lng -- check the /routes/{route_id}/stops response shape.`,
+        browseRouteStops.filter((entry) => {
+          const lat = Number(entry.stop?.lat);
+          const lng = Number(entry.stop?.lng);
+          return !(Number.isFinite(lat) && Number.isFinite(lng));
+        })
+      );
+    }
+
+    if (validEntries.length === 0) {
+      console.error("[BusMap] No valid coordinates in browseRouteStops -- nothing to draw. Check field names (lat/lng vs latitude/longitude?).");
+      return;
+    }
+
+    const layer = L.layerGroup().addTo(map);
+    const latLngs: [number, number][] = validEntries.map(({ lat, lng }) => [lat, lng]);
+
+    L.polyline(latLngs, { color: BROWSE_ROUTE_COLOR, weight: 4, opacity: 0.85 }).addTo(layer);
+
+    validEntries.forEach(({ entry, lat, lng }) => {
+      const marker = L.marker([lat, lng], {
+        icon: L.divIcon({
+          className: "",
+          html: `<span style="display:flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:9999px;background:${BROWSE_ROUTE_COLOR};color:#0F1418;font-size:11px;font-weight:600;border:2px solid #0F1418;">${entry.sequence_no}</span>`,
+          iconSize: [20, 20],
+          iconAnchor: [10, 10],
+        }),
+      });
+      marker.bindTooltip(`${entry.sequence_no}. ${entry.stop.stop_name}`, {
+        direction: "top",
+        offset: [0, -8],
+      });
+      layer.addLayer(marker);
+    });
+
+    const bounds = L.latLngBounds(latLngs);
+    map.fitBounds(bounds, { padding: [40, 40] });
+
+    return () => {
+      layer.remove();
+    };
+  }, [browseRouteStops]);
 
   // Cursor feedback so it's obvious the map is in "pick a stop" mode.
   useEffect(() => {

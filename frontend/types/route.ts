@@ -82,3 +82,36 @@ export interface CongestionResponse {
   hour_bucket: number;
   segments: CongestionSegment[];
 }
+
+// Mirrors RouteOut / RouteStopOut / RouteListOut in backend/app/schemas.py.
+export interface RouteOperator {
+  operator_id: string;
+  name: string;
+  service_type: string | null;
+}
+
+export interface RouteSummary {
+  route_id: string;
+  route_name: string;
+  short_name: string | null;
+  vehicle_type: string;
+  start_stop_id: string;
+  end_stop_id: string;
+  total_stops: number;
+  approx_distance_km: number | null;
+  status: string;
+  operator: RouteOperator | null;
+}
+
+export interface RouteListResponse {
+  total: number;
+  limit: number;
+  offset: number;
+  items: RouteSummary[];
+}
+
+// GET /routes/{route_id}/stops -- a route's stops, in ride order.
+export interface RouteStopEntry {
+  sequence_no: number;
+  stop: Stop;
+}

@@ -1,0 +1,524 @@
+diff --git a/backend/app/api/routes.py b/backend/app/api/routes.py
+index b658ab1..5d0d041 100644
+--- a/backend/app/api/routes.py
++++ b/backend/app/api/routes.py
+@@ -1,14 +1,30 @@
+-from fastapi import APIRouter, Depends, HTTPException
++from fastapi import APIRouter, Depends, HTTPException, Query
+ from sqlalchemy.orm import Session
+ 
+ 
+ from app.db.session import get_db
+ from app.db import queries
+-from app.schemas import RouteOut, RouteStopOut
++from app.schemas import RouteListOut, RouteOut, RouteStopOut
+ 
+ router = APIRouter(prefix="/routes", tags=["routes"])
+ 
+ 
++@router.get("", response_model=RouteListOut)
++def list_routes(
++    q: str | None = Query(None, description="Optional case-insensitive substring match on route_name"),
++    offset: int = Query(0, ge=0),
++    limit: int = Query(50, ge=1, le=200),
++    db: Session = Depends(get_db),
++):
++    """Route browser listing -- lean (no stops payload); pair with
++    GET /routes/{route_id}/stops to fetch a single route's ordered stops
++    once the user picks one, rather than shipping every route's full stop
++    list up front."""
++    items = queries.list_routes(db, q=q, limit=limit, offset=offset)
++    total = queries.count_routes(db, q=q)
++    return RouteListOut(total=total, limit=limit, offset=offset, items=items)
++
++
+ @router.get("/{route_id}", response_model=RouteOut)
+ def read_route(route_id: str, db: Session = Depends(get_db)):
+     route = queries.get_route(db, route_id)
+diff --git a/backend/app/db/queries.py b/backend/app/db/queries.py
+index 563971e..0cd7f2f 100644
+--- a/backend/app/db/queries.py
++++ b/backend/app/db/queries.py
+@@ -126,6 +126,33 @@ def get_active_routes(session: Session) -> Sequence[Route]:
+     return session.execute(stmt).scalars().all()
+ 
+ 
++def list_routes(
++    session: Session,
++    status: str = "active",
++    q: Optional[str] = None,
++    limit: int = 50,
++    offset: int = 0,
++) -> Sequence[Route]:
++    """Paged route listing for the route browser (app/api/routes.py::list_routes
++    endpoint), optionally filtered by a case-insensitive substring match on
++    route_name. Deliberately lean -- no route_stops eager-loaded here, unlike
++    get_active_routes/get_route, since the browser only needs stops for
++    whichever single route the user expands (GET /routes/{route_id}/stops)."""
++    stmt = select(Route).where(Route.status == status)
++    if q:
++        stmt = stmt.where(Route.route_name.ilike(f"%{q}%"))
++    stmt = stmt.order_by(Route.route_name).limit(limit).offset(offset)
++    return session.execute(stmt).scalars().all()
++
++
++def count_routes(session: Session, status: str = "active", q: Optional[str] = None) -> int:
++    """Total routes matching `status`/`q`, for pagination totals alongside list_routes()."""
++    stmt = select(func.count()).select_from(Route).where(Route.status == status)
++    if q:
++        stmt = stmt.where(Route.route_name.ilike(f"%{q}%"))
++    return session.execute(stmt).scalar_one()
++
++
+ # --- Historical congestion stats (app/api/congestion.py) ---
+ #
+ # segment_congestion_stats is an *aggregate* table (see the model
+diff --git a/backend/app/schemas.py b/backend/app/schemas.py
+index 9e6cd66..9e25f9f 100644
+--- a/backend/app/schemas.py
++++ b/backend/app/schemas.py
+@@ -61,6 +61,13 @@ class StopListOut(BaseModel):
+     items: list[StopOut]
+ 
+ 
++class RouteListOut(BaseModel):
++    total: int
++    limit: int
++    offset: int
++    items: list[RouteOut]
++
++
+ class RouteLeg(BaseModel):
+     """One uninterrupted ride on a single route, part of a route-finder result."""
+     route_id: str
+diff --git a/frontend/app/page.tsx b/frontend/app/page.tsx
+index 76dc1aa..447b7bb 100644
+--- a/frontend/app/page.tsx
++++ b/frontend/app/page.tsx
+@@ -4,10 +4,13 @@ import { useCallback, useEffect, useState } from "react";
+ import dynamic from "next/dynamic";
+ import SearchForm from "@/components/SearchForm";
+ import CongestionPanel from "@/components/CongestionPanel";
++import RoutesPanel from "@/components/RoutesPanel";
+ import {
+   CongestionSegment,
+   LatLng,
+   RouteSearchResult,
++  RouteStopEntry,
++  RouteSummary,
+   Stop,
+   StopPickTarget,
+   WalkingRoute,
+@@ -197,6 +200,104 @@ export default function Home() {
+ 
+   const hasSeededOnly = congestionSegments.length > 0 && congestionSegments.every((s) => s.is_seeded);
+ 
++  // Route browser: paged/searchable list of routes, with one route at a
++  // time toggle-able "visible" (its ordered stops shown both inline in
++  // the panel and drawn on the map). Only one visible at a time keeps the
++  // map readable -- matches the congestion/walking overlays' approach.
++  const ROUTES_PAGE_SIZE = 50;
++  const [routes, setRoutes] = useState<RouteSummary[]>([]);
++  const [routesTotal, setRoutesTotal] = useState(0);
++  const [routesLoading, setRoutesLoading] = useState(false);
++  const [routesLoadingMore, setRoutesLoadingMore] = useState(false);
++  const [routeSearchQuery, setRouteSearchQuery] = useState("");
++  const [visibleRouteId, setVisibleRouteId] = useState<string | null>(null);
++  const [visibleRouteStops, setVisibleRouteStops] = useState<RouteStopEntry[]>([]);
++  const [visibleRouteStopsLoading, setVisibleRouteStopsLoading] = useState(false);
++  const [routeStopsCache, setRouteStopsCache] = useState<Record<string, RouteStopEntry[]>>({});
++
++  // Debounced search -- re-fetch page 1 whenever the query settles, rather
++  // than on every keystroke.
++  useEffect(() => {
++    let cancelled = false;
++
++    const timer = setTimeout(async () => {
++      setRoutesLoading(true);
++      try {
++        const params = new URLSearchParams({ limit: String(ROUTES_PAGE_SIZE), offset: "0" });
++        if (routeSearchQuery.trim()) params.set("q", routeSearchQuery.trim());
++        const res = await fetch(`${API_BASE}/routes?${params.toString()}`);
++        if (!res.ok || cancelled) return;
++        const data: { items: RouteSummary[]; total: number } = await res.json();
++        if (!cancelled) {
++          setRoutes(data.items);
++          setRoutesTotal(data.total);
++        }
++      } catch {
++        // Route browser is supplementary -- fail silently, panel just
++        // shows "no routes" rather than an error banner.
++      } finally {
++        if (!cancelled) setRoutesLoading(false);
++      }
++    }, 300);
++
++    return () => {
++      cancelled = true;
++      clearTimeout(timer);
++    };
++  }, [routeSearchQuery]);
++
++  async function handleLoadMoreRoutes() {
++    setRoutesLoadingMore(true);
++    try {
++      const params = new URLSearchParams({
++        limit: String(ROUTES_PAGE_SIZE),
++        offset: String(routes.length),
++      });
++      if (routeSearchQuery.trim()) params.set("q", routeSearchQuery.trim());
++      const res = await fetch(`${API_BASE}/routes?${params.toString()}`);
++      if (res.ok) {
++        const data: { items: RouteSummary[]; total: number } = await res.json();
++        setRoutes((prev) => [...prev, ...data.items]);
++        setRoutesTotal(data.total);
++      }
++    } catch {
++      // supplementary feature -- ignore
++    } finally {
++      setRoutesLoadingMore(false);
++    }
++  }
++
++  async function handleToggleRouteVisible(route: RouteSummary) {
++    if (visibleRouteId === route.route_id) {
++      setVisibleRouteId(null);
++      setVisibleRouteStops([]);
++      return;
++    }
++
++    setVisibleRouteId(route.route_id);
++
++    const cached = routeStopsCache[route.route_id];
++    if (cached) {
++      setVisibleRouteStops(cached);
++      return;
++    }
++
++    setVisibleRouteStopsLoading(true);
++    setVisibleRouteStops([]);
++    try {
++      const res = await fetch(`${API_BASE}/routes/${route.route_id}/stops`);
++      if (res.ok) {
++        const data: RouteStopEntry[] = await res.json();
++        setVisibleRouteStops(data);
++        setRouteStopsCache((prev) => ({ ...prev, [route.route_id]: data }));
++      }
++    } catch {
++      // supplementary feature -- leave the list empty rather than erroring
++    } finally {
++      setVisibleRouteStopsLoading(false);
++    }
++  }
++
+   // Load the full stop list for the autocomplete datalist, paging through
+   // /stops since `limit` is capped server-side by settings.MAX_PAGE_SIZE.
+   useEffect(() => {
+@@ -304,6 +405,21 @@ export default function Home() {
+           hasSeededOnly={hasSeededOnly}
+         />
+ 
++        <RoutesPanel
++          routes={routes}
++          routesLoading={routesLoading}
++          total={routesTotal}
++          searchQuery={routeSearchQuery}
++          onSearchChange={setRouteSearchQuery}
++          visibleRouteId={visibleRouteId}
++          visibleRouteStops={visibleRouteStops}
++          visibleRouteStopsLoading={visibleRouteStopsLoading}
++          onToggleVisible={handleToggleRouteVisible}
++          hasMore={routes.length < routesTotal}
++          onLoadMore={handleLoadMoreRoutes}
++          loadingMore={routesLoadingMore}
++        />
++
+         {stopsError && (
+           <p className="rounded-md border border-amber-900 bg-amber-950/40 px-3 py-2 text-sm text-amber-300">
+             Couldn&apos;t load the stop list from the server. You can still search if you know
+@@ -381,6 +497,7 @@ export default function Home() {
+           walkingRoute={walkingRoute}
+           nearestStop={nearestStop}
+           congestionSegments={congestionEnabled ? congestionSegments : []}
++          browseRouteStops={visibleRouteStops}
+         />
+       </div>
+     </main>
+diff --git a/frontend/components/BusMap.tsx b/frontend/components/BusMap.tsx
+index ad5816a..e30239f 100644
+--- a/frontend/components/BusMap.tsx
++++ b/frontend/components/BusMap.tsx
+@@ -2,7 +2,7 @@
+ 
+ import { useEffect, useRef } from "react";
+ import L from "leaflet";
+-import { CongestionSegment, LatLng, RouteSearchResult, Stop, StopPickTarget, WalkingRoute } from "@/types/route";
++import { CongestionSegment, LatLng, RouteSearchResult, RouteStopEntry, Stop, StopPickTarget, WalkingRoute } from "@/types/route";
+ 
+ const VALLEY_CENTER: [number, number] = [27.7041, 85.32];
+ 
+@@ -23,6 +23,11 @@ const CONGESTION_COLORS: Record<string, string> = {
+   unknown: "#6B7280",
+ };
+ 
++// Route-browser overlay (numbered stops + connecting line for whichever
++// route is toggled visible in RoutesPanel) gets its own color too, distinct
++// from every other layer this map draws.
++const BROWSE_ROUTE_COLOR = "#A78BFA";
++
+ function dotIcon(color: string, size: number): L.DivIcon {
+   return L.divIcon({
+     className: "",
+@@ -68,6 +73,10 @@ interface BusMapProps {
+    * congestion_level. Independent of `result`; shows regardless of
+    * whether a route is currently searched. */
+   congestionSegments?: CongestionSegment[];
++  /** Route browser overlay: whichever route is toggled visible via the eye
++   * button in RoutesPanel, drawn as numbered stops in ride order + a
++   * connecting line. Independent of `result` and congestion. */
++  browseRouteStops?: RouteStopEntry[];
+ }
+ 
+ export default function BusMap({
+@@ -79,6 +88,7 @@ export default function BusMap({
+   walkingRoute,
+   nearestStop,
+   congestionSegments = [],
++  browseRouteStops = [],
+ }: BusMapProps) {
+   const mapContainerRef = useRef<HTMLDivElement | null>(null);
+   const mapRef = useRef<L.Map | null>(null);
+@@ -208,6 +218,48 @@ export default function BusMap({
+     };
+   }, [congestionSegments, allStops]);
+ 
++  // Route-browser overlay: numbered markers in ride order + a connecting
++  // line for whichever route is toggled visible via RoutesPanel's eye
++  // button. Straight lines between consecutive stops, same tradeoff as the
++  // congestion overlay -- no per-hop road geometry is fetched just to
++  // preview a route's stop order. Auto-fits the map to the route so the
++  // user doesn't have to hunt for it.
++  useEffect(() => {
++    const map = mapRef.current;
++    if (!map || browseRouteStops.length === 0) return;
++
++    const layer = L.layerGroup().addTo(map);
++    const latLngs: [number, number][] = browseRouteStops.map((entry) => [
++      entry.stop.lat,
++      entry.stop.lng,
++    ]);
++
++    L.polyline(latLngs, { color: BROWSE_ROUTE_COLOR, weight: 4, opacity: 0.85 }).addTo(layer);
++
++    browseRouteStops.forEach((entry) => {
++      const marker = L.marker([entry.stop.lat, entry.stop.lng], {
++        icon: L.divIcon({
++          className: "",
++          html: `<span style="display:flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:9999px;background:${BROWSE_ROUTE_COLOR};color:#0F1418;font-size:11px;font-weight:600;border:2px solid #0F1418;">${entry.sequence_no}</span>`,
++          iconSize: [20, 20],
++          iconAnchor: [10, 10],
++        }),
++      });
++      marker.bindTooltip(`${entry.sequence_no}. ${entry.stop.stop_name}`, {
++        direction: "top",
++        offset: [0, -8],
++      });
++      layer.addLayer(marker);
++    });
++
++    const bounds = L.latLngBounds(latLngs);
++    map.fitBounds(bounds, { padding: [40, 40] });
++
++    return () => {
++      layer.remove();
++    };
++  }, [browseRouteStops]);
++
+   // Cursor feedback so it's obvious the map is in "pick a stop" mode.
+   useEffect(() => {
+     const container = mapContainerRef.current;
+diff --git a/frontend/components/RoutesPanel.tsx b/frontend/components/RoutesPanel.tsx
+new file mode 100644
+index 0000000..c8f85f2
+--- /dev/null
++++ b/frontend/components/RoutesPanel.tsx
+@@ -0,0 +1,136 @@
++"use client";
++
++import { RouteStopEntry, RouteSummary } from "@/types/route";
++
++function EyeIcon({ open }: { open: boolean }) {
++  if (open) {
++    return (
++      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
++        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" />
++        <circle cx="12" cy="12" r="3" />
++      </svg>
++    );
++  }
++  return (
++    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
++      <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a20.3 20.3 0 0 1 4.22-5.06M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 7 11 7a20.3 20.3 0 0 1-2.7 3.79M14.12 14.12a3 3 0 1 1-4.24-4.24" />
++      <line x1="1" y1="1" x2="23" y2="23" />
++    </svg>
++  );
++}
++
++interface RoutesPanelProps {
++  routes: RouteSummary[];
++  routesLoading?: boolean;
++  total: number;
++  searchQuery: string;
++  onSearchChange: (value: string) => void;
++  visibleRouteId: string | null;
++  visibleRouteStops: RouteStopEntry[];
++  visibleRouteStopsLoading?: boolean;
++  onToggleVisible: (route: RouteSummary) => void;
++  hasMore: boolean;
++  onLoadMore: () => void;
++  loadingMore?: boolean;
++}
++
++export default function RoutesPanel({
++  routes,
++  routesLoading,
++  total,
++  searchQuery,
++  onSearchChange,
++  visibleRouteId,
++  visibleRouteStops,
++  visibleRouteStopsLoading,
++  onToggleVisible,
++  hasMore,
++  onLoadMore,
++  loadingMore,
++}: RoutesPanelProps) {
++  return (
++    <div className="flex flex-col gap-3 rounded-lg bg-route-panel p-4">
++      <div className="flex items-center justify-between">
++        <p className="text-sm font-medium">Routes</p>
++        <p className="text-xs text-neutral-500">{total} total</p>
++      </div>
++
++      <input
++        value={searchQuery}
++        onChange={(e) => onSearchChange(e.target.value)}
++        placeholder="Search routes by name…"
++        className="rounded-md border border-route-line bg-route-bg px-3 py-2 text-sm outline-none focus:border-route-accent"
++      />
++
++      <div className="flex max-h-80 flex-col gap-1 overflow-y-auto">
++        {routesLoading && routes.length === 0 && (
++          <p className="py-2 text-xs text-neutral-500">Loading routes…</p>
++        )}
++        {!routesLoading && routes.length === 0 && (
++          <p className="py-2 text-xs text-neutral-500">No routes match &quot;{searchQuery}&quot;.</p>
++        )}
++
++        {routes.map((route) => {
++          const isVisible = visibleRouteId === route.route_id;
++          return (
++            <div key={route.route_id} className="rounded-md">
++              <div className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-route-bg">
++                <button
++                  type="button"
++                  onClick={() => onToggleVisible(route)}
++                  aria-pressed={isVisible}
++                  aria-label={isVisible ? `Hide ${route.route_name}` : `Show ${route.route_name} and its stops`}
++                  title={isVisible ? "Hide route" : "Show route + stops in order"}
++                  className={`flex-shrink-0 rounded-full p-1.5 ${
++                    isVisible
++                      ? "bg-route-accent text-route-bg"
++                      : "text-neutral-400 hover:text-route-accent"
++                  }`}
++                >
++                  <EyeIcon open={isVisible} />
++                </button>
++                <div className="min-w-0 flex-1">
++                  <p className="truncate text-sm">{route.route_name}</p>
++                  <p className="truncate text-xs text-neutral-500">
++                    {route.vehicle_type} · {route.total_stops} stops
++                    {route.operator ? ` · ${route.operator.name}` : ""}
++                  </p>
++                </div>
++              </div>
++
++              {isVisible && (
++                <div className="ml-9 mr-2 mb-2 max-h-56 overflow-y-auto rounded-md border border-route-line bg-route-bg p-2">
++                  {visibleRouteStopsLoading ? (
++                    <p className="text-xs text-neutral-500">Loading stops…</p>
++                  ) : (
++                    <ol className="flex flex-col gap-1">
++                      {visibleRouteStops.map((entry) => (
++                        <li key={entry.sequence_no} className="flex items-center gap-2 text-xs">
++                          <span className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-route-accent/20 text-[10px] font-medium text-route-accent">
++                            {entry.sequence_no}
++                          </span>
++                          <span className="truncate text-neutral-200">{entry.stop.stop_name}</span>
++                        </li>
++                      ))}
++                    </ol>
++                  )}
++                </div>
++              )}
++            </div>
++          );
++        })}
++      </div>
++
++      {hasMore && (
++        <button
++          type="button"
++          onClick={onLoadMore}
++          disabled={loadingMore}
++          className="rounded-md border border-route-line py-1.5 text-xs text-neutral-400 hover:border-route-accent hover:text-route-accent disabled:opacity-50"
++        >
++          {loadingMore ? "Loading…" : "Load more routes"}
++        </button>
++      )}
++    </div>
++  );
++}
+diff --git a/frontend/types/route.ts b/frontend/types/route.ts
+index 1397bf7..b0d333e 100644
+--- a/frontend/types/route.ts
++++ b/frontend/types/route.ts
+@@ -81,4 +81,37 @@ export interface CongestionResponse {
+   day_of_week: number;
+   hour_bucket: number;
+   segments: CongestionSegment[];
++}
++
++// Mirrors RouteOut / RouteStopOut / RouteListOut in backend/app/schemas.py.
++export interface RouteOperator {
++  operator_id: string;
++  name: string;
++  service_type: string | null;
++}
++
++export interface RouteSummary {
++  route_id: string;
++  route_name: string;
++  short_name: string | null;
++  vehicle_type: string;
++  start_stop_id: string;
++  end_stop_id: string;
++  total_stops: number;
++  approx_distance_km: number | null;
++  status: string;
++  operator: RouteOperator | null;
++}
++
++export interface RouteListResponse {
++  total: number;
++  limit: number;
++  offset: number;
++  items: RouteSummary[];
++}
++
++// GET /routes/{route_id}/stops -- a route's stops, in ride order.
++export interface RouteStopEntry {
++  sequence_no: number;
++  stop: Stop;
+ }
+\ No newline at end of file
