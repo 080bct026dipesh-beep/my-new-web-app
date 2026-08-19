@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Stop, StopPickTarget } from "@/types/route";
 
 interface SearchFormProps {
@@ -40,13 +40,6 @@ export default function SearchForm({
   onUseMyLocation,
 }: SearchFormProps) {
   const [fieldError, setFieldError] = useState<FieldError>(null);
-
-  // Whichever field is the active map-pick target gets cleared of field
-  // errors as soon as its text changes (e.g. via a map click), same as typing.
-  useEffect(() => {
-    if (fieldError) setFieldError(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [originText, destinationText]);
 
   function resolveStop(typedName: string): Stop | null {
     return (
@@ -133,7 +126,10 @@ export default function SearchForm({
           id="origin"
           list="stop-options"
           value={originText}
-          onChange={(e) => onOriginTextChange(e.target.value)}
+          onChange={(e) => {
+            onOriginTextChange(e.target.value);
+            if (fieldError) setFieldError(null);
+          }}
           placeholder={stopsLoading ? "Loading stops…" : "Origin stop"}
           autoComplete="off"
           aria-invalid={originInvalid}
@@ -175,7 +171,10 @@ export default function SearchForm({
           id="destination"
           list="stop-options"
           value={destinationText}
-          onChange={(e) => onDestinationTextChange(e.target.value)}
+          onChange={(e) => {
+            onDestinationTextChange(e.target.value);
+            if (fieldError) setFieldError(null);
+          }}
           placeholder={stopsLoading ? "Loading stops…" : "Destination stop"}
           autoComplete="off"
           aria-invalid={destinationInvalid}

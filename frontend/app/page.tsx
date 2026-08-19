@@ -3,7 +3,15 @@
 import { useCallback, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import SearchForm from "@/components/SearchForm";
-import { LatLng, RouteSearchResult, Stop, StopPickTarget, WalkingRoute } from "@/types/route";
+import CongestionPanel from "@/components/CongestionPanel";
+import {
+  CongestionSegment,
+  LatLng,
+  RouteSearchResult,
+  Stop,
+  StopPickTarget,
+  WalkingRoute,
+} from "@/types/route";
 
 // Leaflet touches `window`, so the map must load client-side only.
 const BusMap = dynamic(() => import("@/components/BusMap"), {
@@ -62,6 +70,10 @@ export default function Home() {
       }
       const stop = nearby[0];
       setNearestStop(stop);
+      // Offer it as the origin, but only if the user hasn't already
+      // typed/picked something themselves. Functional update reads the
+      // latest originText without needing it in this callback's deps.
+      setOriginText((prev) => prev || stop.stop_name);
 
       try {
         const walkParams = new URLSearchParams({
@@ -125,15 +137,6 @@ export default function Home() {
     );
   }, [locateNearestStop]);
 
-  // Once we know the nearest stop, offer it as the origin -- but only if
-  // the user hasn't already typed/picked something themselves.
-  useEffect(() => {
-    if (nearestStop && !originText) {
-      setOriginText(nearestStop.stop_name);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nearestStop]);
-
   function handleStopPick(stop: Stop) {
     if (pickTarget === "origin") {
       setOriginText(stop.stop_name);
@@ -142,6 +145,57 @@ export default function Home() {
     }
     setPickTarget(null); // one pick and done, same as most map apps
   }
+
+  // Congestion overlay: off by default (extra map clutter + a fetch most
+  // visits don't need), with a day/hour picker that defers to the
+  // server's "now" bucket when both are null.
+  const [congestionEnabled, setCongestionEnabled] = useState(false);
+  const [congestionDayOfWeek, setCongestionDayOfWeek] = useState<number | null>(null);
+  const [congestionHourBucket, setCongestionHourBucket] = useState<number | null>(null);
+  const [congestionSegments, setCongestionSegments] = useState<CongestionSegment[]>([]);
+  const [congestionLoading, setCongestionLoading] = useState(false);
+
+  useEffect(() => {
+    if (!congestionEnabled) return;
+
+    let cancelled = false;
+
+    async function loadCongestion() {
+      setCongestionLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (congestionDayOfWeek !== null) params.set("day_of_week", String(congestionDayOfWeek));
+        if (congestionHourBucket !== null) params.set("hour", String(congestionHourBucket));
+        const res = await fetch(`${API_BASE}/congestion?${params.toString()}`);
+        if (!res.ok || cancelled) return;
+        const data: { segments: CongestionSegment[] } = await res.json();
+        if (!cancelled) setCongestionSegments(data.segments);
+      } catch {
+        // Congestion is a nice-to-have overlay -- fail silently and just
+        // leave whatever was last successfully loaded (or empty) rather
+        // than surfacing an error banner for a non-critical layer.
+      } finally {
+        if (!cancelled) setCongestionLoading(false);
+      }
+    }
+
+    loadCongestion();
+
+    // Only auto-refresh when following "now" (both pickers unset) --
+    // otherwise the user is deliberately browsing a fixed time and a
+    // refetch would just be wasted requests.
+    let interval: ReturnType<typeof setInterval> | undefined;
+    if (congestionDayOfWeek === null && congestionHourBucket === null) {
+      interval = setInterval(loadCongestion, 3 * 60 * 1000);
+    }
+
+    return () => {
+      cancelled = true;
+      if (interval) clearInterval(interval);
+    };
+  }, [congestionEnabled, congestionDayOfWeek, congestionHourBucket]);
+
+  const hasSeededOnly = congestionSegments.length > 0 && congestionSegments.every((s) => s.is_seeded);
 
   // Load the full stop list for the autocomplete datalist, paging through
   // /stops since `limit` is capped server-side by settings.MAX_PAGE_SIZE.
@@ -238,6 +292,18 @@ export default function Home() {
           onUseMyLocation={handleUseMyLocation}
         />
 
+        <CongestionPanel
+          enabled={congestionEnabled}
+          onToggle={() => setCongestionEnabled((v) => !v)}
+          dayOfWeek={congestionDayOfWeek}
+          hourBucket={congestionHourBucket}
+          onDayChange={setCongestionDayOfWeek}
+          onHourChange={setCongestionHourBucket}
+          loading={congestionLoading}
+          segmentCount={congestionSegments.length}
+          hasSeededOnly={hasSeededOnly}
+        />
+
         {stopsError && (
           <p className="rounded-md border border-amber-900 bg-amber-950/40 px-3 py-2 text-sm text-amber-300">
             Couldn&apos;t load the stop list from the server. You can still search if you know
@@ -314,6 +380,7 @@ export default function Home() {
           userLocation={userLocation}
           walkingRoute={walkingRoute}
           nearestStop={nearestStop}
+          congestionSegments={congestionEnabled ? congestionSegments : []}
         />
       </div>
     </main>

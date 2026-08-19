@@ -59,3 +59,26 @@ export interface LatLng {
 // GET /walking-route response -- same shape as RoadGeometry, kept separate
 // so call sites don't imply it came from a bus leg.
 export type WalkingRoute = RoadGeometry;
+
+// Mirrors CongestionLevel / CongestionSegmentOut / CongestionResponse in
+// backend/app/schemas.py.
+export type CongestionLevel = "free_flow" | "moderate" | "heavy" | "unknown";
+
+export interface CongestionSegment {
+  route_id: string | null;
+  from_stop_id: string;
+  to_stop_id: string;
+  avg_duration_s: number;
+  avg_distance_m: number;
+  free_flow_duration_s: number;
+  congestion_ratio: number;
+  congestion_level: CongestionLevel;
+  sample_count: number;
+  is_seeded: boolean;
+}
+
+export interface CongestionResponse {
+  day_of_week: number;
+  hour_bucket: number;
+  segments: CongestionSegment[];
+}

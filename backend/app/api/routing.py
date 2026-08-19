@@ -1,9 +1,10 @@
-from fastapi import APIRouter, HTTPException, Query, Depends
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Depends
 from sqlalchemy.orm import Session
 
 from app.routing.osrm_client import get_route_geometry, OSRMError
 from app.routing.graph_builder import haversine_distance_m
-from app.db.session import get_db
+from app.routing.time_buckets import day_and_bucket_for, now_in_nepal
+from app.db.session import get_db, SessionLocal
 from app.db import queries
 from app.routing.pathfinder import find_shortest_path, NoRouteFoundError
 from app.schemas import RouteFinderResult, RouteLeg, StopOut
@@ -52,6 +53,39 @@ def _attach_road_geometry(legs: list[RouteLeg]) -> None:
             pass
 
 
+def _record_leg_congestion(legs: list[RouteLeg]) -> None:
+    """Runs after the response is already sent (see BackgroundTasks in
+    find_route below), so this never adds latency to a user's search. Each
+    ride leg with real OSRM road_geometry becomes one upsert into
+    segment_congestion_stats, bucketed by "now" in Nepal time -- an
+    approximation of when the underlying trip would actually happen, good
+    enough for an aggregate stat that only needs day-of-week/3-hour
+    resolution.
+
+    Opens its own DB session rather than reusing the request's, since the
+    request's session is closed by the get_db dependency once the response
+    finishes -- background tasks run after that.
+    """
+    day_of_week, hour_bucket = day_and_bucket_for(now_in_nepal())
+    db = SessionLocal()
+    try:
+        for leg in legs:
+            if leg.route_id == "TRANSFER" or leg.road_geometry is None:
+                continue
+            queries.record_congestion_sample(
+                db,
+                route_id=leg.route_id,
+                from_stop_id=leg.board_stop.stop_id,
+                to_stop_id=leg.alight_stop.stop_id,
+                day_of_week=day_of_week,
+                hour_bucket=hour_bucket,
+                duration_s=leg.road_geometry["duration_s"],
+                distance_m=leg.road_geometry["distance_m"],
+            )
+    finally:
+        db.close()
+
+
 @router.get("/walking-route")
 def walking_route(
     from_lat: float = Query(..., ge=-90, le=90),
@@ -72,6 +106,7 @@ def walking_route(
 
 @router.get("/route-finder", response_model=RouteFinderResult)
 def find_route(
+    background_tasks: BackgroundTasks,
     origin: str = Query(..., description="Origin stop_id, e.g. S0198"),
     destination: str = Query(..., description="Destination stop_id, e.g. S0021"),
     db: Session = Depends(get_db),
@@ -103,6 +138,8 @@ def find_route(
             )
 
     _attach_road_geometry(legs)
+
+    background_tasks.add_task(_record_leg_congestion, legs)
 
     return RouteFinderResult(
         origin_stop_id=origin,

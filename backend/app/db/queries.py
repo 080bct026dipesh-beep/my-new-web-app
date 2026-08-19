@@ -9,11 +9,12 @@ Session so callers control transaction/connection lifecycle.
 from typing import List, Optional, Sequence
 
 from geoalchemy2.functions import ST_Distance, ST_DWithin, ST_GeogFromText
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select, text
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session, selectinload
 
 
-from ..models import FareRule, Operator, Route, RouteOperator, RouteStop, Stop
+from ..models import FareRule, Operator, Route, RouteOperator, RouteStop, Stop, SegmentCongestionStat
 
 
 def nearest_stops(
@@ -123,3 +124,145 @@ def get_active_routes(session: Session) -> Sequence[Route]:
         .options(selectinload(Route.route_stops).selectinload(RouteStop.stop))
     )
     return session.execute(stmt).scalars().all()
+
+
+# --- Historical congestion stats (app/api/congestion.py) ---
+#
+# segment_congestion_stats is an *aggregate* table (see the model
+# docstring for the sizing math), upserted per sample rather than
+# appended to, so record_congestion_sample and get_congestion_stats are
+# the only two entry points that ever touch it.
+
+
+def record_congestion_sample(
+    session: Session,
+    *,
+    route_id: str,
+    from_stop_id: str,
+    to_stop_id: str,
+    day_of_week: int,
+    hour_bucket: int,
+    duration_s: float,
+    distance_m: float,
+) -> None:
+    """Upsert one real (organic) OSRM observation into the running average
+    for this segment/time-bucket.
+
+    If the existing row is still just the synthetic seed written by
+    scripts/seed_congestion_stats.py (is_seeded and sample_count <= 1),
+    this sample REPLACES it outright rather than blending in -- so one
+    guessed baseline doesn't permanently bias the historical average
+    once real traffic data starts arriving.
+    """
+    table = SegmentCongestionStat.__table__
+    stmt = pg_insert(table).values(
+        route_id=route_id,
+        from_stop_id=from_stop_id,
+        to_stop_id=to_stop_id,
+        day_of_week=day_of_week,
+        hour_bucket=hour_bucket,
+        avg_duration_s=duration_s,
+        avg_distance_m=distance_m,
+        sample_count=1,
+        is_seeded=False,
+    )
+    excluded = stmt.excluded
+    replace_seed = table.c.is_seeded & (table.c.sample_count <= 1)
+
+    stmt = stmt.on_conflict_do_update(
+        constraint="uq_segment_congestion_key",
+        set_={
+            "avg_duration_s": case(
+                (replace_seed, excluded.avg_duration_s),
+                else_=(
+                    (table.c.avg_duration_s * table.c.sample_count + excluded.avg_duration_s)
+                    / (table.c.sample_count + 1)
+                ),
+            ),
+            "avg_distance_m": case(
+                (replace_seed, excluded.avg_distance_m),
+                else_=(
+                    (table.c.avg_distance_m * table.c.sample_count + excluded.avg_distance_m)
+                    / (table.c.sample_count + 1)
+                ),
+            ),
+            "sample_count": case(
+                (replace_seed, 1),
+                else_=table.c.sample_count + 1,
+            ),
+            "is_seeded": False,
+            "updated_at": text("now()"),
+        },
+    )
+    session.execute(stmt)
+    session.commit()
+
+
+def seed_congestion_baseline(
+    session: Session,
+    *,
+    route_id: str,
+    from_stop_id: str,
+    to_stop_id: str,
+    duration_s: float,
+    distance_m: float,
+) -> None:
+    """Write a synthetic baseline into all 8 hour buckets for every day of
+    the week, so the congestion map isn't empty before real traffic
+    accumulates. Used by scripts/seed_congestion_stats.py. A no-op (does
+    nothing, doesn't overwrite) for any bucket that already has organic
+    data, so re-running the seed script is always safe.
+    """
+    table = SegmentCongestionStat.__table__
+    rows = [
+        {
+            "route_id": route_id,
+            "from_stop_id": from_stop_id,
+            "to_stop_id": to_stop_id,
+            "day_of_week": dow,
+            "hour_bucket": hour,
+            "avg_duration_s": duration_s,
+            "avg_distance_m": distance_m,
+            "sample_count": 1,
+            "is_seeded": True,
+        }
+        for dow in range(7)
+        for hour in (0, 3, 6, 9, 12, 15, 18, 21)
+    ]
+    stmt = pg_insert(table).values(rows)
+    stmt = stmt.on_conflict_do_nothing(constraint="uq_segment_congestion_key")
+    session.execute(stmt)
+    session.commit()
+
+
+def get_congestion_stats(
+    session: Session, day_of_week: int, hour_bucket: int
+) -> Sequence:
+    """Every segment with data for this (day_of_week, hour_bucket), each
+    row paired with that segment's own free-flow baseline -- the minimum
+    avg_duration_s across all of its buckets -- so callers can turn it
+    into a congestion ratio without a second round-trip. See
+    app/api/congestion.py for how the ratio becomes free_flow/moderate/heavy.
+    """
+    T = SegmentCongestionStat
+    baseline = (
+        select(
+            T.route_id.label("route_id"),
+            T.from_stop_id.label("from_stop_id"),
+            T.to_stop_id.label("to_stop_id"),
+            func.min(T.avg_duration_s).label("free_flow_duration_s"),
+        )
+        .group_by(T.route_id, T.from_stop_id, T.to_stop_id)
+        .subquery()
+    )
+    stmt = (
+        select(T, baseline.c.free_flow_duration_s)
+        .join(
+            baseline,
+            (T.route_id == baseline.c.route_id)
+            & (T.from_stop_id == baseline.c.from_stop_id)
+            & (T.to_stop_id == baseline.c.to_stop_id),
+        )
+        .where(T.day_of_week == day_of_week, T.hour_bucket == hour_bucket)
+    )
+    return session.execute(stmt).all()

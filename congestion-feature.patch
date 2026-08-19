@@ -1,0 +1,1204 @@
+diff --git a/backend/app/api/congestion.py b/backend/app/api/congestion.py
+new file mode 100644
+index 0000000..4fcf3da
+--- /dev/null
++++ b/backend/app/api/congestion.py
+@@ -0,0 +1,88 @@
++"""
++api/congestion.py
++
++GET /congestion — historical congestion stats for a given day-of-week /
++hour-bucket, defaulting to "right now" in Nepal time.
++
++Data comes from segment_congestion_stats, an aggregate table upserted by
++api/routing.py on real traffic (see _record_leg_congestion) and optionally
++pre-populated by scripts/seed_congestion_stats.py. This endpoint is pure
++read: it classifies each row's congestion_ratio into a CongestionLevel and
++returns it, no writes.
++"""
++
++from fastapi import APIRouter, Query, Depends
++from sqlalchemy.orm import Session
++
++from app.db import queries
++from app.db.session import get_db
++from app.routing.time_buckets import HOUR_BUCKETS, day_and_bucket_for, hour_bucket_start, now_in_nepal
++from app.schemas import CongestionLevel, CongestionResponse, CongestionSegmentOut
++
++router = APIRouter(tags=["congestion"])
++
++# Ratio thresholds for avg_duration_s / free_flow_duration_s. Tuned to be
++# forgiving of GPS/OSRM noise on short segments (a 90s hop naturally has
++# more relative jitter than a 10-minute one) -- adjust here only; every
++# consumer reads the classification off the API, not the raw ratio.
++_MODERATE_RATIO = 1.15
++_HEAVY_RATIO = 1.5
++
++
++def _classify(ratio: float) -> CongestionLevel:
++    if ratio >= _HEAVY_RATIO:
++        return "heavy"
++    if ratio >= _MODERATE_RATIO:
++        return "moderate"
++    return "free_flow"
++
++
++@router.get("/congestion", response_model=CongestionResponse)
++def get_congestion(
++    day_of_week: int | None = Query(
++        None, ge=0, le=6, description="0=Monday..6=Sunday. Defaults to today (Nepal time)."
++    ),
++    hour: int | None = Query(
++        None,
++        ge=0,
++        le=23,
++        description="Hour of day (0-23), rounded down to its 3-hour bucket. Defaults to now.",
++    ),
++    db: Session = Depends(get_db),
++):
++    if day_of_week is None or hour is None:
++        default_dow, default_bucket = day_and_bucket_for(now_in_nepal())
++        if day_of_week is None:
++            day_of_week = default_dow
++        hour_bucket = default_bucket if hour is None else hour_bucket_start(hour)
++    else:
++        hour_bucket = hour_bucket_start(hour)
++
++    rows = queries.get_congestion_stats(db, day_of_week=day_of_week, hour_bucket=hour_bucket)
++
++    segments = []
++    for stat, free_flow_duration_s in rows:
++        ratio = stat.avg_duration_s / free_flow_duration_s if free_flow_duration_s > 0 else 1.0
++        segments.append(
++            CongestionSegmentOut(
++                route_id=stat.route_id,
++                from_stop_id=stat.from_stop_id,
++                to_stop_id=stat.to_stop_id,
++                avg_duration_s=stat.avg_duration_s,
++                avg_distance_m=stat.avg_distance_m,
++                free_flow_duration_s=free_flow_duration_s,
++                congestion_ratio=ratio,
++                congestion_level=_classify(ratio),
++                sample_count=stat.sample_count,
++                is_seeded=stat.is_seeded,
++            )
++        )
++
++    return CongestionResponse(day_of_week=day_of_week, hour_bucket=hour_bucket, segments=segments)
++
++
++@router.get("/congestion/buckets")
++def list_buckets():
++    """The fixed set of valid hour buckets, so the frontend's time picker
++    doesn't have to hardcode it separately."""
++    return {"hour_buckets": list(HOUR_BUCKETS)}
+diff --git a/backend/app/api/routing.py b/backend/app/api/routing.py
+index a0a6cce..0eaa486 100644
+--- a/backend/app/api/routing.py
++++ b/backend/app/api/routing.py
+@@ -1,9 +1,10 @@
+-from fastapi import APIRouter, HTTPException, Query, Depends
++from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Depends
+ from sqlalchemy.orm import Session
+ 
+ from app.routing.osrm_client import get_route_geometry, OSRMError
+ from app.routing.graph_builder import haversine_distance_m
+-from app.db.session import get_db
++from app.routing.time_buckets import day_and_bucket_for, now_in_nepal
++from app.db.session import get_db, SessionLocal
+ from app.db import queries
+ from app.routing.pathfinder import find_shortest_path, NoRouteFoundError
+ from app.schemas import RouteFinderResult, RouteLeg, StopOut
+@@ -52,6 +53,39 @@ def _attach_road_geometry(legs: list[RouteLeg]) -> None:
+             pass
+ 
+ 
++def _record_leg_congestion(legs: list[RouteLeg]) -> None:
++    """Runs after the response is already sent (see BackgroundTasks in
++    find_route below), so this never adds latency to a user's search. Each
++    ride leg with real OSRM road_geometry becomes one upsert into
++    segment_congestion_stats, bucketed by "now" in Nepal time -- an
++    approximation of when the underlying trip would actually happen, good
++    enough for an aggregate stat that only needs day-of-week/3-hour
++    resolution.
++
++    Opens its own DB session rather than reusing the request's, since the
++    request's session is closed by the get_db dependency once the response
++    finishes -- background tasks run after that.
++    """
++    day_of_week, hour_bucket = day_and_bucket_for(now_in_nepal())
++    db = SessionLocal()
++    try:
++        for leg in legs:
++            if leg.route_id == "TRANSFER" or leg.road_geometry is None:
++                continue
++            queries.record_congestion_sample(
++                db,
++                route_id=leg.route_id,
++                from_stop_id=leg.board_stop.stop_id,
++                to_stop_id=leg.alight_stop.stop_id,
++                day_of_week=day_of_week,
++                hour_bucket=hour_bucket,
++                duration_s=leg.road_geometry["duration_s"],
++                distance_m=leg.road_geometry["distance_m"],
++            )
++    finally:
++        db.close()
++
++
+ @router.get("/walking-route")
+ def walking_route(
+     from_lat: float = Query(..., ge=-90, le=90),
+@@ -72,6 +106,7 @@ def walking_route(
+ 
+ @router.get("/route-finder", response_model=RouteFinderResult)
+ def find_route(
++    background_tasks: BackgroundTasks,
+     origin: str = Query(..., description="Origin stop_id, e.g. S0198"),
+     destination: str = Query(..., description="Destination stop_id, e.g. S0021"),
+     db: Session = Depends(get_db),
+@@ -104,6 +139,8 @@ def find_route(
+ 
+     _attach_road_geometry(legs)
+ 
++    background_tasks.add_task(_record_leg_congestion, legs)
++
+     return RouteFinderResult(
+         origin_stop_id=origin,
+         destination_stop_id=destination,
+diff --git a/backend/app/db/queries.py b/backend/app/db/queries.py
+index c2847b2..563971e 100644
+--- a/backend/app/db/queries.py
++++ b/backend/app/db/queries.py
+@@ -9,11 +9,12 @@ Session so callers control transaction/connection lifecycle.
+ from typing import List, Optional, Sequence
+ 
+ from geoalchemy2.functions import ST_Distance, ST_DWithin, ST_GeogFromText
+-from sqlalchemy import func, select
++from sqlalchemy import case, func, select, text
++from sqlalchemy.dialects.postgresql import insert as pg_insert
+ from sqlalchemy.orm import Session, selectinload
+ 
+ 
+-from ..models import FareRule, Operator, Route, RouteOperator, RouteStop, Stop
++from ..models import FareRule, Operator, Route, RouteOperator, RouteStop, Stop, SegmentCongestionStat
+ 
+ 
+ def nearest_stops(
+@@ -122,4 +123,146 @@ def get_active_routes(session: Session) -> Sequence[Route]:
+         .where(Route.status == "active")
+         .options(selectinload(Route.route_stops).selectinload(RouteStop.stop))
+     )
+-    return session.execute(stmt).scalars().all()
+\ No newline at end of file
++    return session.execute(stmt).scalars().all()
++
++
++# --- Historical congestion stats (app/api/congestion.py) ---
++#
++# segment_congestion_stats is an *aggregate* table (see the model
++# docstring for the sizing math), upserted per sample rather than
++# appended to, so record_congestion_sample and get_congestion_stats are
++# the only two entry points that ever touch it.
++
++
++def record_congestion_sample(
++    session: Session,
++    *,
++    route_id: str,
++    from_stop_id: str,
++    to_stop_id: str,
++    day_of_week: int,
++    hour_bucket: int,
++    duration_s: float,
++    distance_m: float,
++) -> None:
++    """Upsert one real (organic) OSRM observation into the running average
++    for this segment/time-bucket.
++
++    If the existing row is still just the synthetic seed written by
++    scripts/seed_congestion_stats.py (is_seeded and sample_count <= 1),
++    this sample REPLACES it outright rather than blending in -- so one
++    guessed baseline doesn't permanently bias the historical average
++    once real traffic data starts arriving.
++    """
++    table = SegmentCongestionStat.__table__
++    stmt = pg_insert(table).values(
++        route_id=route_id,
++        from_stop_id=from_stop_id,
++        to_stop_id=to_stop_id,
++        day_of_week=day_of_week,
++        hour_bucket=hour_bucket,
++        avg_duration_s=duration_s,
++        avg_distance_m=distance_m,
++        sample_count=1,
++        is_seeded=False,
++    )
++    excluded = stmt.excluded
++    replace_seed = table.c.is_seeded & (table.c.sample_count <= 1)
++
++    stmt = stmt.on_conflict_do_update(
++        constraint="uq_segment_congestion_key",
++        set_={
++            "avg_duration_s": case(
++                (replace_seed, excluded.avg_duration_s),
++                else_=(
++                    (table.c.avg_duration_s * table.c.sample_count + excluded.avg_duration_s)
++                    / (table.c.sample_count + 1)
++                ),
++            ),
++            "avg_distance_m": case(
++                (replace_seed, excluded.avg_distance_m),
++                else_=(
++                    (table.c.avg_distance_m * table.c.sample_count + excluded.avg_distance_m)
++                    / (table.c.sample_count + 1)
++                ),
++            ),
++            "sample_count": case(
++                (replace_seed, 1),
++                else_=table.c.sample_count + 1,
++            ),
++            "is_seeded": False,
++            "updated_at": text("now()"),
++        },
++    )
++    session.execute(stmt)
++    session.commit()
++
++
++def seed_congestion_baseline(
++    session: Session,
++    *,
++    route_id: str,
++    from_stop_id: str,
++    to_stop_id: str,
++    duration_s: float,
++    distance_m: float,
++) -> None:
++    """Write a synthetic baseline into all 8 hour buckets for every day of
++    the week, so the congestion map isn't empty before real traffic
++    accumulates. Used by scripts/seed_congestion_stats.py. A no-op (does
++    nothing, doesn't overwrite) for any bucket that already has organic
++    data, so re-running the seed script is always safe.
++    """
++    table = SegmentCongestionStat.__table__
++    rows = [
++        {
++            "route_id": route_id,
++            "from_stop_id": from_stop_id,
++            "to_stop_id": to_stop_id,
++            "day_of_week": dow,
++            "hour_bucket": hour,
++            "avg_duration_s": duration_s,
++            "avg_distance_m": distance_m,
++            "sample_count": 1,
++            "is_seeded": True,
++        }
++        for dow in range(7)
++        for hour in (0, 3, 6, 9, 12, 15, 18, 21)
++    ]
++    stmt = pg_insert(table).values(rows)
++    stmt = stmt.on_conflict_do_nothing(constraint="uq_segment_congestion_key")
++    session.execute(stmt)
++    session.commit()
++
++
++def get_congestion_stats(
++    session: Session, day_of_week: int, hour_bucket: int
++) -> Sequence:
++    """Every segment with data for this (day_of_week, hour_bucket), each
++    row paired with that segment's own free-flow baseline -- the minimum
++    avg_duration_s across all of its buckets -- so callers can turn it
++    into a congestion ratio without a second round-trip. See
++    app/api/congestion.py for how the ratio becomes free_flow/moderate/heavy.
++    """
++    T = SegmentCongestionStat
++    baseline = (
++        select(
++            T.route_id.label("route_id"),
++            T.from_stop_id.label("from_stop_id"),
++            T.to_stop_id.label("to_stop_id"),
++            func.min(T.avg_duration_s).label("free_flow_duration_s"),
++        )
++        .group_by(T.route_id, T.from_stop_id, T.to_stop_id)
++        .subquery()
++    )
++    stmt = (
++        select(T, baseline.c.free_flow_duration_s)
++        .join(
++            baseline,
++            (T.route_id == baseline.c.route_id)
++            & (T.from_stop_id == baseline.c.from_stop_id)
++            & (T.to_stop_id == baseline.c.to_stop_id),
++        )
++        .where(T.day_of_week == day_of_week, T.hour_bucket == hour_bucket)
++    )
++    return session.execute(stmt).all()
+\ No newline at end of file
+diff --git a/backend/app/main.py b/backend/app/main.py
+index f3d8eab..d4688de 100644
+--- a/backend/app/main.py
++++ b/backend/app/main.py
+@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
+ from fastapi import Depends, FastAPI
+ from fastapi.middleware.cors import CORSMiddleware
+ 
+-from app.api import admin, admin_auth, routes, routing, stops
++from app.api import admin, admin_auth, congestion, routes, routing, stops
+ from app.core.config import get_settings
+ from app.core.security import require_admin_key
+ from app.db.session import SessionLocal
+@@ -63,5 +63,6 @@ def rebuild_graph():
+ app.include_router(stops.router)
+ app.include_router(routes.router)
+ app.include_router(routing.router)
++app.include_router(congestion.router)
+ app.include_router(admin.router)
+ app.include_router(admin_auth.router)
+\ No newline at end of file
+diff --git a/backend/app/models/__init__.py b/backend/app/models/__init__.py
+index ca42d54..dca35f3 100644
+--- a/backend/app/models/__init__.py
++++ b/backend/app/models/__init__.py
+@@ -7,6 +7,7 @@ from .route_operator import RouteOperator
+ from .route_return_leg_priority import RouteReturnLegPriority
+ from .fare_rule import FareRule
+ from .admin_user import AdminUser
++from .segment_congestion_stat import SegmentCongestionStat
+ 
+ __all__ = [
+     "Base",
+@@ -18,4 +19,5 @@ __all__ = [
+     "RouteReturnLegPriority",
+     "FareRule",
+     "AdminUser",
++    "SegmentCongestionStat",
+ ]
+\ No newline at end of file
+diff --git a/backend/app/models/segment_congestion_stat.py b/backend/app/models/segment_congestion_stat.py
+new file mode 100644
+index 0000000..adac6c4
+--- /dev/null
++++ b/backend/app/models/segment_congestion_stat.py
+@@ -0,0 +1,105 @@
++"""ORM model for `segment_congestion_stats`.
++
++One row per (route_id, from_stop_id, to_stop_id, day_of_week, hour_bucket) --
++an *aggregate*, not a raw log. Rows are upserted (see
++db/queries.record_congestion_sample), so the table stays bounded by the real
++segment/time-bucket space instead of growing per request:
++
++    max rows ~= (sum of ride-hops across all active routes) * 7 * 8
++
++with hour_bucket in {0,3,6,9,12,15,18,21} (3-hour windows) rather than 24
++one-hour buckets, trading a bit of time-of-day resolution for buckets that
++fill up with enough samples to be statistically meaningful sooner -- the
++whole point of "historical stats" over a cold, sparse table.
++
++Populated two ways:
++  1. Organically, via a FastAPI BackgroundTask on every /route-finder
++     request that got real OSRM road_geometry for a leg (see
++     app/api/routing.py::_record_leg_congestion). Doesn't add latency to
++     the user-facing response.
++  2. Proactively, via scripts/seed_congestion_stats.py, which walks every
++     active route's consecutive stop pairs once and seeds all 8 buckets
++     with a baseline OSRM duration (is_seeded=True, sample_count=1) so the
++     map isn't blank before real traffic accumulates. The first *real*
++     sample for a seeded row overwrites the baseline outright instead of
++     averaging into it (see record_congestion_sample) so one synthetic
++     guess doesn't permanently bias the average.
++"""
++from sqlalchemy import (
++    Boolean,
++    CheckConstraint,
++    Column,
++    Float,
++    ForeignKey,
++    Index,
++    Integer,
++    SmallInteger,
++    Text,
++    TIMESTAMP,
++    UniqueConstraint,
++    text,
++)
++from sqlalchemy.orm import relationship
++
++from .base import Base
++
++
++class SegmentCongestionStat(Base):
++    __tablename__ = "segment_congestion_stats"
++
++    id = Column(Integer, primary_key=True, autoincrement=True)
++
++    # route_id is nullable to leave room for a future non-route-specific
++    # (pure road-segment) key; every row written today always sets it.
++    route_id = Column(Text, ForeignKey("routes.route_id", ondelete="CASCADE"), nullable=True)
++    from_stop_id = Column(Text, ForeignKey("stops.stop_id", ondelete="CASCADE"), nullable=False)
++    to_stop_id = Column(Text, ForeignKey("stops.stop_id", ondelete="CASCADE"), nullable=False)
++
++    # 0=Monday .. 6=Sunday (Python's date.weekday()).
++    day_of_week = Column(SmallInteger, nullable=False)
++    # Start hour of a 3-hour window: 0, 3, 6, ..., 21.
++    hour_bucket = Column(SmallInteger, nullable=False)
++
++    avg_duration_s = Column(Float, nullable=False)
++    avg_distance_m = Column(Float, nullable=False)
++    sample_count = Column(Integer, nullable=False, server_default=text("0"))
++
++    # True until the first organic sample overwrites it -- lets
++    # record_congestion_sample distinguish "one synthetic guess" from
++    # "one real observation" when deciding whether to average or replace.
++    is_seeded = Column(Boolean, nullable=False, server_default=text("false"))
++
++    updated_at = Column(
++        TIMESTAMP(timezone=True), nullable=False, server_default=text("now()")
++    )
++
++    __table_args__ = (
++        UniqueConstraint(
++            "route_id",
++            "from_stop_id",
++            "to_stop_id",
++            "day_of_week",
++            "hour_bucket",
++            name="uq_segment_congestion_key",
++        ),
++        CheckConstraint("day_of_week BETWEEN 0 AND 6", name="ck_congestion_day_of_week"),
++        CheckConstraint(
++            "hour_bucket IN (0,3,6,9,12,15,18,21)", name="ck_congestion_hour_bucket"
++        ),
++        CheckConstraint("sample_count >= 0", name="ck_congestion_sample_count"),
++        # The hot-path query is always "give me every segment for this
++        # (day_of_week, hour_bucket)", so that pair is the lead index --
++        # not route_id/from_stop_id, which only matter for the upsert.
++        Index("idx_congestion_day_hour", "day_of_week", "hour_bucket"),
++    )
++
++    route = relationship("Route")
++    from_stop = relationship("Stop", foreign_keys=[from_stop_id])
++    to_stop = relationship("Stop", foreign_keys=[to_stop_id])
++
++    def __repr__(self) -> str:  # pragma: no cover
++        return (
++            f"<SegmentCongestionStat route={self.route_id} "
++            f"{self.from_stop_id}->{self.to_stop_id} "
++            f"dow={self.day_of_week} hr={self.hour_bucket}>"
++        )
+diff --git a/backend/app/routing/time_buckets.py b/backend/app/routing/time_buckets.py
+new file mode 100644
+index 0000000..11708ca
+--- /dev/null
++++ b/backend/app/routing/time_buckets.py
+@@ -0,0 +1,31 @@
++"""Shared day-of-week / hour-bucket logic for historical congestion stats.
++
++Used by both the write path (api/routing.py, logging real OSRM samples)
++and the read path (api/congestion.py, querying them) so the two can never
++disagree about bucket boundaries.
++"""
++from datetime import datetime, timedelta, timezone
++
++# Nepal Standard Time is UTC+5:45 and doesn't observe DST, so a fixed
++# offset is correct year-round -- no zoneinfo/tzdata dependency needed.
++NEPAL_TZ = timezone(timedelta(hours=5, minutes=45))
++
++HOUR_BUCKETS = (0, 3, 6, 9, 12, 15, 18, 21)
++
++
++def now_in_nepal() -> datetime:
++    return datetime.now(NEPAL_TZ)
++
++
++def hour_bucket_start(hour: int) -> int:
++    """Round an hour (0-23) down to its 3-hour bucket start."""
++    return (hour // 3) * 3
++
++
++def day_and_bucket_for(dt: datetime) -> tuple[int, int]:
++    """(day_of_week, hour_bucket) for a datetime, per Nepal local time.
++
++    day_of_week follows Python's date.weekday(): 0=Monday .. 6=Sunday.
++    """
++    local = dt.astimezone(NEPAL_TZ)
++    return local.weekday(), hour_bucket_start(local.hour)
+diff --git a/backend/app/schemas.py b/backend/app/schemas.py
+index c0e8efa..9e6cd66 100644
+--- a/backend/app/schemas.py
++++ b/backend/app/schemas.py
+@@ -149,3 +149,33 @@ class AdminLoginRequest(BaseModel):
+ class AdminTokenResponse(BaseModel):
+     access_token: str
+     token_type: str = "bearer"
++
++
++# ---------------------------------------------------------------------------
++# Historical congestion (app/api/congestion.py, backed by
++# segment_congestion_stats -- see that model's docstring for the schema
++# rationale).
++# ---------------------------------------------------------------------------
++
++CongestionLevel = Literal["free_flow", "moderate", "heavy", "unknown"]
++
++
++class CongestionSegmentOut(BaseModel):
++    route_id: Optional[str] = None
++    from_stop_id: str
++    to_stop_id: str
++    avg_duration_s: float
++    avg_distance_m: float
++    free_flow_duration_s: float
++    # avg_duration_s / free_flow_duration_s. 1.0 = as fast as this segment's
++    # best-observed bucket; higher = slower than usual for this segment.
++    congestion_ratio: float
++    congestion_level: CongestionLevel
++    sample_count: int
++    is_seeded: bool
++
++
++class CongestionResponse(BaseModel):
++    day_of_week: int
++    hour_bucket: int
++    segments: list[CongestionSegmentOut]
+diff --git a/backend/migrations/versions/80abdfcbf8fa_add_segment_congestion_stats.py b/backend/migrations/versions/80abdfcbf8fa_add_segment_congestion_stats.py
+new file mode 100644
+index 0000000..f74da3d
+--- /dev/null
++++ b/backend/migrations/versions/80abdfcbf8fa_add_segment_congestion_stats.py
+@@ -0,0 +1,67 @@
++"""add segment_congestion_stats table
++
++Revision ID: 80abdfcbf8fa
++Revises: 2f29b3e3e5fd
++Create Date: 2026-08-19 00:00:00.000000
++
++"""
++from typing import Sequence, Union
++
++from alembic import op
++import sqlalchemy as sa
++
++
++# revision identifiers, used by Alembic.
++revision: str = '80abdfcbf8fa'
++down_revision: Union[str, None] = '2f29b3e3e5fd'
++branch_labels: Union[str, Sequence[str], None] = None
++depends_on: Union[str, Sequence[str], None] = None
++
++
++def upgrade() -> None:
++    op.create_table(
++        'segment_congestion_stats',
++        sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
++        sa.Column('route_id', sa.Text(), nullable=True),
++        sa.Column('from_stop_id', sa.Text(), nullable=False),
++        sa.Column('to_stop_id', sa.Text(), nullable=False),
++        sa.Column('day_of_week', sa.SmallInteger(), nullable=False),
++        sa.Column('hour_bucket', sa.SmallInteger(), nullable=False),
++        sa.Column('avg_duration_s', sa.Float(), nullable=False),
++        sa.Column('avg_distance_m', sa.Float(), nullable=False),
++        sa.Column('sample_count', sa.Integer(), nullable=False, server_default=sa.text('0')),
++        sa.Column('is_seeded', sa.Boolean(), nullable=False, server_default=sa.text('false')),
++        sa.Column(
++            'updated_at',
++            sa.TIMESTAMP(timezone=True),
++            nullable=False,
++            server_default=sa.text('now()'),
++        ),
++        sa.ForeignKeyConstraint(['route_id'], ['routes.route_id'], ondelete='CASCADE'),
++        sa.ForeignKeyConstraint(['from_stop_id'], ['stops.stop_id'], ondelete='CASCADE'),
++        sa.ForeignKeyConstraint(['to_stop_id'], ['stops.stop_id'], ondelete='CASCADE'),
++        sa.PrimaryKeyConstraint('id'),
++        sa.CheckConstraint('day_of_week BETWEEN 0 AND 6', name='ck_congestion_day_of_week'),
++        sa.CheckConstraint(
++            'hour_bucket IN (0,3,6,9,12,15,18,21)', name='ck_congestion_hour_bucket'
++        ),
++        sa.CheckConstraint('sample_count >= 0', name='ck_congestion_sample_count'),
++        sa.UniqueConstraint(
++            'route_id',
++            'from_stop_id',
++            'to_stop_id',
++            'day_of_week',
++            'hour_bucket',
++            name='uq_segment_congestion_key',
++        ),
++    )
++    op.create_index(
++        'idx_congestion_day_hour',
++        'segment_congestion_stats',
++        ['day_of_week', 'hour_bucket'],
++    )
++
++
++def downgrade() -> None:
++    op.drop_index('idx_congestion_day_hour', table_name='segment_congestion_stats')
++    op.drop_table('segment_congestion_stats')
+diff --git a/backend/scripts/seed_congestion_stats.py b/backend/scripts/seed_congestion_stats.py
+new file mode 100644
+index 0000000..2c34010
+--- /dev/null
++++ b/backend/scripts/seed_congestion_stats.py
+@@ -0,0 +1,75 @@
++"""One-off (safe to re-run) script to seed segment_congestion_stats with a
++baseline duration/distance for every consecutive stop-pair on every active
++route, so GET /congestion isn't empty before real search traffic has had
++time to populate it organically (see api/routing.py::_record_leg_congestion).
++
++Makes exactly one OSRM call per consecutive stop-pair (not per time
++bucket -- see queries.seed_congestion_baseline, which fans that one
++duration out to all 7 days x 8 hour-buckets). For a network with a few
++hundred routes and a handful of stops each, that's on the order of a few
++thousand OSRM calls total, a few seconds each at most -- fine to run
++as a one-off, and safe to re-run any time (existing rows, seeded or real,
++are never overwritten -- see ON CONFLICT DO NOTHING in
++queries.seed_congestion_baseline).
++
++Run from backend/:  python3 scripts/seed_congestion_stats.py
++"""
++import sys
++import time
++
++from app.db import queries
++from app.db.session import SessionLocal
++from app.routing.osrm_client import OSRMError, get_route_geometry
++
++
++def main() -> None:
++    db = SessionLocal()
++    seeded = 0
++    skipped = 0
++    try:
++        routes = queries.get_active_routes(db)
++        total_pairs = sum(max(len(r.route_stops) - 1, 0) for r in routes)
++        print(f"Seeding congestion baseline for {len(routes)} routes, {total_pairs} stop-pairs...")
++
++        done = 0
++        for route in routes:
++            ordered = sorted(
++                (rs for rs in route.route_stops if rs.stop is not None),
++                key=lambda rs: rs.sequence_no,
++            )
++            for a, b in zip(ordered, ordered[1:]):
++                done += 1
++                try:
++                    geometry = get_route_geometry(
++                        [(a.stop.lat, a.stop.lng), (b.stop.lat, b.stop.lng)]
++                    )
++                    queries.seed_congestion_baseline(
++                        db,
++                        route_id=route.route_id,
++                        from_stop_id=a.stop_id,
++                        to_stop_id=b.stop_id,
++                        duration_s=geometry["duration_s"],
++                        distance_m=geometry["distance_m"],
++                    )
++                    seeded += 1
++                except OSRMError as exc:
++                    # OSRM unreachable, or this particular pair failed to
++                    # route (e.g. one stop off the road network) -- skip
++                    # and keep going rather than aborting the whole run.
++                    skipped += 1
++                    print(
++                        f"  skip {route.route_id} {a.stop_id}->{b.stop_id}: {exc}",
++                        file=sys.stderr,
++                    )
++
++                if done % 50 == 0:
++                    print(f"  {done}/{total_pairs} pairs processed...")
++                    time.sleep(0.1)  # be polite to a shared local OSRM instance
++
++        print(f"Done. Seeded {seeded} stop-pairs, skipped {skipped}.")
++    finally:
++        db.close()
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/frontend/app/page.tsx b/frontend/app/page.tsx
+index ada4190..76dc1aa 100644
+--- a/frontend/app/page.tsx
++++ b/frontend/app/page.tsx
+@@ -3,7 +3,15 @@
+ import { useCallback, useEffect, useState } from "react";
+ import dynamic from "next/dynamic";
+ import SearchForm from "@/components/SearchForm";
+-import { LatLng, RouteSearchResult, Stop, StopPickTarget, WalkingRoute } from "@/types/route";
++import CongestionPanel from "@/components/CongestionPanel";
++import {
++  CongestionSegment,
++  LatLng,
++  RouteSearchResult,
++  Stop,
++  StopPickTarget,
++  WalkingRoute,
++} from "@/types/route";
+ 
+ // Leaflet touches `window`, so the map must load client-side only.
+ const BusMap = dynamic(() => import("@/components/BusMap"), {
+@@ -62,6 +70,10 @@ export default function Home() {
+       }
+       const stop = nearby[0];
+       setNearestStop(stop);
++      // Offer it as the origin, but only if the user hasn't already
++      // typed/picked something themselves. Functional update reads the
++      // latest originText without needing it in this callback's deps.
++      setOriginText((prev) => prev || stop.stop_name);
+ 
+       try {
+         const walkParams = new URLSearchParams({
+@@ -125,15 +137,6 @@ export default function Home() {
+     );
+   }, [locateNearestStop]);
+ 
+-  // Once we know the nearest stop, offer it as the origin -- but only if
+-  // the user hasn't already typed/picked something themselves.
+-  useEffect(() => {
+-    if (nearestStop && !originText) {
+-      setOriginText(nearestStop.stop_name);
+-    }
+-    // eslint-disable-next-line react-hooks/exhaustive-deps
+-  }, [nearestStop]);
+-
+   function handleStopPick(stop: Stop) {
+     if (pickTarget === "origin") {
+       setOriginText(stop.stop_name);
+@@ -143,6 +146,57 @@ export default function Home() {
+     setPickTarget(null); // one pick and done, same as most map apps
+   }
+ 
++  // Congestion overlay: off by default (extra map clutter + a fetch most
++  // visits don't need), with a day/hour picker that defers to the
++  // server's "now" bucket when both are null.
++  const [congestionEnabled, setCongestionEnabled] = useState(false);
++  const [congestionDayOfWeek, setCongestionDayOfWeek] = useState<number | null>(null);
++  const [congestionHourBucket, setCongestionHourBucket] = useState<number | null>(null);
++  const [congestionSegments, setCongestionSegments] = useState<CongestionSegment[]>([]);
++  const [congestionLoading, setCongestionLoading] = useState(false);
++
++  useEffect(() => {
++    if (!congestionEnabled) return;
++
++    let cancelled = false;
++
++    async function loadCongestion() {
++      setCongestionLoading(true);
++      try {
++        const params = new URLSearchParams();
++        if (congestionDayOfWeek !== null) params.set("day_of_week", String(congestionDayOfWeek));
++        if (congestionHourBucket !== null) params.set("hour", String(congestionHourBucket));
++        const res = await fetch(`${API_BASE}/congestion?${params.toString()}`);
++        if (!res.ok || cancelled) return;
++        const data: { segments: CongestionSegment[] } = await res.json();
++        if (!cancelled) setCongestionSegments(data.segments);
++      } catch {
++        // Congestion is a nice-to-have overlay -- fail silently and just
++        // leave whatever was last successfully loaded (or empty) rather
++        // than surfacing an error banner for a non-critical layer.
++      } finally {
++        if (!cancelled) setCongestionLoading(false);
++      }
++    }
++
++    loadCongestion();
++
++    // Only auto-refresh when following "now" (both pickers unset) --
++    // otherwise the user is deliberately browsing a fixed time and a
++    // refetch would just be wasted requests.
++    let interval: ReturnType<typeof setInterval> | undefined;
++    if (congestionDayOfWeek === null && congestionHourBucket === null) {
++      interval = setInterval(loadCongestion, 3 * 60 * 1000);
++    }
++
++    return () => {
++      cancelled = true;
++      if (interval) clearInterval(interval);
++    };
++  }, [congestionEnabled, congestionDayOfWeek, congestionHourBucket]);
++
++  const hasSeededOnly = congestionSegments.length > 0 && congestionSegments.every((s) => s.is_seeded);
++
+   // Load the full stop list for the autocomplete datalist, paging through
+   // /stops since `limit` is capped server-side by settings.MAX_PAGE_SIZE.
+   useEffect(() => {
+@@ -238,6 +292,18 @@ export default function Home() {
+           onUseMyLocation={handleUseMyLocation}
+         />
+ 
++        <CongestionPanel
++          enabled={congestionEnabled}
++          onToggle={() => setCongestionEnabled((v) => !v)}
++          dayOfWeek={congestionDayOfWeek}
++          hourBucket={congestionHourBucket}
++          onDayChange={setCongestionDayOfWeek}
++          onHourChange={setCongestionHourBucket}
++          loading={congestionLoading}
++          segmentCount={congestionSegments.length}
++          hasSeededOnly={hasSeededOnly}
++        />
++
+         {stopsError && (
+           <p className="rounded-md border border-amber-900 bg-amber-950/40 px-3 py-2 text-sm text-amber-300">
+             Couldn&apos;t load the stop list from the server. You can still search if you know
+@@ -314,6 +380,7 @@ export default function Home() {
+           userLocation={userLocation}
+           walkingRoute={walkingRoute}
+           nearestStop={nearestStop}
++          congestionSegments={congestionEnabled ? congestionSegments : []}
+         />
+       </div>
+     </main>
+diff --git a/frontend/components/BusMap.tsx b/frontend/components/BusMap.tsx
+index 337dcd4..ad5816a 100644
+--- a/frontend/components/BusMap.tsx
++++ b/frontend/components/BusMap.tsx
+@@ -2,7 +2,7 @@
+ 
+ import { useEffect, useRef } from "react";
+ import L from "leaflet";
+-import { LatLng, RouteSearchResult, Stop, StopPickTarget, WalkingRoute } from "@/types/route";
++import { CongestionSegment, LatLng, RouteSearchResult, Stop, StopPickTarget, WalkingRoute } from "@/types/route";
+ 
+ const VALLEY_CENTER: [number, number] = [27.7041, 85.32];
+ 
+@@ -13,6 +13,16 @@ const LEG_COLORS = ["#3DDC97", "#F2A93B", "#5DA9E9", "#E06C75"];
+ // route-leg palette above and the grey used for in-route transfer walks.
+ const USER_WALK_COLOR = "#5DD8E0";
+ 
++// Standard traffic-light palette for the congestion overlay -- kept
++// separate from LEG_COLORS/USER_WALK_COLOR so it reads unambiguously as
++// "speed", not "which route/leg".
++const CONGESTION_COLORS: Record<string, string> = {
++  free_flow: "#22C55E",
++  moderate: "#F59E0B",
++  heavy: "#EF4444",
++  unknown: "#6B7280",
++};
++
+ function dotIcon(color: string, size: number): L.DivIcon {
+   return L.divIcon({
+     className: "",
+@@ -53,6 +63,11 @@ interface BusMapProps {
+   /** Walking directions from userLocation to the nearest stop. */
+   walkingRoute?: WalkingRoute | null;
+   nearestStop?: Stop | null;
++  /** Historical congestion overlay -- straight lines between board/alight
++   * stops (no road geometry available at this granularity), colored by
++   * congestion_level. Independent of `result`; shows regardless of
++   * whether a route is currently searched. */
++  congestionSegments?: CongestionSegment[];
+ }
+ 
+ export default function BusMap({
+@@ -63,17 +78,23 @@ export default function BusMap({
+   userLocation,
+   walkingRoute,
+   nearestStop,
++  congestionSegments = [],
+ }: BusMapProps) {
+   const mapContainerRef = useRef<HTMLDivElement | null>(null);
+   const mapRef = useRef<L.Map | null>(null);
+ 
+   // Mutable refs so the stops-layer effect (below) always calls the latest
+   // pickTarget/onStopPick without needing to rebuild ~1000s of markers on
+-  // every render just because the callback identity changed.
++  // every render just because the callback identity changed. Synced via
++  // their own effects (not written during render) per react-hooks/refs.
+   const pickTargetRef = useRef(pickTarget);
+-  pickTargetRef.current = pickTarget;
+   const onStopPickRef = useRef(onStopPick);
+-  onStopPickRef.current = onStopPick;
++  useEffect(() => {
++    pickTargetRef.current = pickTarget;
++  }, [pickTarget]);
++  useEffect(() => {
++    onStopPickRef.current = onStopPick;
++  }, [onStopPick]);
+ 
+   useEffect(() => {
+     if (!mapContainerRef.current || mapRef.current) {
+@@ -129,6 +150,64 @@ export default function BusMap({
+     };
+   }, [allStops]);
+ 
++  // Congestion overlay: one straight line per segment (from_stop_id ->
++  // to_stop_id), colored by congestion_level. Straight lines rather than
++  // road geometry -- the backend only stores per-segment averages, not
++  // full OSRM polylines, so this is the same tradeoff BusMap already
++  // makes as its road_geometry fallback elsewhere in this file. A
++  // separate layer/effect from allStops and result so toggling it on/off
++  // doesn't touch either of those.
++  useEffect(() => {
++    const map = mapRef.current;
++    if (!map || congestionSegments.length === 0) return;
++
++    const stopById = new Map(allStops.map((s) => [s.stop_id, s]));
++    const layer = L.layerGroup().addTo(map);
++
++    congestionSegments.forEach((seg) => {
++      const from = stopById.get(seg.from_stop_id);
++      const to = stopById.get(seg.to_stop_id);
++      if (!from || !to) return; // stop list hasn't loaded yet, or stopped existing
++
++      const color = CONGESTION_COLORS[seg.congestion_level] ?? CONGESTION_COLORS.unknown;
++      const line = L.polyline(
++        [
++          [from.lat, from.lng],
++          [to.lat, to.lng],
++        ],
++        {
++          color,
++          weight: 5,
++          opacity: seg.is_seeded ? 0.5 : 0.85,
++          dashArray: seg.is_seeded ? "3 5" : undefined,
++        }
++      );
++
++      const minutes = Math.round(seg.avg_duration_s / 60);
++      const freeFlowMinutes = Math.round(seg.free_flow_duration_s / 60);
++      const label =
++        seg.congestion_level === "free_flow"
++          ? "Free-flow"
++          : seg.congestion_level === "moderate"
++          ? "Moderate congestion"
++          : "Heavy congestion";
++      line.bindPopup(
++        `<strong>${from.stop_name} → ${to.stop_name}</strong>${
++          seg.route_id ? `<br/>${seg.route_id}` : ""
++        }<br/>${label} (${seg.congestion_ratio.toFixed(1)}x free-flow)` +
++          `<br/>~${minutes} min typical, ${freeFlowMinutes} min free-flow` +
++          (seg.is_seeded
++            ? "<br/><em>Estimated baseline -- no confirmed traffic data yet</em>"
++            : `<br/>Based on ${seg.sample_count} sample${seg.sample_count === 1 ? "" : "s"}`)
++      );
++      layer.addLayer(line);
++    });
++
++    return () => {
++      layer.remove();
++    };
++  }, [congestionSegments, allStops]);
++
+   // Cursor feedback so it's obvious the map is in "pick a stop" mode.
+   useEffect(() => {
+     const container = mapContainerRef.current;
+diff --git a/frontend/components/CongestionPanel.tsx b/frontend/components/CongestionPanel.tsx
+new file mode 100644
+index 0000000..b2e852a
+--- /dev/null
++++ b/frontend/components/CongestionPanel.tsx
+@@ -0,0 +1,129 @@
++"use client";
++
++const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
++const HOUR_BUCKETS = [0, 3, 6, 9, 12, 15, 18, 21];
++
++function formatHour(hour: number): string {
++  const period = hour < 12 ? "AM" : "PM";
++  const display = hour % 12 === 0 ? 12 : hour % 12;
++  return `${display}${period}`;
++}
++
++interface CongestionPanelProps {
++  enabled: boolean;
++  onToggle: () => void;
++  // null = "now" (server picks the current Nepal-time bucket); a picked
++  // value overrides it so the user can browse other times of day.
++  dayOfWeek: number | null;
++  hourBucket: number | null;
++  onDayChange: (day: number | null) => void;
++  onHourChange: (hour: number | null) => void;
++  loading?: boolean;
++  segmentCount: number;
++  hasSeededOnly: boolean;
++}
++
++export default function CongestionPanel({
++  enabled,
++  onToggle,
++  dayOfWeek,
++  hourBucket,
++  onDayChange,
++  onHourChange,
++  loading,
++  segmentCount,
++  hasSeededOnly,
++}: CongestionPanelProps) {
++  const isCustomTime = dayOfWeek !== null || hourBucket !== null;
++
++  return (
++    <div className="flex flex-col gap-3 rounded-lg bg-route-panel p-4">
++      <div className="flex items-center justify-between">
++        <div>
++          <p className="text-sm font-medium">Traffic congestion</p>
++          <p className="text-xs text-neutral-400">Historical averages by time of day</p>
++        </div>
++        <button
++          type="button"
++          onClick={onToggle}
++          aria-pressed={enabled}
++          className={`rounded-full px-3 py-1 text-xs font-medium ${
++            enabled
++              ? "bg-route-accent text-route-bg"
++              : "border border-route-line text-neutral-400 hover:border-route-accent hover:text-route-accent"
++          }`}
++        >
++          {enabled ? "On" : "Off"}
++        </button>
++      </div>
++
++      {enabled && (
++        <>
++          <div className="flex flex-wrap items-center gap-2 text-xs">
++            <select
++              value={dayOfWeek ?? "now"}
++              onChange={(e) => onDayChange(e.target.value === "now" ? null : Number(e.target.value))}
++              className="rounded-md border border-route-line bg-route-bg px-2 py-1 text-neutral-200"
++            >
++              <option value="now">Today</option>
++              {DAY_LABELS.map((label, i) => (
++                <option key={label} value={i}>
++                  {label}
++                </option>
++              ))}
++            </select>
++            <select
++              value={hourBucket ?? "now"}
++              onChange={(e) => onHourChange(e.target.value === "now" ? null : Number(e.target.value))}
++              className="rounded-md border border-route-line bg-route-bg px-2 py-1 text-neutral-200"
++            >
++              <option value="now">Now</option>
++              {HOUR_BUCKETS.map((h) => (
++                <option key={h} value={h}>
++                  {formatHour(h)}–{formatHour((h + 3) % 24)}
++                </option>
++              ))}
++            </select>
++            {isCustomTime && (
++              <button
++                type="button"
++                onClick={() => {
++                  onDayChange(null);
++                  onHourChange(null);
++                }}
++                className="text-route-accent hover:underline"
++              >
++                Reset to now
++              </button>
++            )}
++          </div>
++
++          <div className="flex items-center gap-4 text-xs text-neutral-400">
++            <span className="flex items-center gap-1.5">
++              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: "#22C55E" }} />
++              Free-flow
++            </span>
++            <span className="flex items-center gap-1.5">
++              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: "#F59E0B" }} />
++              Moderate
++            </span>
++            <span className="flex items-center gap-1.5">
++              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: "#EF4444" }} />
++              Heavy
++            </span>
++          </div>
++
++          <p className="text-xs text-neutral-500">
++            {loading
++              ? "Loading…"
++              : segmentCount === 0
++              ? "No congestion data for this segment/time yet."
++              : `${segmentCount} segment${segmentCount === 1 ? "" : "s"} with data.${
++                  hasSeededOnly ? " (baseline estimate, not yet confirmed by real traffic)" : ""
++                }`}
++          </p>
++        </>
++      )}
++    </div>
++  );
++}
+diff --git a/frontend/components/SearchForm.tsx b/frontend/components/SearchForm.tsx
+index 3afc8c4..5f11933 100644
+--- a/frontend/components/SearchForm.tsx
++++ b/frontend/components/SearchForm.tsx
+@@ -1,6 +1,6 @@
+ "use client";
+ 
+-import { useEffect, useState } from "react";
++import { useState } from "react";
+ import { Stop, StopPickTarget } from "@/types/route";
+ 
+ interface SearchFormProps {
+@@ -41,13 +41,6 @@ export default function SearchForm({
+ }: SearchFormProps) {
+   const [fieldError, setFieldError] = useState<FieldError>(null);
+ 
+-  // Whichever field is the active map-pick target gets cleared of field
+-  // errors as soon as its text changes (e.g. via a map click), same as typing.
+-  useEffect(() => {
+-    if (fieldError) setFieldError(null);
+-    // eslint-disable-next-line react-hooks/exhaustive-deps
+-  }, [originText, destinationText]);
+-
+   function resolveStop(typedName: string): Stop | null {
+     return (
+       stops.find(
+@@ -133,7 +126,10 @@ export default function SearchForm({
+           id="origin"
+           list="stop-options"
+           value={originText}
+-          onChange={(e) => onOriginTextChange(e.target.value)}
++          onChange={(e) => {
++            onOriginTextChange(e.target.value);
++            if (fieldError) setFieldError(null);
++          }}
+           placeholder={stopsLoading ? "Loading stops…" : "Origin stop"}
+           autoComplete="off"
+           aria-invalid={originInvalid}
+@@ -175,7 +171,10 @@ export default function SearchForm({
+           id="destination"
+           list="stop-options"
+           value={destinationText}
+-          onChange={(e) => onDestinationTextChange(e.target.value)}
++          onChange={(e) => {
++            onDestinationTextChange(e.target.value);
++            if (fieldError) setFieldError(null);
++          }}
+           placeholder={stopsLoading ? "Loading stops…" : "Destination stop"}
+           autoComplete="off"
+           aria-invalid={destinationInvalid}
+diff --git a/frontend/types/route.ts b/frontend/types/route.ts
+index 96400dc..1397bf7 100644
+--- a/frontend/types/route.ts
++++ b/frontend/types/route.ts
+@@ -58,4 +58,27 @@ export interface LatLng {
+ 
+ // GET /walking-route response -- same shape as RoadGeometry, kept separate
+ // so call sites don't imply it came from a bus leg.
+-export type WalkingRoute = RoadGeometry;
+\ No newline at end of file
++export type WalkingRoute = RoadGeometry;
++
++// Mirrors CongestionLevel / CongestionSegmentOut / CongestionResponse in
++// backend/app/schemas.py.
++export type CongestionLevel = "free_flow" | "moderate" | "heavy" | "unknown";
++
++export interface CongestionSegment {
++  route_id: string | null;
++  from_stop_id: string;
++  to_stop_id: string;
++  avg_duration_s: number;
++  avg_distance_m: number;
++  free_flow_duration_s: number;
++  congestion_ratio: number;
++  congestion_level: CongestionLevel;
++  sample_count: number;
++  is_seeded: boolean;
++}
++
++export interface CongestionResponse {
++  day_of_week: number;
++  hour_bucket: number;
++  segments: CongestionSegment[];
++}
+\ No newline at end of file

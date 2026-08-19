@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import L from "leaflet";
-import { LatLng, RouteSearchResult, Stop, StopPickTarget, WalkingRoute } from "@/types/route";
+import { CongestionSegment, LatLng, RouteSearchResult, Stop, StopPickTarget, WalkingRoute } from "@/types/route";
 
 const VALLEY_CENTER: [number, number] = [27.7041, 85.32];
 
@@ -12,6 +12,16 @@ const LEG_COLORS = ["#3DDC97", "#F2A93B", "#5DA9E9", "#E06C75"];
 // Walking-to-nearest-stop path gets its own color, distinct from both the
 // route-leg palette above and the grey used for in-route transfer walks.
 const USER_WALK_COLOR = "#5DD8E0";
+
+// Standard traffic-light palette for the congestion overlay -- kept
+// separate from LEG_COLORS/USER_WALK_COLOR so it reads unambiguously as
+// "speed", not "which route/leg".
+const CONGESTION_COLORS: Record<string, string> = {
+  free_flow: "#22C55E",
+  moderate: "#F59E0B",
+  heavy: "#EF4444",
+  unknown: "#6B7280",
+};
 
 function dotIcon(color: string, size: number): L.DivIcon {
   return L.divIcon({
@@ -53,6 +63,11 @@ interface BusMapProps {
   /** Walking directions from userLocation to the nearest stop. */
   walkingRoute?: WalkingRoute | null;
   nearestStop?: Stop | null;
+  /** Historical congestion overlay -- straight lines between board/alight
+   * stops (no road geometry available at this granularity), colored by
+   * congestion_level. Independent of `result`; shows regardless of
+   * whether a route is currently searched. */
+  congestionSegments?: CongestionSegment[];
 }
 
 export default function BusMap({
@@ -63,17 +78,23 @@ export default function BusMap({
   userLocation,
   walkingRoute,
   nearestStop,
+  congestionSegments = [],
 }: BusMapProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
 
   // Mutable refs so the stops-layer effect (below) always calls the latest
   // pickTarget/onStopPick without needing to rebuild ~1000s of markers on
-  // every render just because the callback identity changed.
+  // every render just because the callback identity changed. Synced via
+  // their own effects (not written during render) per react-hooks/refs.
   const pickTargetRef = useRef(pickTarget);
-  pickTargetRef.current = pickTarget;
   const onStopPickRef = useRef(onStopPick);
-  onStopPickRef.current = onStopPick;
+  useEffect(() => {
+    pickTargetRef.current = pickTarget;
+  }, [pickTarget]);
+  useEffect(() => {
+    onStopPickRef.current = onStopPick;
+  }, [onStopPick]);
 
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) {
@@ -128,6 +149,64 @@ export default function BusMap({
       stopsLayer.remove();
     };
   }, [allStops]);
+
+  // Congestion overlay: one straight line per segment (from_stop_id ->
+  // to_stop_id), colored by congestion_level. Straight lines rather than
+  // road geometry -- the backend only stores per-segment averages, not
+  // full OSRM polylines, so this is the same tradeoff BusMap already
+  // makes as its road_geometry fallback elsewhere in this file. A
+  // separate layer/effect from allStops and result so toggling it on/off
+  // doesn't touch either of those.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || congestionSegments.length === 0) return;
+
+    const stopById = new Map(allStops.map((s) => [s.stop_id, s]));
+    const layer = L.layerGroup().addTo(map);
+
+    congestionSegments.forEach((seg) => {
+      const from = stopById.get(seg.from_stop_id);
+      const to = stopById.get(seg.to_stop_id);
+      if (!from || !to) return; // stop list hasn't loaded yet, or stopped existing
+
+      const color = CONGESTION_COLORS[seg.congestion_level] ?? CONGESTION_COLORS.unknown;
+      const line = L.polyline(
+        [
+          [from.lat, from.lng],
+          [to.lat, to.lng],
+        ],
+        {
+          color,
+          weight: 5,
+          opacity: seg.is_seeded ? 0.5 : 0.85,
+          dashArray: seg.is_seeded ? "3 5" : undefined,
+        }
+      );
+
+      const minutes = Math.round(seg.avg_duration_s / 60);
+      const freeFlowMinutes = Math.round(seg.free_flow_duration_s / 60);
+      const label =
+        seg.congestion_level === "free_flow"
+          ? "Free-flow"
+          : seg.congestion_level === "moderate"
+          ? "Moderate congestion"
+          : "Heavy congestion";
+      line.bindPopup(
+        `<strong>${from.stop_name} → ${to.stop_name}</strong>${
+          seg.route_id ? `<br/>${seg.route_id}` : ""
+        }<br/>${label} (${seg.congestion_ratio.toFixed(1)}x free-flow)` +
+          `<br/>~${minutes} min typical, ${freeFlowMinutes} min free-flow` +
+          (seg.is_seeded
+            ? "<br/><em>Estimated baseline -- no confirmed traffic data yet</em>"
+            : `<br/>Based on ${seg.sample_count} sample${seg.sample_count === 1 ? "" : "s"}`)
+      );
+      layer.addLayer(line);
+    });
+
+    return () => {
+      layer.remove();
+    };
+  }, [congestionSegments, allStops]);
 
   // Cursor feedback so it's obvious the map is in "pick a stop" mode.
   useEffect(() => {

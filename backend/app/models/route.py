@@ -90,12 +90,6 @@ class Route(Base):
     route_operators = relationship(
         "RouteOperator", back_populates="route", cascade="all, delete-orphan"
     )
-    return_leg_priority = relationship(
-        "RouteReturnLegPriority",
-        back_populates="route",
-        uselist=False,
-        cascade="all, delete-orphan",
-    )
 
     def __repr__(self) -> str:
         return f"<Route {self.route_id} {self.route_name!r}>"

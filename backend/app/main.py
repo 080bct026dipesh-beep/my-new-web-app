@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import admin, admin_auth, routes, routing, stops
+from app.api import admin, admin_auth, congestion, routes, routing, stops
 from app.core.config import get_settings
 from app.core.security import require_admin_key
 from app.db.session import SessionLocal
@@ -63,5 +63,6 @@ def rebuild_graph():
 app.include_router(stops.router)
 app.include_router(routes.router)
 app.include_router(routing.router)
+app.include_router(congestion.router)
 app.include_router(admin.router)
 app.include_router(admin_auth.router)

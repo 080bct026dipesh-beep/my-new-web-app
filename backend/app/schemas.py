@@ -149,3 +149,33 @@ class AdminLoginRequest(BaseModel):
 class AdminTokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+
+# ---------------------------------------------------------------------------
+# Historical congestion (app/api/congestion.py, backed by
+# segment_congestion_stats -- see that model's docstring for the schema
+# rationale).
+# ---------------------------------------------------------------------------
+
+CongestionLevel = Literal["free_flow", "moderate", "heavy", "unknown"]
+
+
+class CongestionSegmentOut(BaseModel):
+    route_id: Optional[str] = None
+    from_stop_id: str
+    to_stop_id: str
+    avg_duration_s: float
+    avg_distance_m: float
+    free_flow_duration_s: float
+    # avg_duration_s / free_flow_duration_s. 1.0 = as fast as this segment's
+    # best-observed bucket; higher = slower than usual for this segment.
+    congestion_ratio: float
+    congestion_level: CongestionLevel
+    sample_count: int
+    is_seeded: bool
+
+
+class CongestionResponse(BaseModel):
+    day_of_week: int
+    hour_bucket: int
+    segments: list[CongestionSegmentOut]
