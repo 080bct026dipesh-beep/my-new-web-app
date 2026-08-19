@@ -18,7 +18,6 @@
 
 \copy route_operators (route_id, operator_id, is_primary) FROM '/home/djoker_209/Desktop/kathmandu-bus-route-finder/data/processed/route_operators_clean.csv' WITH (FORMAT csv, HEADER true, NULL '')
 
-\copy route_return_leg_priority (route_id, route_name, vehicle_type, operator, total_stops, approx_distance_km, status) FROM '/home/djoker_209/Desktop/kathmandu-bus-route-finder/data/processed/return_leg_verification_priority_clean.csv' WITH (FORMAT csv, HEADER true, NULL '')
 
 -- ----------------------------------------------------------------------------
 -- Sanity checks — every count should be 0

@@ -908,6 +908,14 @@ def main() -> int:
             ) if str(x).strip() else ""
         )
     operators.to_csv(args.out_dir / "operators_clean.csv", index=False)
+    if "unverified_fields" in stops.columns:
+        stops["unverified_fields"] = stops["unverified_fields"].apply(
+            lambda x: (
+                "{" + ",".join(
+                    f.strip() for f in str(x).split(",") if f.strip()
+                ) + "}"
+            ) if str(x).strip() else ""
+        )
     stops.to_csv(args.out_dir / "stops_clean.csv", index=False)
     routes.to_csv(args.out_dir / "routes_clean.csv", index=False)
     route_stops.to_csv(args.out_dir / "route_stops_clean.csv", index=False)

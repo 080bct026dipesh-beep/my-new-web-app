@@ -32,7 +32,6 @@ sudo apt install postgresql-16 postgresql-16-postgis-3
 | `routes_clean.csv` | 88 rows — routes (distance, timing, operator link) |
 | `route_stops_clean.csv` | 1662 rows — ordered route ↔ stop mapping |
 | `route_operators_clean.csv` | 86 rows — route ↔ operator (M:N, one primary each) |
-| `return_leg_verification_priority_clean.csv` | 87 rows — auxiliary QA table |
 | `fare_rules_clean.csv` | 5 rows — distance-banded fare lookup |
 | `report.md` / `report_v4.md` | Full audit trail — read these before trusting a number |
 
@@ -62,7 +61,6 @@ read `0` except `fare_rules row count`, which should read `5`.
   legitimately repeat within one route (loop/bidirectional routes)
 - **route_operators** — M:N join; exactly one `is_primary = true` row per
   route (enforced by a partial unique index)
-- **route_return_leg_priority** — QA tracking table, 1:1 with `routes`
 - **fare_rules** — distance → fare lookup. `min_distance_km` is inclusive,
   `max_distance_km` is **exclusive** (a route at exactly 5.00 km falls into
   the `[5,10)` band, not `[0,5)`). An `EXCLUDE` constraint makes overlapping

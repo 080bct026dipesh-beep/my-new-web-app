@@ -2,7 +2,6 @@
 -- Kathmandu Bus Route Finder — production schema (PostgreSQL + PostGIS)
 -- Generated from operators_clean.csv, stops_clean.csv, routes_clean.csv,
 -- route_stops_clean.csv, route_operators_clean.csv, fare_rules_clean.csv
--- (return_leg_verification_priority_clean.csv is loaded as an auxiliary QA table)
 --
 -- Tested end-to-end on:
 --   PostgreSQL 16.14  (16.14-0ubuntu0.24.04.1)
@@ -153,21 +152,6 @@ CREATE INDEX idx_route_operators_operator_id ON route_operators (operator_id);
 CREATE UNIQUE INDEX uq_route_operators_primary
     ON route_operators (route_id)
     WHERE is_primary;
-
--- ----------------------------------------------------------------------------
--- route_return_leg_priority — auxiliary QA/tracking table, not a relational
--- entity in its own right (all columns duplicate routes.* for the routes
--- flagged for return-leg verification). Kept 1:1 with routes.route_id.
--- ----------------------------------------------------------------------------
-CREATE TABLE route_return_leg_priority (
-    route_id             TEXT PRIMARY KEY REFERENCES routes(route_id) ON DELETE CASCADE,
-    route_name           TEXT,
-    vehicle_type         TEXT,
-    operator              TEXT,
-    total_stops           INTEGER,
-    approx_distance_km    NUMERIC(6,2),
-    status                TEXT
-);
 
 -- ----------------------------------------------------------------------------
 -- fare_rules — distance-banded fare lookup, independent of routes/stops.

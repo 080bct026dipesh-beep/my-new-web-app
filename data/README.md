@@ -105,9 +105,7 @@ the `EXCLUDE USING gist` constraint) and correctly computed as
 
 **Field verification status** — not re-assessed this round.
   <!-- TODO: replace with current Tier 1/2/3 breakdown -->
-  Note: `return_leg_verification_priority_clean.csv` still flags **86 of
-  87 routes** as pending return-leg verification, so most of the dataset
-  likely isn't field-verified yet even though it's now referentially clean.
+  Field verification status — not re-assessed this round.
 
 **Unresolved operator matches** — none currently. All routes have a
 resolved `operator_id` as of the latest cleaned dataset.
