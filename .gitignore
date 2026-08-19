@@ -40,3 +40,7 @@ data/raw/*.pbf
 *.log
 !data/raw/yatayat_export.osm
 data/import_run.sql
+
+# Ignore ad-hoc SQL backups that may contain sensitive dumps
+backup_*.sql
+*.sql.bak
