@@ -52,6 +52,24 @@ def _attach_road_geometry(legs: list[RouteLeg]) -> None:
             pass
 
 
+@router.get("/walking-route")
+def walking_route(
+    from_lat: float = Query(..., ge=-90, le=90),
+    from_lng: float = Query(..., ge=-180, le=180),
+    to_lat: float = Query(..., ge=-90, le=90),
+    to_lng: float = Query(..., ge=-180, le=180),
+):
+    """Foot-profile OSRM route from an arbitrary point (e.g. the user's
+    detected location) to a stop. Separate from route-finder's driving-profile
+    _attach_road_geometry since this is a single pedestrian leg, not a ride.
+    """
+    try:
+        geometry = get_route_geometry([(from_lat, from_lng), (to_lat, to_lng)], profile="foot")
+    except OSRMError as exc:
+        raise HTTPException(status_code=502, detail=f"Couldn't compute walking route: {exc}")
+    return geometry
+
+
 @router.get("/route-finder", response_model=RouteFinderResult)
 def find_route(
     origin: str = Query(..., description="Origin stop_id, e.g. S0198"),

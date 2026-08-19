@@ -1,14 +1,25 @@
 "use client";
 
-import { useState } from "react";
-import { Stop } from "@/types/route";
+import { useEffect, useState } from "react";
+import { Stop, StopPickTarget } from "@/types/route";
 
 interface SearchFormProps {
   stops: Stop[];
   stopsLoading?: boolean;
-  apiBase: string;
   onSearch: (originId: string, destinationId: string) => void;
   loading?: boolean;
+  // Map-click stop picking is owned by the parent (it also drives the map),
+  // so origin/destination text are controlled from there rather than kept
+  // as local state here.
+  originText: string;
+  destinationText: string;
+  onOriginTextChange: (value: string) => void;
+  onDestinationTextChange: (value: string) => void;
+  pickTarget: StopPickTarget;
+  onPickTargetChange: (target: StopPickTarget) => void;
+  locating?: boolean;
+  locateError?: string | null;
+  onUseMyLocation: () => void;
 }
 
 type FieldError = "origin" | "destination" | "both" | null;
@@ -16,15 +27,26 @@ type FieldError = "origin" | "destination" | "both" | null;
 export default function SearchForm({
   stops,
   stopsLoading,
-  apiBase,
   onSearch,
   loading,
+  originText,
+  destinationText,
+  onOriginTextChange,
+  onDestinationTextChange,
+  pickTarget,
+  onPickTargetChange,
+  locating = false,
+  locateError = null,
+  onUseMyLocation,
 }: SearchFormProps) {
-  const [originText, setOriginText] = useState("");
-  const [destinationText, setDestinationText] = useState("");
   const [fieldError, setFieldError] = useState<FieldError>(null);
-  const [locating, setLocating] = useState(false);
-  const [locateError, setLocateError] = useState<string | null>(null);
+
+  // Whichever field is the active map-pick target gets cleared of field
+  // errors as soon as its text changes (e.g. via a map click), same as typing.
+  useEffect(() => {
+    if (fieldError) setFieldError(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [originText, destinationText]);
 
   function resolveStop(typedName: string): Stop | null {
     return (
@@ -61,50 +83,13 @@ export default function SearchForm({
   }
 
   function handleSwap() {
-    setOriginText(destinationText);
-    setDestinationText(originText);
+    onOriginTextChange(destinationText);
+    onDestinationTextChange(originText);
     setFieldError(null);
   }
 
-  function useMyLocation() {
-    if (!navigator.geolocation) {
-      setLocateError("Geolocation isn't available in this browser.");
-      return;
-    }
-
-    setLocating(true);
-    setLocateError(null);
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        try {
-          const { latitude, longitude } = position.coords;
-          const params = new URLSearchParams({
-            lat: String(latitude),
-            lng: String(longitude),
-            limit: "1",
-          });
-          const res = await fetch(`${apiBase}/stops/nearby?${params.toString()}`);
-          if (!res.ok) throw new Error();
-          const nearby: Stop[] = await res.json();
-          if (nearby.length === 0) {
-            setLocateError("No stops found near your location.");
-            return;
-          }
-          setOriginText(nearby[0].stop_name);
-          setFieldError(null);
-        } catch {
-          setLocateError("Couldn't find a nearby stop. Try again.");
-        } finally {
-          setLocating(false);
-        }
-      },
-      () => {
-        setLocateError("Location permission denied.");
-        setLocating(false);
-      },
-      { timeout: 8000 }
-    );
+  function togglePick(target: "origin" | "destination") {
+    onPickTargetChange(pickTarget === target ? null : target);
   }
 
   const originInvalid = fieldError === "origin" || fieldError === "both";
@@ -112,28 +97,43 @@ export default function SearchForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3 rounded-lg bg-route-panel p-4">
+      {pickTarget && (
+        <p className="rounded-md border border-route-accent/40 bg-route-accent/10 px-3 py-2 text-xs text-route-accent">
+          Tap a stop on the map to set your {pickTarget === "origin" ? "origin" : "destination"}.
+        </p>
+      )}
+
       <div className="flex flex-col gap-1">
         <div className="flex items-center justify-between">
           <label htmlFor="origin" className="text-xs uppercase tracking-wide text-neutral-400">
             From
           </label>
-          <button
-            type="button"
-            onClick={useMyLocation}
-            disabled={locating}
-            className="text-xs text-route-accent hover:underline disabled:opacity-50"
-          >
-            {locating ? "Locating…" : "Use my location"}
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={onUseMyLocation}
+              disabled={locating}
+              className="text-xs text-route-accent hover:underline disabled:opacity-50"
+            >
+              {locating ? "Locating…" : "Use my location"}
+            </button>
+            <button
+              type="button"
+              onClick={() => togglePick("origin")}
+              aria-pressed={pickTarget === "origin"}
+              className={`text-xs hover:underline ${
+                pickTarget === "origin" ? "font-semibold text-route-accent" : "text-neutral-400"
+              }`}
+            >
+              {pickTarget === "origin" ? "Picking…" : "Pick on map"}
+            </button>
+          </div>
         </div>
         <input
           id="origin"
           list="stop-options"
           value={originText}
-          onChange={(e) => {
-            setOriginText(e.target.value);
-            if (fieldError) setFieldError(null);
-          }}
+          onChange={(e) => onOriginTextChange(e.target.value)}
           placeholder={stopsLoading ? "Loading stops…" : "Origin stop"}
           autoComplete="off"
           aria-invalid={originInvalid}
@@ -156,17 +156,26 @@ export default function SearchForm({
       </div>
 
       <div className="flex flex-col gap-1">
-        <label htmlFor="destination" className="text-xs uppercase tracking-wide text-neutral-400">
-          To
-        </label>
+        <div className="flex items-center justify-between">
+          <label htmlFor="destination" className="text-xs uppercase tracking-wide text-neutral-400">
+            To
+          </label>
+          <button
+            type="button"
+            onClick={() => togglePick("destination")}
+            aria-pressed={pickTarget === "destination"}
+            className={`text-xs hover:underline ${
+              pickTarget === "destination" ? "font-semibold text-route-accent" : "text-neutral-400"
+            }`}
+          >
+            {pickTarget === "destination" ? "Picking…" : "Pick on map"}
+          </button>
+        </div>
         <input
           id="destination"
           list="stop-options"
           value={destinationText}
-          onChange={(e) => {
-            setDestinationText(e.target.value);
-            if (fieldError) setFieldError(null);
-          }}
+          onChange={(e) => onDestinationTextChange(e.target.value)}
           placeholder={stopsLoading ? "Loading stops…" : "Destination stop"}
           autoComplete="off"
           aria-invalid={destinationInvalid}

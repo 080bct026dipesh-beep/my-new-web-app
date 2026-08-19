@@ -3,6 +3,18 @@ import requests
 
 OSRM_BASE_URL = os.environ.get("OSRM_BASE_URL", "http://localhost:5000")
 
+# A single osrm-routed process only serves whichever profile its .osrm file
+# was extracted with (see backend/README.md: nepal-latest.osrm is extracted
+# with car.lua). Walking directions need a second osrm-routed instance
+# extracted with foot.lua, so it gets its own base URL/port rather than
+# reusing OSRM_BASE_URL. Falls back to OSRM_BASE_URL if unset so this
+# doesn't break setups that haven't added the foot instance yet.
+OSRM_FOOT_BASE_URL = os.environ.get("OSRM_FOOT_BASE_URL", OSRM_BASE_URL)
+
+_PROFILE_BASE_URLS = {
+    "foot": OSRM_FOOT_BASE_URL,
+}
+
 
 class OSRMError(Exception):
     pass
@@ -13,8 +25,9 @@ def get_route_geometry(coords: list[tuple[float, float]], profile: str = "drivin
     if len(coords) < 2:
         raise ValueError("Need at least 2 coordinates for OSRM routing")
 
+    base_url = _PROFILE_BASE_URLS.get(profile, OSRM_BASE_URL)
     coord_str = ";".join(f"{lon},{lat}" for lat, lon in coords)
-    url = f"{OSRM_BASE_URL}/route/v1/{profile}/{coord_str}"
+    url = f"{base_url}/route/v1/{profile}/{coord_str}"
     params = {"overview": "full", "geometries": "geojson"}
 
     try:

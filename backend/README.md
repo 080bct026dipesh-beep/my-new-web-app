@@ -49,11 +49,22 @@ docker run -t -v "${PWD}:/data" osrm/osrm-backend osrm-extract -p /opt/car.lua /
 docker run -t -v "${PWD}:/data" osrm/osrm-backend osrm-partition /data/nepal-latest.osrm
 docker run -t -v "${PWD}:/data" osrm/osrm-backend osrm-customize /data/nepal-latest.osrm
 
-# Start the OSRM router (managed via docker-compose, from repo root):
+# (Optional) Pedestrian routing for "walk to nearest stop" -- needs a
+# second extract with foot.lua, saved under a different name so it
+# doesn't clobber the driving one above:
+docker run -t -v "${PWD}:/data" osrm/osrm-backend osrm-extract -p /opt/foot.lua /data/nepal-latest.osm.pbf
+mv nepal-latest.osrm nepal-latest-foot.osrm  # rename before the next two steps overwrite it
+mv nepal-latest.osrm.* nepal-latest-foot.osrm.*  # move the matching sidecar files too, if any got created
+docker run -t -v "${PWD}:/data" osrm/osrm-backend osrm-partition /data/nepal-latest-foot.osrm
+docker run -t -v "${PWD}:/data" osrm/osrm-backend osrm-customize /data/nepal-latest-foot.osrm
+
+# Start the OSRM router(s) (managed via docker-compose, from repo root):
 cd ..
-docker compose up -d osrm
+docker compose up -d osrm osrm-foot
 cd backend
-# Runs on http://localhost:5000, restarts automatically on reboot
+# Driving instance runs on http://localhost:5000, foot instance on
+# http://localhost:5001 (see OSRM_FOOT_BASE_URL in backend/.env or your
+# environment). Both restart automatically on reboot
 # (restart: unless-stopped). No need to manually start it again after
 # the first time unless you stop it explicitly.
 

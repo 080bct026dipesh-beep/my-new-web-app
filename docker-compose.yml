@@ -38,5 +38,20 @@ services:
     volumes:
       - ./backend:/data
 
+  # Separate instance for pedestrian directions (walking to the nearest
+  # stop). A single osrm-routed process only serves the profile its .osrm
+  # file was extracted with, so this needs its own extract
+  # (nepal-latest-foot.osrm, built with foot.lua) and its own port -- see
+  # backend/README.md for the one-time extract command.
+  osrm-foot:
+    image: osrm/osrm-backend
+    container_name: osrm_ktm_foot
+    restart: unless-stopped
+    command: osrm-routed --algorithm mld /data/nepal-latest-foot.osrm
+    ports:
+      - "5001:5000"
+    volumes:
+      - ./backend:/data
+
 volumes:
   pgdata:

@@ -2,12 +2,16 @@
 
 import { useEffect, useRef } from "react";
 import L from "leaflet";
-import { RouteSearchResult } from "@/types/route";
+import { LatLng, RouteSearchResult, Stop, StopPickTarget, WalkingRoute } from "@/types/route";
 
 const VALLEY_CENTER: [number, number] = [27.7041, 85.32];
 
 // Kept in sync with the legend rendered in app/page.tsx.
 const LEG_COLORS = ["#3DDC97", "#F2A93B", "#5DA9E9", "#E06C75"];
+
+// Walking-to-nearest-stop path gets its own color, distinct from both the
+// route-leg palette above and the grey used for in-route transfer walks.
+const USER_WALK_COLOR = "#5DD8E0";
 
 function dotIcon(color: string, size: number): L.DivIcon {
   return L.divIcon({
@@ -24,13 +28,52 @@ const originIcon = dotIcon("#3DDC97", 18);
 const destinationIcon = dotIcon("#E06C75", 18);
 const transferIcon = dotIcon("#e8ecef", 14);
 
+// Pulsing blue dot for "you are here", the same visual language every map
+// app uses so it doesn't need a legend entry of its own.
+const userLocationIcon = L.divIcon({
+  className: "",
+  html: `<span style="position:relative;display:block;width:16px;height:16px;">
+      <span style="position:absolute;inset:-8px;border-radius:9999px;background:rgba(93,169,233,0.35);"></span>
+      <span style="position:absolute;inset:0;border-radius:9999px;background:#5DA9E9;border:2px solid #ffffff;box-shadow:0 0 0 1px rgba(0,0,0,0.3);"></span>
+    </span>`,
+  iconSize: [16, 16],
+  iconAnchor: [8, 8],
+});
+
 interface BusMapProps {
   result?: RouteSearchResult | null;
+  /** All stops, drawn as small clickable dots so the user can pick a stop
+   * directly on the map instead of typing its name. */
+  allStops?: Stop[];
+  /** Which field (origin/destination) a stop click should fill; null disables
+   * map-click selection (dots still render, just aren't wired to onStopPick). */
+  pickTarget?: StopPickTarget;
+  onStopPick?: (stop: Stop) => void;
+  userLocation?: LatLng | null;
+  /** Walking directions from userLocation to the nearest stop. */
+  walkingRoute?: WalkingRoute | null;
+  nearestStop?: Stop | null;
 }
 
-export default function BusMap({ result }: BusMapProps) {
+export default function BusMap({
+  result,
+  allStops = [],
+  pickTarget = null,
+  onStopPick,
+  userLocation,
+  walkingRoute,
+  nearestStop,
+}: BusMapProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
+
+  // Mutable refs so the stops-layer effect (below) always calls the latest
+  // pickTarget/onStopPick without needing to rebuild ~1000s of markers on
+  // every render just because the callback identity changed.
+  const pickTargetRef = useRef(pickTarget);
+  pickTargetRef.current = pickTarget;
+  const onStopPickRef = useRef(onStopPick);
+  onStopPickRef.current = onStopPick;
 
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) {
@@ -49,6 +92,97 @@ export default function BusMap({ result }: BusMapProps) {
       mapRef.current = null;
     };
   }, []);
+
+  // All-stops layer: small dots, always present, clickable whenever a
+  // pickTarget is active. Kept in its own effect/layer so it doesn't get
+  // wiped every time the route result changes.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const stopsLayer = L.layerGroup().addTo(map);
+
+    allStops.forEach((stop) => {
+      const dot = L.circleMarker([stop.lat, stop.lng], {
+        radius: 4,
+        weight: 1,
+        color: "#4b5563",
+        fillColor: "#9CA3AF",
+        fillOpacity: 0.85,
+      });
+      dot.bindTooltip(stop.stop_name, { direction: "top", offset: [0, -4] });
+      dot.on("click", () => {
+        const target = pickTargetRef.current;
+        if (target) onStopPickRef.current?.(stop);
+      });
+      dot.on("mouseover", () => {
+        if (pickTargetRef.current) dot.setStyle({ radius: 6, fillColor: "#5DA9E9" });
+      });
+      dot.on("mouseout", () => {
+        dot.setStyle({ radius: 4, fillColor: "#9CA3AF" });
+      });
+      stopsLayer.addLayer(dot);
+    });
+
+    return () => {
+      stopsLayer.remove();
+    };
+  }, [allStops]);
+
+  // Cursor feedback so it's obvious the map is in "pick a stop" mode.
+  useEffect(() => {
+    const container = mapContainerRef.current;
+    if (!container) return;
+    container.style.cursor = pickTarget ? "crosshair" : "";
+  }, [pickTarget]);
+
+  // User location marker + walking path to the nearest stop.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !userLocation) return;
+
+    const layer = L.layerGroup().addTo(map);
+
+    const marker = L.marker([userLocation.lat, userLocation.lng], {
+      icon: userLocationIcon,
+      zIndexOffset: 1000,
+    });
+    marker.bindPopup("Your location");
+    layer.addLayer(marker);
+
+    if (walkingRoute) {
+      const points = walkingRoute.geometry.coordinates.map(
+        ([lng, lat]) => [lat, lng] as [number, number]
+      );
+      const line = L.polyline(points, {
+        color: USER_WALK_COLOR,
+        weight: 4,
+        dashArray: "4 8",
+      });
+      const distanceKm = (walkingRoute.distance_m / 1000).toFixed(1);
+      const minutes = Math.round(walkingRoute.duration_s / 60);
+      line.bindPopup(
+        `<strong>Walk to ${nearestStop?.stop_name ?? "nearest stop"}</strong><br/>${distanceKm} km · ~${minutes} min`
+      );
+      layer.addLayer(line);
+    } else if (nearestStop) {
+      // OSRM foot-routing unavailable/unset up -- fall back to a straight
+      // line so the user still sees roughly where the nearest stop is.
+      const line = L.polyline(
+        [
+          [userLocation.lat, userLocation.lng],
+          [nearestStop.lat, nearestStop.lng],
+        ],
+        { color: USER_WALK_COLOR, weight: 3, dashArray: "2 6", opacity: 0.7 }
+      );
+      line.bindPopup(`Approx. path to ${nearestStop.stop_name} (straight line)`);
+      layer.addLayer(line);
+    }
+
+    return () => {
+      layer.remove();
+    };
+  }, [userLocation, walkingRoute, nearestStop]);
 
   useEffect(() => {
     const map = mapRef.current;

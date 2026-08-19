@@ -46,3 +46,16 @@ export interface RouteFinderResult {
 export type RouteSearchResult =
   | ({ found: true } & RouteFinderResult)
   | { found: false };
+
+// Which field a map click should fill in. Null means clicking a stop on
+// the map does nothing (the default, idle state).
+export type StopPickTarget = "origin" | "destination" | null;
+
+export interface LatLng {
+  lat: number;
+  lng: number;
+}
+
+// GET /walking-route response -- same shape as RoadGeometry, kept separate
+// so call sites don't imply it came from a bus leg.
+export type WalkingRoute = RoadGeometry;

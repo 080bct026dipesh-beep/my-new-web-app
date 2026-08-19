@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import SearchForm from "@/components/SearchForm";
-import { RouteSearchResult, Stop } from "@/types/route";
+import { LatLng, RouteSearchResult, Stop, StopPickTarget, WalkingRoute } from "@/types/route";
 
 // Leaflet touches `window`, so the map must load client-side only.
 const BusMap = dynamic(() => import("@/components/BusMap"), {
@@ -32,6 +32,116 @@ export default function Home() {
   const [result, setResult] = useState<RouteSearchResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Origin/destination text lives here (not inside SearchForm) so both the
+  // form and a map click can write to it.
+  const [originText, setOriginText] = useState("");
+  const [destinationText, setDestinationText] = useState("");
+  const [pickTarget, setPickTarget] = useState<StopPickTarget>(null);
+
+  // Auto-detected location + walk-to-nearest-stop path.
+  const [userLocation, setUserLocation] = useState<LatLng | null>(null);
+  const [nearestStop, setNearestStop] = useState<Stop | null>(null);
+  const [walkingRoute, setWalkingRoute] = useState<WalkingRoute | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [locateError, setLocateError] = useState<string | null>(null);
+
+  // Given a location, find + store the nearest stop and the walking path to
+  // it. Shared by the automatic on-load detect and the manual "Use my
+  // location" button so they behave identically.
+  const locateNearestStop = useCallback(async (lat: number, lng: number) => {
+    setUserLocation({ lat, lng });
+    try {
+      const params = new URLSearchParams({ lat: String(lat), lng: String(lng), limit: "1" });
+      const res = await fetch(`${API_BASE}/stops/nearby?${params.toString()}`);
+      if (!res.ok) throw new Error();
+      const nearby: Stop[] = await res.json();
+      if (nearby.length === 0) {
+        setLocateError("No stops found near your location.");
+        return;
+      }
+      const stop = nearby[0];
+      setNearestStop(stop);
+
+      try {
+        const walkParams = new URLSearchParams({
+          from_lat: String(lat),
+          from_lng: String(lng),
+          to_lat: String(stop.lat),
+          to_lng: String(stop.lng),
+        });
+        const walkRes = await fetch(`${API_BASE}/walking-route?${walkParams.toString()}`);
+        // Walking directions are a nice-to-have (needs a foot-profile OSRM
+        // instance running); BusMap falls back to a straight line if this
+        // 404s/502s, so just leave walkingRoute null rather than surfacing
+        // an error.
+        if (walkRes.ok) {
+          setWalkingRoute(await walkRes.json());
+        } else {
+          setWalkingRoute(null);
+        }
+      } catch {
+        setWalkingRoute(null);
+      }
+    } catch {
+      setLocateError("Couldn't find a nearby stop. Try again.");
+    }
+  }, []);
+
+  function handleUseMyLocation() {
+    if (!navigator.geolocation) {
+      setLocateError("Geolocation isn't available in this browser.");
+      return;
+    }
+    setLocating(true);
+    setLocateError(null);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        await locateNearestStop(position.coords.latitude, position.coords.longitude);
+        setLocating(false);
+      },
+      () => {
+        setLocateError("Location permission denied.");
+        setLocating(false);
+      },
+      { timeout: 8000 }
+    );
+  }
+
+  // Auto-detect location once on load. This only asks for permission (the
+  // browser's native prompt) -- it never overwrites text the user already
+  // typed, and a denial is treated as a silent no-op rather than an error
+  // message on a page they haven't interacted with yet.
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        locateNearestStop(position.coords.latitude, position.coords.longitude);
+      },
+      () => {
+        /* permission denied or unavailable -- fine, "Use my location" is still there */
+      },
+      { timeout: 8000 }
+    );
+  }, [locateNearestStop]);
+
+  // Once we know the nearest stop, offer it as the origin -- but only if
+  // the user hasn't already typed/picked something themselves.
+  useEffect(() => {
+    if (nearestStop && !originText) {
+      setOriginText(nearestStop.stop_name);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nearestStop]);
+
+  function handleStopPick(stop: Stop) {
+    if (pickTarget === "origin") {
+      setOriginText(stop.stop_name);
+    } else if (pickTarget === "destination") {
+      setDestinationText(stop.stop_name);
+    }
+    setPickTarget(null); // one pick and done, same as most map apps
+  }
 
   // Load the full stop list for the autocomplete datalist, paging through
   // /stops since `limit` is capped server-side by settings.MAX_PAGE_SIZE.
@@ -115,9 +225,17 @@ export default function Home() {
         <SearchForm
           stops={stops}
           stopsLoading={stopsLoading}
-          apiBase={API_BASE}
           onSearch={handleSearch}
           loading={loading}
+          originText={originText}
+          destinationText={destinationText}
+          onOriginTextChange={setOriginText}
+          onDestinationTextChange={setDestinationText}
+          pickTarget={pickTarget}
+          onPickTargetChange={setPickTarget}
+          locating={locating}
+          locateError={locateError}
+          onUseMyLocation={handleUseMyLocation}
         />
 
         {stopsError && (
@@ -187,7 +305,16 @@ export default function Home() {
       </aside>
 
       <div className="min-h-[50vh] flex-1 md:min-h-0">
-        <BusMap key="bus-map" result={result} />
+        <BusMap
+          key="bus-map"
+          result={result}
+          allStops={stops}
+          pickTarget={pickTarget}
+          onStopPick={handleStopPick}
+          userLocation={userLocation}
+          walkingRoute={walkingRoute}
+          nearestStop={nearestStop}
+        />
       </div>
     </main>
   );
