@@ -8,6 +8,12 @@ so you can catch problems in CI before ever touching Postgres.
 Usage:
     python scripts/validate_clean.py --dir data/processed
     # exits 1 and prints failures if any check is non-zero
+
+    python scripts/validate_clean.py --dir data/processed --write-ready
+    # also writes normalized, load-ready copies to <dir>/ready/ once every
+    # check passes (bare comma lists in array columns like `aliases` and
+    # `unverified_fields` get wrapped as Postgres array literals, e.g.
+    # "a, b" -> "{a,b}") — nothing is written if any check fails.
 """
 
 from __future__ import annotations
@@ -18,6 +24,8 @@ from pathlib import Path
 
 import pandas as pd
 
+ARRAY_COLS = ("aliases", "unverified_fields")
+
 
 def load(dir_: Path, name: str) -> pd.DataFrame:
     path = dir_ / name
@@ -27,9 +35,25 @@ def load(dir_: Path, name: str) -> pd.DataFrame:
     return pd.read_csv(path, dtype=str, keep_default_na=False, na_values=[""])
 
 
+def to_array_literal(val: object) -> object:
+    """"a, b" -> "{a,b}"; already-braced or empty values pass through unchanged."""
+    if pd.isna(val) or val == "":
+        return val
+    s = str(val)
+    if s.startswith("{") and s.endswith("}"):
+        return s
+    parts = [p.strip() for p in s.split(",") if p.strip()]
+    return "{" + ",".join(parts) + "}"
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dir", type=Path, default=Path("data/processed"))
+    ap.add_argument(
+        "--write-ready",
+        action="store_true",
+        help="write normalized, load-ready CSVs to <dir>/ready/ if all checks pass",
+    )
     args = ap.parse_args()
 
     operators = load(args.dir, "operators_clean.csv")
@@ -37,6 +61,7 @@ def main() -> int:
     routes = load(args.dir, "routes_clean.csv")
     route_stops = load(args.dir, "route_stops_clean.csv")
     route_operators = load(args.dir, "route_operators_clean.csv")
+    fare_rules = load(args.dir, "fare_rules_clean.csv")
 
     checks = {}
 
@@ -89,6 +114,31 @@ def main() -> int:
     bad_seq_routes = route_stops.groupby("route_id").apply(bad_sequence)
     checks["routes with non-contiguous sequence_no"] = int(bad_seq_routes.sum())
 
+    dup_route_ids = routes["route_id"].duplicated().sum()
+    checks["routes.route_id duplicated"] = int(dup_route_ids)
+
+    dup_route_operator_pairs = route_operators.duplicated(subset=["route_id", "operator_id"]).sum()
+    checks["route_operators.(route_id, operator_id) duplicated"] = int(dup_route_operator_pairs)
+
+    lat = pd.to_numeric(stops["lat"], errors="coerce")
+    lng = pd.to_numeric(stops["lng"], errors="coerce")
+    bad_latlng = (lat.isna() | lng.isna() | ~lat.between(-90, 90) | ~lng.between(-180, 180)).sum()
+    checks["stops.lat/lng out of range or non-numeric"] = int(bad_latlng)
+
+    fr_min = pd.to_numeric(fare_rules["min_distance_km"], errors="coerce")
+    fr_max = pd.to_numeric(fare_rules["max_distance_km"], errors="coerce")
+    fare_min = pd.to_numeric(fare_rules["fare_npr_min"], errors="coerce")
+    fare_max = pd.to_numeric(fare_rules["fare_npr_max"], errors="coerce")
+    bad_fare_bounds = (
+        fr_min.isna() | fr_max.isna() | fare_min.isna() | fare_max.isna()
+        | (fr_min < 0) | (fr_max <= fr_min) | (fare_max < fare_min)
+    ).sum()
+    checks["fare_rules min/max bounds invalid"] = int(bad_fare_bounds)
+
+    fr_sorted = fare_rules.assign(_lo=fr_min, _hi=fr_max).sort_values("_lo")
+    overlaps = (fr_sorted["_lo"].shift(-1) < fr_sorted["_hi"]).sum()
+    checks["fare_rules overlapping distance bands"] = int(overlaps)
+
     ok = True
     print(f"{'CHECK':<62}{'COUNT':>8}  STATUS")
     print("-" * 82)
@@ -99,12 +149,32 @@ def main() -> int:
         print(f"{name:<62}{count:>8}  {status}")
 
     print()
-    if ok:
-        print("All checks passed.")
-        return 0
-    else:
+    if not ok:
         print("One or more checks FAILED — see above.", file=sys.stderr)
         return 1
+
+    print("All checks passed.")
+
+    if args.write_ready:
+        ready_dir = args.dir / "ready"
+        ready_dir.mkdir(parents=True, exist_ok=True)
+        frames = {
+            "operators_clean.csv": operators,
+            "stops_clean.csv": stops,
+            "routes_clean.csv": routes,
+            "route_stops_clean.csv": route_stops,
+            "route_operators_clean.csv": route_operators,
+            "fare_rules_clean.csv": fare_rules,
+        }
+        for name, df in frames.items():
+            out = df.copy()
+            for col in ARRAY_COLS:
+                if col in out.columns:
+                    out[col] = out[col].map(to_array_literal)
+            out.to_csv(ready_dir / name, index=False)
+        print(f"Load-ready CSVs written to {ready_dir}")
+
+    return 0
 
 
 if __name__ == "__main__":

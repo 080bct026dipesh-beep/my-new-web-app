@@ -1,0 +1,1616 @@
+route_id,route_name,stop_sequence,stop_id,stop_name,lat,lng
+R2276770,Purano Bus Park-Thimi,1,S0198,Purano Bus Park,27.703654,85.316517
+R2276770,Purano Bus Park-Thimi,2,S0086,Tourism Board Stop,27.702332,85.3168
+R2276770,Purano Bus Park-Thimi,3,S0088,Bhadrakali,27.699352,85.317713
+R2276770,Purano Bus Park-Thimi,4,S0036,Singha Durbar West Stop,27.69659,85.321228
+R2276770,Purano Bus Park-Thimi,5,S0097,Maitighar,27.693965,85.320962
+R2276770,Purano Bus Park-Thimi,6,S0028,Babarmahal,27.692579,85.323905
+R2276770,Purano Bus Park-Thimi,7,S0099,Babarmahal Stop West,27.692337,85.3244
+R2276770,Purano Bus Park-Thimi,8,S0034,Buddhanagar Stop,27.68933,85.331039
+R2276770,Purano Bus Park-Thimi,9,S0062,Babarmahal Stop East,27.69032,85.328762
+R2276770,Purano Bus Park-Thimi,10,S0069,Naya Baneshwor Tampoo Station,27.688586,85.334689
+R2276770,Purano Bus Park-Thimi,11,S0029,Minbhawan,27.6877,85.338462
+R2276770,Purano Bus Park-Thimi,12,S0127,Shantinagar Stop,27.687086,85.341372
+R2276770,Purano Bus Park-Thimi,13,S0017,Tinkune Stop,27.6835,85.3486
+R2276770,Purano Bus Park-Thimi,14,S0203,Tinkune Subidhanagar,27.686056,85.345662
+R2276770,Purano Bus Park-Thimi,15,S0107,Koteshwor Stop,27.6802001,85.3494489
+R2276770,Purano Bus Park-Thimi,16,S0159,Jadibuti,27.675459,85.3516
+R2276770,Purano Bus Park-Thimi,17,S0022,Lokanthali North,27.674829,85.359862
+R2276770,Purano Bus Park-Thimi,18,S0004,Kaushaltar,27.674541,85.364349
+R2276770,Purano Bus Park-Thimi,19,S0092,Gathaghar,27.674014,85.373177
+R2276770,Purano Bus Park-Thimi,20,S0007,Chardobato,27.673553,85.381717
+R2276770,Purano Bus Park-Thimi,21,S0110,Thimi Stop,27.673336,85.386293
+R2276999,Shobhabhagwati-Koteshwore,1,S0003,Shobhabhagwati,27.718204,85.312138
+R2276999,Shobhabhagwati-Koteshwore,2,S0207,ASCOL Stop,27.71738,85.314811
+R2276999,Shobhabhagwati-Koteshwore,3,S0193,Lainchour Chowk Bus Stop,27.717048,85.316046
+R2276999,Shobhabhagwati-Koteshwore,4,S0152,Jamal,27.708829,85.315292
+R2276999,Shobhabhagwati-Koteshwore,5,S0166,Kantipath,27.708912,85.314607
+R2276999,Shobhabhagwati-Koteshwore,6,S0137,Ghantaghar (घण्टाघर) stop,27.708043,85.317116
+R2276999,Shobhabhagwati-Koteshwore,7,S0042,Kamaladi Road (कमलादी) stop,27.707997,85.321282
+R2276999,Shobhabhagwati-Koteshwore,8,S0094,Krishna Pauroti Stop,27.710369,85.322281
+R2276999,Shobhabhagwati-Koteshwore,9,S0210,Ciy Center Stop,27.709819,85.326984
+R2276999,Shobhabhagwati-Koteshwore,10,S0083,Gyaneshwor Chowk,27.708687,85.331826
+R2276999,Shobhabhagwati-Koteshwore,11,S0126,Maitidevi Temple stop,27.706412,85.333733
+R2276999,Shobhabhagwati-Koteshwore,12,S0035,Maiti Devi chowk,27.703944,85.332682
+R2276999,Shobhabhagwati-Koteshwore,13,S0222,Old Baneshwor,27.70152,85.340204
+R2276999,Shobhabhagwati-Koteshwore,14,S0016,Bhimsengola stop,27.700377,85.343256
+R2276999,Shobhabhagwati-Koteshwore,15,S0148,Sinamangal,27.698432,85.348521
+R2276999,Shobhabhagwati-Koteshwore,16,S0027,KMC stop,27.695834,85.352791
+R2276999,Shobhabhagwati-Koteshwore,17,S0139,Sinamangal/Ring Road Stop सिनामंगल,27.6983,85.3533
+R2276999,Shobhabhagwati-Koteshwore,18,S0053,Gairigaun Stop,27.687275,85.35056
+R2276999,Shobhabhagwati-Koteshwore,19,S0107,Koteshwor Stop,27.6802001,85.3494489
+R2277212,Koteshwor - Ratna Park,1,S0198,Purano Bus Park,27.703654,85.316517
+R2277212,Koteshwor - Ratna Park,2,S0137,Ghantaghar (घण्टाघर) stop,27.708043,85.317116
+R2277212,Koteshwor - Ratna Park,3,S0094,Krishna Pauroti Stop,27.710369,85.322281
+R2277212,Koteshwor - Ratna Park,4,S0042,Kamaladi Road (कमलादी) stop,27.707997,85.321282
+R2277212,Koteshwor - Ratna Park,5,S0005,Putalisadak Stop,27.70569,85.322552
+R2277212,Koteshwor - Ratna Park,6,S0055,Dillibazaar stop,27.70537,85.326759
+R2277212,Koteshwor - Ratna Park,7,S0035,Maiti Devi chowk,27.703944,85.332682
+R2277212,Koteshwor - Ratna Park,8,S0222,Old Baneshwor,27.70152,85.340204
+R2277212,Koteshwor - Ratna Park,9,S0016,Bhimsengola stop,27.700377,85.343256
+R2277212,Koteshwor - Ratna Park,10,S0148,Sinamangal,27.698432,85.348521
+R2277212,Koteshwor - Ratna Park,11,S0027,KMC stop,27.695834,85.352791
+R2277212,Koteshwor - Ratna Park,12,S0139,Sinamangal/Ring Road Stop सिनामंगल,27.6983,85.3533
+R2277212,Koteshwor - Ratna Park,13,S0053,Gairigaun Stop,27.687275,85.35056
+R2277212,Koteshwor - Ratna Park,14,S0107,Koteshwor Stop,27.6802001,85.3494489
+R2282031,Ratna Park - Kirtipur,1,S0198,Purano Bus Park,27.703654,85.316517
+R2282031,Ratna Park - Kirtipur,2,S0086,Tourism Board Stop,27.702332,85.3168
+R2282031,Ratna Park - Kirtipur,3,S0067,Shahid Gate,27.699685,85.314748
+R2282031,Ratna Park - Kirtipur,4,S0076,Sundhara Stop,27.700542,85.313503
+R2282031,Ratna Park - Kirtipur,5,S0056,Tripureshwor,27.694418,85.314128
+R2282031,Ratna Park - Kirtipur,6,S0023,Kalimati,27.69843,85.29944
+R2282031,Ratna Park - Kirtipur,7,S0230,Balkhu,27.6823,85.2985
+R2282031,Ratna Park - Kirtipur,8,S0233,Balkhu Stop,27.684798,85.298592
+R2282031,Ratna Park - Kirtipur,9,S0225,Kumari Club,27.682663,85.298599
+R2282031,Ratna Park - Kirtipur,10,S0043,TU Gate,27.67888,85.297212
+R2282031,Ratna Park - Kirtipur,11,S0049,Naya Bato,27.676114,85.293897
+R2282031,Ratna Park - Kirtipur,12,S0047,Tinkune (Kirtipur side),27.676654,85.283543
+R2282031,Ratna Park - Kirtipur,13,S0221,Naya Bazar,27.677149,85.28139
+R2282031,Ratna Park - Kirtipur,14,S0084,Panga Dobato,27.674758,85.280408
+R2282031,Ratna Park - Kirtipur,15,S0085,Nagaon Dobato,27.674795,85.277757
+R2282031,Ratna Park - Kirtipur,16,S0041,BishnuDevi Health Centre,27.680562,85.276439
+R2282101,Ratna Park - Sundarijal,1,S0040,Sundarijal,27.757565,85.419394
+R2282101,Ratna Park - Sundarijal,2,S0140,Gokarna Bus Stop,27.740306,85.39072
+R2282101,Ratna Park - Sundarijal,3,S0125,Attarkhel,27.734548,85.382452
+R2282101,Ratna Park - Sundarijal,4,S0135,Jorpati,27.721763,85.372632
+R2282101,Ratna Park - Sundarijal,5,S0026,Boudha,27.72072,85.36176
+R2282101,Ratna Park - Sundarijal,6,S0172,Hyatt Regency,27.7194,85.354109
+R2282101,Ratna Park - Sundarijal,7,S0195,Chabahil चाबाहील,27.717,85.3465
+R2282101,Ratna Park - Sundarijal,8,S0052,JayaBageshwari Stop,27.711989,85.344999
+R2282101,Ratna Park - Sundarijal,9,S0204,Gaushala Chowk Stop,27.7082,85.3485
+R2282101,Ratna Park - Sundarijal,10,S0045,Ratopul,27.708117,85.336428
+R2282101,Ratna Park - Sundarijal,11,S0083,Gyaneshwor Chowk,27.708687,85.331826
+R2282101,Ratna Park - Sundarijal,12,S0210,Ciy Center Stop,27.709819,85.326984
+R2282101,Ratna Park - Sundarijal,13,S0094,Krishna Pauroti Stop,27.710369,85.322281
+R2282101,Ratna Park - Sundarijal,14,S0042,Kamaladi Road (कमलादी) stop,27.707997,85.321282
+R2282101,Ratna Park - Sundarijal,15,S0005,Putalisadak Stop,27.70569,85.322552
+R2282101,Ratna Park - Sundarijal,16,S0066,Bhrikuti Mandap Stop,27.702122,85.318738
+R2282101,Ratna Park - Sundarijal,17,S0086,Tourism Board Stop,27.702332,85.3168
+R2282101,Ratna Park - Sundarijal,18,S0198,Purano Bus Park,27.703654,85.316517
+R2294107,Ratna Park-Gwarko,1,S0020,Gwarko Chowk Stop,27.6705,85.334
+R2294107,Ratna Park-Gwarko,2,S0141,Tyogal,27.668631,85.329848
+R2294107,Ratna Park-Gwarko,3,S0133,Saughal,27.670479,85.327219
+R2294107,Ratna Park-Gwarko,4,S0154,Mangalbazar,27.672641,85.32499
+R2294107,Ratna Park-Gwarko,5,S0227,Mahapal,27.67355,85.32389
+R2294107,Ratna Park-Gwarko,6,S0226,Gahabahal,27.674297,85.321046
+R2294107,Ratna Park-Gwarko,7,S0058,Natole,27.676065,85.318202
+R2294107,Ratna Park-Gwarko,8,S0142,UN Stop,27.678104,85.316327
+R2294107,Ratna Park-Gwarko,9,S0168,Jwagal,27.685593,85.318106
+R2294107,Ratna Park-Gwarko,10,S0063,Kupondole stop,27.688005,85.316248
+R2294107,Ratna Park-Gwarko,11,S0185,Thapathali,27.691767,85.318016
+R2294107,Ratna Park-Gwarko,12,S0132,Maitighar Stop--South,27.694112,85.319308
+R2294107,Ratna Park-Gwarko,13,S0036,Singha Durbar West Stop,27.69659,85.321228
+R2294107,Ratna Park-Gwarko,14,S0088,Bhadrakali,27.699352,85.317713
+R2294107,Ratna Park-Gwarko,15,S0067,Shahid Gate,27.699685,85.314748
+R2294107,Ratna Park-Gwarko,16,S0076,Sundhara Stop,27.700542,85.313503
+R2294107,Ratna Park-Gwarko,17,S0100,RNAC stop,27.70221,85.313638
+R2294107,Ratna Park-Gwarko,18,S0171,Bir Hospital,27.705723,85.314074
+R2294107,Ratna Park-Gwarko,19,S0013,Ratna Park,27.706705,85.315249
+R2294152,Ratna Park-Lagankhel,1,S0013,Ratna Park,27.706705,85.315249
+R2294152,Ratna Park-Lagankhel,2,S0198,Purano Bus Park,27.703654,85.316517
+R2294152,Ratna Park-Lagankhel,3,S0086,Tourism Board Stop,27.702332,85.3168
+R2294152,Ratna Park-Lagankhel,4,S0088,Bhadrakali,27.699352,85.317713
+R2294152,Ratna Park-Lagankhel,5,S0036,Singha Durbar West Stop,27.69659,85.321228
+R2294152,Ratna Park-Lagankhel,6,S0097,Maitighar,27.693965,85.320962
+R2294152,Ratna Park-Lagankhel,7,S0132,Maitighar Stop--South,27.694112,85.319308
+R2294152,Ratna Park-Lagankhel,8,S0185,Thapathali,27.691767,85.318016
+R2294152,Ratna Park-Lagankhel,9,S0063,Kupondole stop,27.688005,85.316248
+R2294152,Ratna Park-Lagankhel,10,S0168,Jwagal,27.685593,85.318106
+R2294152,Ratna Park-Lagankhel,11,S0328,Jwagal Chowk,27.683512,85.321045
+R2294152,Ratna Park-Lagankhel,12,S0283,Nabil Bank,27.6828614259285,85.3184559776392
+R2294152,Ratna Park-Lagankhel,13,S0284,Harihar Bhawan/ Krishna galli,27.6812082856123,85.317350907549
+R2294152,Ratna Park-Lagankhel,14,S0142,UN Stop,27.678104,85.316327
+R2294152,Ratna Park-Lagankhel,15,S0116,Damkal,27.675796,85.315747
+R2294152,Ratna Park-Lagankhel,16,S0103,Jawlakhel Stop,27.672577,85.314174
+R2294152,Ratna Park-Lagankhel,17,S0213,Kumaripati,27.67084,85.320098
+R2294152,Ratna Park-Lagankhel,18,S0155,Patan Hospital,27.668489,85.321642
+R2294152,Ratna Park-Lagankhel,19,S0112,Lagankhel Stop,27.6668,85.3219
+R2294152,Ratna Park-Lagankhel,20,S0223,Lalitpur Industrial Estate,27.667312,85.322256
+R2295734,Ratna Park-Budhanilkantha School,1,S0013,Ratna Park,27.706705,85.315249
+R2295734,Ratna Park-Budhanilkantha School,2,S0166,Kantipath,27.708912,85.314607
+R2295734,Ratna Park-Budhanilkantha School,3,S0152,Jamal,27.708829,85.315292
+R2295734,Ratna Park-Budhanilkantha School,4,S0193,Lainchour Chowk Bus Stop,27.717048,85.316046
+R2295734,Ratna Park-Budhanilkantha School,5,S0087,Lainchaur stop,27.718757,85.317697
+R2295734,Ratna Park-Budhanilkantha School,6,S0149,Lazimpat stop,27.722523,85.320924
+R2295734,Ratna Park-Budhanilkantha School,7,S0082,Panipokhari stop,27.730686,85.325986
+R2295734,Ratna Park-Budhanilkantha School,8,S0124,Teaching Hospital stop,27.734523,85.330711
+R2295734,Ratna Park-Budhanilkantha School,9,S0030,Chakrapath Stop-- South,27.739835,85.336915
+R2295734,Ratna Park-Budhanilkantha School,10,S0044,Narayan Gopal Chowk,27.740022,85.337201
+R2295734,Ratna Park-Budhanilkantha School,11,S0158,Bansbari stop,27.745758,85.342373
+R2295734,Ratna Park-Budhanilkantha School,12,S0231,Golfutar stop,27.75144,85.345969
+R2295734,Ratna Park-Budhanilkantha School,13,S0038,Deuba Chowk stop,27.773756,85.36033
+R2295734,Ratna Park-Budhanilkantha School,14,S0096,Budhanilkantha Micro Stand,27.776459,85.361934
+R2295734,Ratna Park-Budhanilkantha School,15,S0176,Budhanilkantha Stop,27.776743,85.36214
+R2295734,Ratna Park-Budhanilkantha School,16,S0143,Budhanilkantha School Blue Micro Stand,27.778969,85.358998
+R2295768,Ratnapark-Mangal Bazaar,1,S0013,Ratna Park,27.706705,85.315249
+R2295768,Ratnapark-Mangal Bazaar,2,S0198,Purano Bus Park,27.703654,85.316517
+R2295768,Ratnapark-Mangal Bazaar,3,S0086,Tourism Board Stop,27.702332,85.3168
+R2295768,Ratnapark-Mangal Bazaar,4,S0088,Bhadrakali,27.699352,85.317713
+R2295768,Ratnapark-Mangal Bazaar,5,S0036,Singha Durbar West Stop,27.69659,85.321228
+R2295768,Ratnapark-Mangal Bazaar,6,S0097,Maitighar,27.693965,85.320962
+R2295768,Ratnapark-Mangal Bazaar,7,S0132,Maitighar Stop--South,27.694112,85.319308
+R2295768,Ratnapark-Mangal Bazaar,8,S0185,Thapathali,27.691767,85.318016
+R2295768,Ratnapark-Mangal Bazaar,9,S0063,Kupondole stop,27.688005,85.316248
+R2295768,Ratnapark-Mangal Bazaar,10,S0168,Jwagal,27.685593,85.318106
+R2295768,Ratnapark-Mangal Bazaar,11,S0142,UN Stop,27.678104,85.316327
+R2295768,Ratnapark-Mangal Bazaar,12,S0058,Natole,27.676065,85.318202
+R2295768,Ratnapark-Mangal Bazaar,13,S0226,Gahabahal,27.674297,85.321046
+R2295768,Ratnapark-Mangal Bazaar,14,S0227,Mahapal,27.67355,85.32389
+R2295768,Ratnapark-Mangal Bazaar,15,S0154,Mangalbazar,27.672641,85.32499
+R2295902,KattyaniChowk-Sundhara,1,S0076,Sundhara Stop,27.700542,85.313503
+R2295902,KattyaniChowk-Sundhara,2,S0067,Shahid Gate,27.699685,85.314748
+R2295902,KattyaniChowk-Sundhara,3,S0086,Tourism Board Stop,27.702332,85.3168
+R2295902,KattyaniChowk-Sundhara,4,S0066,Bhrikuti Mandap Stop,27.702122,85.318738
+R2295902,KattyaniChowk-Sundhara,5,S0102,New Plaza Stop,27.700951,85.322918
+R2295902,KattyaniChowk-Sundhara,6,S0196,Anamnagar Stop,27.699488,85.3286
+R2295902,KattyaniChowk-Sundhara,7,S0209,Singha Durbar East Stop,27.696608,85.32815
+R2295902,KattyaniChowk-Sundhara,8,S0015,Hanumanthan Stop,27.693522,85.327603
+R2295902,KattyaniChowk-Sundhara,9,S0033,Bijulibazar Stop,27.692332,85.329615
+R2295902,KattyaniChowk-Sundhara,10,S0108,Thapagaun Stop,27.691133,85.334031
+R2295902,KattyaniChowk-Sundhara,11,S0075,New Baneshwor West,27.690327,85.335954
+R2295902,KattyaniChowk-Sundhara,12,S0069,Naya Baneshwor Tampoo Station,27.688586,85.334689
+R2295902,KattyaniChowk-Sundhara,13,S0167,ShivaDarshan Hall Stop,27.692336,85.336217
+R2295902,KattyaniChowk-Sundhara,14,S0180,Sangam Chowk Stop,27.693196,85.340502
+R2295902,KattyaniChowk-Sundhara,15,S0115,Milan Chowk Stop,27.695169,85.340638
+R2295902,KattyaniChowk-Sundhara,16,S0006,KattyaniChowk Stop,27.695366,85.344466
+R2295903,Sundhara-Milanchowk-KattyaniChowk,1,S0076,Sundhara Stop,27.700542,85.313503
+R2295903,Sundhara-Milanchowk-KattyaniChowk,2,S0100,RNAC stop,27.70221,85.313638
+R2295903,Sundhara-Milanchowk-KattyaniChowk,3,S0171,Bir Hospital,27.705723,85.314074
+R2295903,Sundhara-Milanchowk-KattyaniChowk,4,S0013,Ratna Park,27.706705,85.315249
+R2295903,Sundhara-Milanchowk-KattyaniChowk,5,S0198,Purano Bus Park,27.703654,85.316517
+R2295903,Sundhara-Milanchowk-KattyaniChowk,6,S0086,Tourism Board Stop,27.702332,85.3168
+R2295903,Sundhara-Milanchowk-KattyaniChowk,7,S0066,Bhrikuti Mandap Stop,27.702122,85.318738
+R2295903,Sundhara-Milanchowk-KattyaniChowk,8,S0102,New Plaza Stop,27.700951,85.322918
+R2295903,Sundhara-Milanchowk-KattyaniChowk,9,S0196,Anamnagar Stop,27.699488,85.3286
+R2295903,Sundhara-Milanchowk-KattyaniChowk,10,S0209,Singha Durbar East Stop,27.696608,85.32815
+R2295903,Sundhara-Milanchowk-KattyaniChowk,11,S0015,Hanumanthan Stop,27.693522,85.327603
+R2295903,Sundhara-Milanchowk-KattyaniChowk,12,S0033,Bijulibazar Stop,27.692332,85.329615
+R2295903,Sundhara-Milanchowk-KattyaniChowk,13,S0108,Thapagaun Stop,27.691133,85.334031
+R2295903,Sundhara-Milanchowk-KattyaniChowk,14,S0075,New Baneshwor West,27.690327,85.335954
+R2295903,Sundhara-Milanchowk-KattyaniChowk,15,S0069,Naya Baneshwor Tampoo Station,27.688586,85.334689
+R2295903,Sundhara-Milanchowk-KattyaniChowk,16,S0167,ShivaDarshan Hall Stop,27.692336,85.336217
+R2295903,Sundhara-Milanchowk-KattyaniChowk,17,S0180,Sangam Chowk Stop,27.693196,85.340502
+R2295903,Sundhara-Milanchowk-KattyaniChowk,18,S0115,Milan Chowk Stop,27.695169,85.340638
+R2295903,Sundhara-Milanchowk-KattyaniChowk,19,S0006,KattyaniChowk Stop,27.695366,85.344466
+R2295941,Old Baneshwar-Sundhara,1,S0076,Sundhara Stop,27.700542,85.313503
+R2295941,Old Baneshwar-Sundhara,2,S0067,Shahid Gate,27.699685,85.314748
+R2295941,Old Baneshwar-Sundhara,3,S0086,Tourism Board Stop,27.702332,85.3168
+R2295941,Old Baneshwar-Sundhara,4,S0066,Bhrikuti Mandap Stop,27.702122,85.318738
+R2295941,Old Baneshwar-Sundhara,5,S0102,New Plaza Stop,27.700951,85.322918
+R2295941,Old Baneshwar-Sundhara,6,S0196,Anamnagar Stop,27.699488,85.3286
+R2295941,Old Baneshwar-Sundhara,7,S0209,Singha Durbar East Stop,27.696608,85.32815
+R2295941,Old Baneshwar-Sundhara,8,S0015,Hanumanthan Stop,27.693522,85.327603
+R2295941,Old Baneshwar-Sundhara,9,S0033,Bijulibazar Stop,27.692332,85.329615
+R2295941,Old Baneshwar-Sundhara,10,S0108,Thapagaun Stop,27.691133,85.334031
+R2295941,Old Baneshwar-Sundhara,11,S0075,New Baneshwor West,27.690327,85.335954
+R2295941,Old Baneshwar-Sundhara,12,S0069,Naya Baneshwor Tampoo Station,27.688586,85.334689
+R2295941,Old Baneshwar-Sundhara,13,S0167,ShivaDarshan Hall Stop,27.692336,85.336217
+R2295941,Old Baneshwar-Sundhara,14,S0059,SchEMS,27.694334,85.337154
+R2295941,Old Baneshwar-Sundhara,15,S0205,Ratna Rajya Stop,27.695667,85.33762
+R2295942,Sundhara-Purano Baneshwar,1,S0076,Sundhara Stop,27.700542,85.313503
+R2295942,Sundhara-Purano Baneshwar,2,S0100,RNAC stop,27.70221,85.313638
+R2295942,Sundhara-Purano Baneshwar,3,S0171,Bir Hospital,27.705723,85.314074
+R2295942,Sundhara-Purano Baneshwar,4,S0013,Ratna Park,27.706705,85.315249
+R2295942,Sundhara-Purano Baneshwar,5,S0198,Purano Bus Park,27.703654,85.316517
+R2295942,Sundhara-Purano Baneshwar,6,S0086,Tourism Board Stop,27.702332,85.3168
+R2295942,Sundhara-Purano Baneshwar,7,S0066,Bhrikuti Mandap Stop,27.702122,85.318738
+R2295942,Sundhara-Purano Baneshwar,8,S0102,New Plaza Stop,27.700951,85.322918
+R2295942,Sundhara-Purano Baneshwar,9,S0196,Anamnagar Stop,27.699488,85.3286
+R2295942,Sundhara-Purano Baneshwar,10,S0209,Singha Durbar East Stop,27.696608,85.32815
+R2295942,Sundhara-Purano Baneshwar,11,S0015,Hanumanthan Stop,27.693522,85.327603
+R2295942,Sundhara-Purano Baneshwar,12,S0033,Bijulibazar Stop,27.692332,85.329615
+R2295942,Sundhara-Purano Baneshwar,13,S0108,Thapagaun Stop,27.691133,85.334031
+R2295942,Sundhara-Purano Baneshwar,14,S0075,New Baneshwor West,27.690327,85.335954
+R2295942,Sundhara-Purano Baneshwar,15,S0069,Naya Baneshwor Tampoo Station,27.688586,85.334689
+R2295942,Sundhara-Purano Baneshwar,16,S0167,ShivaDarshan Hall Stop,27.692336,85.336217
+R2295942,Sundhara-Purano Baneshwar,17,S0059,SchEMS,27.694334,85.337154
+R2295942,Sundhara-Purano Baneshwar,18,S0205,Ratna Rajya Stop,27.695667,85.33762
+R2295942,Sundhara-Purano Baneshwar,19,S0077,Apex College Stop,27.69907,85.338327
+R2295942,Sundhara-Purano Baneshwar,20,S0046,Tempo Stop Near Old Baneshwar,27.700669,85.339677
+R2295974,Purano Bus Park-Nakhipot,1,S0198,Purano Bus Park,27.703654,85.316517
+R2295974,Purano Bus Park-Nakhipot,2,S0086,Tourism Board Stop,27.702332,85.3168
+R2295974,Purano Bus Park-Nakhipot,3,S0088,Bhadrakali,27.699352,85.317713
+R2295974,Purano Bus Park-Nakhipot,4,S0036,Singha Durbar West Stop,27.69659,85.321228
+R2295974,Purano Bus Park-Nakhipot,5,S0097,Maitighar,27.693965,85.320962
+R2295974,Purano Bus Park-Nakhipot,6,S0132,Maitighar Stop--South,27.694112,85.319308
+R2295974,Purano Bus Park-Nakhipot,7,S0185,Thapathali,27.691767,85.318016
+R2295974,Purano Bus Park-Nakhipot,8,S0063,Kupondole stop,27.688005,85.316248
+R2295974,Purano Bus Park-Nakhipot,9,S0168,Jwagal,27.685593,85.318106
+R2295974,Purano Bus Park-Nakhipot,10,S0142,UN Stop,27.678104,85.316327
+R2295974,Purano Bus Park-Nakhipot,11,S0116,Damkal,27.675796,85.315747
+R2295974,Purano Bus Park-Nakhipot,12,S0103,Jawlakhel Stop,27.672577,85.314174
+R2295974,Purano Bus Park-Nakhipot,13,S0213,Kumaripati,27.67084,85.320098
+R2295974,Purano Bus Park-Nakhipot,14,S0155,Patan Hospital,27.668489,85.321642
+R2295974,Purano Bus Park-Nakhipot,15,S0112,Lagankhel Stop,27.6668,85.3219
+R2295974,Purano Bus Park-Nakhipot,16,S0223,Lalitpur Industrial Estate,27.667312,85.322256
+R2295974,Purano Bus Park-Nakhipot,17,S0219,Lagankhel,27.662461,85.323946
+R2295974,Purano Bus Park-Nakhipot,18,S0194,Batuk Bhairav,27.664475,85.324003
+R2295974,Purano Bus Park-Nakhipot,19,S0011,Satdobato Chowk Stop,27.6656,85.3283
+R2295974,Purano Bus Park-Nakhipot,20,S0216,Thecho,27.6153,85.319176
+R2295974,Purano Bus Park-Nakhipot,21,S0060,Chapagaun,27.592941,85.324403
+R2295974,Purano Bus Park-Nakhipot,22,S0269,Tikabhairab Temple,27.5746276,85.3128817
+R2295986,Sundhara-Shankhamul,1,S0018,Sankhamul Stop,27.681128,85.331587
+R2295986,Sundhara-Shankhamul,2,S0069,Naya Baneshwor Tampoo Station,27.688586,85.334689
+R2295986,Sundhara-Shankhamul,3,S0062,Babarmahal Stop East,27.69032,85.328762
+R2295986,Sundhara-Shankhamul,4,S0034,Buddhanagar Stop,27.68933,85.331039
+R2295986,Sundhara-Shankhamul,5,S0028,Babarmahal,27.692579,85.323905
+R2295986,Sundhara-Shankhamul,6,S0099,Babarmahal Stop West,27.692337,85.3244
+R2295986,Sundhara-Shankhamul,7,S0097,Maitighar,27.693965,85.320962
+R2295986,Sundhara-Shankhamul,8,S0036,Singha Durbar West Stop,27.69659,85.321228
+R2295986,Sundhara-Shankhamul,9,S0088,Bhadrakali,27.699352,85.317713
+R2295986,Sundhara-Shankhamul,10,S0086,Tourism Board Stop,27.702332,85.3168
+R2295986,Sundhara-Shankhamul,11,S0198,Purano Bus Park,27.703654,85.316517
+R2295986,Sundhara-Shankhamul,12,S0013,Ratna Park,27.706705,85.315249
+R2295986,Sundhara-Shankhamul,13,S0171,Bir Hospital,27.705723,85.314074
+R2295986,Sundhara-Shankhamul,14,S0100,RNAC stop,27.70221,85.313638
+R2295986,Sundhara-Shankhamul,15,S0076,Sundhara Stop,27.700542,85.313503
+R2301161,MAV School-Purano Buspark,1,S0101,MAV School,27.657068,85.326288
+R2301161,MAV School-Purano Buspark,2,S0011,Satdobato Chowk Stop,27.6656,85.3283
+R2301161,MAV School-Purano Buspark,3,S0219,Lagankhel,27.662461,85.323946
+R2301161,MAV School-Purano Buspark,4,S0194,Batuk Bhairav,27.664475,85.324003
+R2301161,MAV School-Purano Buspark,5,S0112,Lagankhel Stop,27.6668,85.3219
+R2301161,MAV School-Purano Buspark,6,S0223,Lalitpur Industrial Estate,27.667312,85.322256
+R2301161,MAV School-Purano Buspark,7,S0155,Patan Hospital,27.668489,85.321642
+R2301161,MAV School-Purano Buspark,8,S0213,Kumaripati,27.67084,85.320098
+R2301161,MAV School-Purano Buspark,9,S0103,Jawlakhel Stop,27.672577,85.314174
+R2301161,MAV School-Purano Buspark,10,S0116,Damkal,27.675796,85.315747
+R2301161,MAV School-Purano Buspark,11,S0142,UN Stop,27.678104,85.316327
+R2301161,MAV School-Purano Buspark,12,S0168,Jwagal,27.685593,85.318106
+R2301161,MAV School-Purano Buspark,13,S0063,Kupondole stop,27.688005,85.316248
+R2301161,MAV School-Purano Buspark,14,S0185,Thapathali,27.691767,85.318016
+R2301161,MAV School-Purano Buspark,15,S0132,Maitighar Stop--South,27.694112,85.319308
+R2301161,MAV School-Purano Buspark,16,S0036,Singha Durbar West Stop,27.69659,85.321228
+R2301161,MAV School-Purano Buspark,17,S0088,Bhadrakali,27.699352,85.317713
+R2301161,MAV School-Purano Buspark,18,S0067,Shahid Gate,27.699685,85.314748
+R2301161,MAV School-Purano Buspark,19,S0076,Sundhara Stop,27.700542,85.313503
+R2301161,MAV School-Purano Buspark,20,S0100,RNAC stop,27.70221,85.313638
+R2301161,MAV School-Purano Buspark,21,S0171,Bir Hospital,27.705723,85.314074
+R2301161,MAV School-Purano Buspark,22,S0166,Kantipath,27.708912,85.314607
+R2301161,MAV School-Purano Buspark,23,S0152,Jamal,27.708829,85.315292
+R2301161,MAV School-Purano Buspark,24,S0137,Ghantaghar (घण्टाघर) stop,27.708043,85.317116
+R2301161,MAV School-Purano Buspark,25,S0198,Purano Bus Park,27.703654,85.316517
+R2301205,Purano Bus Park-Shivapuri,1,S0198,Purano Bus Park,27.703654,85.316517
+R2301205,Purano Bus Park-Shivapuri,2,S0086,Tourism Board Stop,27.702332,85.3168
+R2301205,Purano Bus Park-Shivapuri,3,S0067,Shahid Gate,27.699685,85.314748
+R2301205,Purano Bus Park-Shivapuri,4,S0076,Sundhara Stop,27.700542,85.313503
+R2301205,Purano Bus Park-Shivapuri,5,S0100,RNAC stop,27.70221,85.313638
+R2301205,Purano Bus Park-Shivapuri,6,S0171,Bir Hospital,27.705723,85.314074
+R2301205,Purano Bus Park-Shivapuri,7,S0166,Kantipath,27.708912,85.314607
+R2301205,Purano Bus Park-Shivapuri,8,S0152,Jamal,27.708829,85.315292
+R2301205,Purano Bus Park-Shivapuri,9,S0193,Lainchour Chowk Bus Stop,27.717048,85.316046
+R2301205,Purano Bus Park-Shivapuri,10,S0087,Lainchaur stop,27.718757,85.317697
+R2301205,Purano Bus Park-Shivapuri,11,S0149,Lazimpat stop,27.722523,85.320924
+R2301205,Purano Bus Park-Shivapuri,12,S0082,Panipokhari stop,27.730686,85.325986
+R2301205,Purano Bus Park-Shivapuri,13,S0124,Teaching Hospital stop,27.734523,85.330711
+R2301205,Purano Bus Park-Shivapuri,14,S0030,Chakrapath Stop-- South,27.739835,85.336915
+R2301205,Purano Bus Park-Shivapuri,15,S0044,Narayan Gopal Chowk,27.740022,85.337201
+R2301205,Purano Bus Park-Shivapuri,16,S0158,Bansbari stop,27.745758,85.342373
+R2301205,Purano Bus Park-Shivapuri,17,S0231,Golfutar stop,27.75144,85.345969
+R2301205,Purano Bus Park-Shivapuri,18,S0038,Deuba Chowk stop,27.773756,85.36033
+R2301205,Purano Bus Park-Shivapuri,19,S0096,Budhanilkantha Micro Stand,27.776459,85.361934
+R2301205,Purano Bus Park-Shivapuri,20,S0176,Budhanilkantha Stop,27.776743,85.36214
+R2301205,Purano Bus Park-Shivapuri,21,S0144,Shivapuri Park Stop,27.791067,85.37041
+R2301306,Balkumari-Gopi Krishna,1,S0024,Balkumari Stop,27.6763,85.3395
+R2301306,Balkumari-Gopi Krishna,2,S0220,Balkumari Bridge Stop,27.673762,85.342508
+R2301306,Balkumari-Gopi Krishna,3,S0107,Koteshwor Stop,27.6802001,85.3494489
+R2301306,Balkumari-Gopi Krishna,4,S0017,Tinkune Stop,27.6835,85.3486
+R2301306,Balkumari-Gopi Krishna,5,S0203,Tinkune Subidhanagar,27.686056,85.345662
+R2301306,Balkumari-Gopi Krishna,6,S0127,Shantinagar Stop,27.687086,85.341372
+R2301306,Balkumari-Gopi Krishna,7,S0029,Minbhawan,27.6877,85.338462
+R2301306,Balkumari-Gopi Krishna,8,S0069,Naya Baneshwor Tampoo Station,27.688586,85.334689
+R2301306,Balkumari-Gopi Krishna,9,S0075,New Baneshwor West,27.690327,85.335954
+R2301306,Balkumari-Gopi Krishna,10,S0108,Thapagaun Stop,27.691133,85.334031
+R2301306,Balkumari-Gopi Krishna,11,S0033,Bijulibazar Stop,27.692332,85.329615
+R2301306,Balkumari-Gopi Krishna,12,S0015,Hanumanthan Stop,27.693522,85.327603
+R2301306,Balkumari-Gopi Krishna,13,S0209,Singha Durbar East Stop,27.696608,85.32815
+R2301306,Balkumari-Gopi Krishna,14,S0196,Anamnagar Stop,27.699488,85.3286
+R2301306,Balkumari-Gopi Krishna,15,S0102,New Plaza Stop,27.700951,85.322918
+R2301306,Balkumari-Gopi Krishna,16,S0005,Putalisadak Stop,27.70569,85.322552
+R2301306,Balkumari-Gopi Krishna,17,S0042,Kamaladi Road (कमलादी) stop,27.707997,85.321282
+R2301306,Balkumari-Gopi Krishna,18,S0094,Krishna Pauroti Stop,27.710369,85.322281
+R2301306,Balkumari-Gopi Krishna,19,S0188,Gairidhara,27.717774,85.327892
+R2301306,Balkumari-Gopi Krishna,20,S0051,Tangal,27.717202,85.330449
+R2301306,Balkumari-Gopi Krishna,21,S0197,Police Headquarter Stop,27.716634,85.330214
+R2301306,Balkumari-Gopi Krishna,22,S0105,Bhatbhatini Stop,27.719211,85.331082
+R2301306,Balkumari-Gopi Krishna,23,S0068,Baluwatar,27.724427,85.331034
+R2301306,Balkumari-Gopi Krishna,24,S0124,Teaching Hospital stop,27.734523,85.330711
+R2301306,Balkumari-Gopi Krishna,25,S0030,Chakrapath Stop-- South,27.739835,85.336915
+R2301306,Balkumari-Gopi Krishna,26,S0044,Narayan Gopal Chowk,27.740022,85.337201
+R2301306,Balkumari-Gopi Krishna,27,S0109,Chapal Karkhana stop,27.734807,85.342234
+R2301306,Balkumari-Gopi Krishna,28,S0118,Dhumbarahi,27.731787,85.344365
+R2301306,Balkumari-Gopi Krishna,29,S0217,Sukedhara Stop,27.7245,85.3438
+R2301306,Balkumari-Gopi Krishna,30,S0134,Gopi Krishna Stop,27.720629,85.346099
+R2301357,Naya Baneshwor-Teaching,1,S0075,New Baneshwor West,27.690327,85.335954
+R2301357,Naya Baneshwor-Teaching,2,S0069,Naya Baneshwor Tampoo Station,27.688586,85.334689
+R2301357,Naya Baneshwor-Teaching,3,S0167,ShivaDarshan Hall Stop,27.692336,85.336217
+R2301357,Naya Baneshwor-Teaching,4,S0059,SchEMS,27.694334,85.337154
+R2301357,Naya Baneshwor-Teaching,5,S0205,Ratna Rajya Stop,27.695667,85.33762
+R2301357,Naya Baneshwor-Teaching,6,S0077,Apex College Stop,27.69907,85.338327
+R2301357,Naya Baneshwor-Teaching,7,S0046,Tempo Stop Near Old Baneshwar,27.700669,85.339677
+R2301357,Naya Baneshwor-Teaching,8,S0222,Old Baneshwor,27.70152,85.340204
+R2301357,Naya Baneshwor-Teaching,9,S0045,Ratopul,27.708117,85.336428
+R2301357,Naya Baneshwor-Teaching,10,S0204,Gaushala Chowk Stop,27.7082,85.3485
+R2301357,Naya Baneshwor-Teaching,11,S0052,JayaBageshwari Stop,27.711989,85.344999
+R2301357,Naya Baneshwor-Teaching,12,S0195,Chabahil चाबाहील,27.717,85.3465
+R2301358,Teaching-NayaBaneshwar,1,S0124,Teaching Hospital stop,27.734523,85.330711
+R2301358,Teaching-NayaBaneshwar,2,S0030,Chakrapath Stop-- South,27.739835,85.336915
+R2301358,Teaching-NayaBaneshwar,3,S0044,Narayan Gopal Chowk,27.740022,85.337201
+R2301358,Teaching-NayaBaneshwar,4,S0134,Gopi Krishna Stop,27.720629,85.346099
+R2301358,Teaching-NayaBaneshwar,5,S0217,Sukedhara Stop,27.7245,85.3438
+R2301358,Teaching-NayaBaneshwar,6,S0118,Dhumbarahi,27.731787,85.344365
+R2301358,Teaching-NayaBaneshwar,7,S0109,Chapal Karkhana stop,27.734807,85.342234
+R2301358,Teaching-NayaBaneshwar,8,S0195,Chabahil चाबाहील,27.717,85.3465
+R2301358,Teaching-NayaBaneshwar,9,S0052,JayaBageshwari Stop,27.711989,85.344999
+R2301358,Teaching-NayaBaneshwar,10,S0204,Gaushala Chowk Stop,27.7082,85.3485
+R2301358,Teaching-NayaBaneshwar,11,S0222,Old Baneshwor,27.70152,85.340204
+R2301358,Teaching-NayaBaneshwar,12,S0167,ShivaDarshan Hall Stop,27.692336,85.336217
+R2301358,Teaching-NayaBaneshwar,13,S0059,SchEMS,27.694334,85.337154
+R2301358,Teaching-NayaBaneshwar,14,S0205,Ratna Rajya Stop,27.695667,85.33762
+R2301358,Teaching-NayaBaneshwar,15,S0077,Apex College Stop,27.69907,85.338327
+R2301358,Teaching-NayaBaneshwar,16,S0046,Tempo Stop Near Old Baneshwar,27.700669,85.339677
+R2302674,Naikap-Koteshwor,1,S0291,Naikap Bus Stop,27.689104,85.263889
+R2302674,Naikap-Koteshwor,2,S0292,Bosigaun Chowk / Checkpost,27.690812,85.269415
+R2302674,Naikap-Koteshwor,3,S0275,Dui Adda (Dhunga Adda),27.691351,85.275754
+R2302674,Naikap-Koteshwor,4,S0130,Kalanki,27.6938,85.2818
+R2302674,Naikap-Koteshwor,5,S0295,Underpass East / Khasibazaar,27.695214,85.288912
+R2302674,Naikap-Koteshwor,6,S0296,Soalteemode East,27.696812,85.292541
+R2302674,Naikap-Koteshwor,7,S0263,Ravi Bhavan,27.6950507,85.2948778
+R2302674,Naikap-Koteshwor,8,S0192,Naya Naikap,27.701283,85.289181
+R2302674,Naikap-Koteshwor,9,S0023,Kalimati,27.69843,85.29944
+R2302674,Naikap-Koteshwor,10,S0276,Tek (Teku),27.696325,85.306981
+R2302674,Naikap-Koteshwor,11,S0056,Tripureshwor,27.694418,85.314128
+R2302674,Naikap-Koteshwor,12,S0185,Thapathali,27.691767,85.318016
+R2302674,Naikap-Koteshwor,13,S0132,Maitighar Stop--South,27.694112,85.319308
+R2302674,Naikap-Koteshwor,14,S0097,Maitighar,27.693965,85.320962
+R2302674,Naikap-Koteshwor,15,S0028,Babarmahal,27.692579,85.323905
+R2302674,Naikap-Koteshwor,16,S0099,Babarmahal Stop West,27.692337,85.3244
+R2302674,Naikap-Koteshwor,17,S0034,Buddhanagar Stop,27.68933,85.331039
+R2302674,Naikap-Koteshwor,18,S0062,Babarmahal Stop East,27.69032,85.328762
+R2302674,Naikap-Koteshwor,19,S0015,Hanumanthan Stop,27.693522,85.327603
+R2302674,Naikap-Koteshwor,20,S0304,Naya Baneshwor Chowk,27.691512,85.333065
+R2302674,Naikap-Koteshwor,21,S0069,Naya Baneshwor Tampoo Station,27.688586,85.334689
+R2302674,Naikap-Koteshwor,22,S0029,Minbhawan,27.6877,85.338462
+R2302674,Naikap-Koteshwor,23,S0127,Shantinagar Stop,27.687086,85.341372
+R2302674,Naikap-Koteshwor,24,S0017,Tinkune Stop,27.6835,85.3486
+R2302674,Naikap-Koteshwor,25,S0203,Tinkune Subidhanagar,27.686056,85.345662
+R2302674,Naikap-Koteshwor,26,S0107,Koteshwor Stop,27.6802001,85.3494489
+R2307657,Lubhu - Lagankhel,1,S0360,Lubhu Bus Park,27.6496,85.362
+R2307657,Lubhu - Lagankhel,2,S0361,Dungin / School Chowk,27.6535,85.3562
+R2307657,Lubhu - Lagankhel,3,S0362,Sanagaun Chowk,27.6582,85.3495
+R2307657,Lubhu - Lagankhel,4,S0363,Siddhipur / Tikathali Dobato,27.662,85.3442
+R2307657,Lubhu - Lagankhel,5,S0364,Imadol Krishna Mandir,27.6655,85.3388
+R2307657,Lubhu - Lagankhel,6,S0365,Ratamakai Chowk,27.668,85.3362
+R2307657,Lubhu - Lagankhel,7,S0366,KIST Hospital Chowk,27.6692,85.335
+R2307657,Lubhu - Lagankhel,8,S0020,Gwarko Chowk Stop,27.6705,85.334
+R2307657,Lubhu - Lagankhel,9,S0367,Prayag Pokhari / Patan College,27.6685,85.3265
+R2307657,Lubhu - Lagankhel,10,S0368,Patan Hospital Dobato,27.6672,85.3235
+R2307657,Lubhu - Lagankhel,11,S0112,Lagankhel Stop,27.6668,85.3219
+R2909799,Kamalbinayak-Ratnapark,1,S0025,Kamal Binayak,27.677327,85.436917
+R2909799,Kamalbinayak-Ratnapark,2,S0050,Mahalaxmi Stop,27.676102,85.433768
+R2909799,Kamalbinayak-Ratnapark,3,S0165,Mahakali Stop,27.675964,85.431831
+R2909799,Kamalbinayak-Ratnapark,4,S0199,Byasi Stop,27.674804,85.427443
+R2909799,Kamalbinayak-Ratnapark,5,S0081,Bhaktapur Hospital Stop,27.671988,85.422408
+R2909799,Kamalbinayak-Ratnapark,6,S0161,Bhaktapur Bus Park,27.671307,85.422416
+R2909799,Kamalbinayak-Ratnapark,7,S0014,Sallaghari North,27.674055,85.409969
+R2909799,Kamalbinayak-Ratnapark,8,S0098,Tinkune Bhaktapur,27.672289,85.406828
+R2909799,Kamalbinayak-Ratnapark,9,S0202,Srijananagar,27.672911,85.404267
+R2909799,Kamalbinayak-Ratnapark,10,S0147,Radhe Radhe,27.67459,85.39748
+R2909799,Kamalbinayak-Ratnapark,11,S0110,Thimi Stop,27.673336,85.386293
+R2909799,Kamalbinayak-Ratnapark,12,S0007,Chardobato,27.673553,85.381717
+R2909799,Kamalbinayak-Ratnapark,13,S0092,Gathaghar,27.674014,85.373177
+R2909799,Kamalbinayak-Ratnapark,14,S0004,Kaushaltar,27.674541,85.364349
+R2909799,Kamalbinayak-Ratnapark,15,S0022,Lokanthali North,27.674829,85.359862
+R2909799,Kamalbinayak-Ratnapark,16,S0159,Jadibuti,27.675459,85.3516
+R2909799,Kamalbinayak-Ratnapark,17,S0107,Koteshwor Stop,27.6802001,85.3494489
+R2909799,Kamalbinayak-Ratnapark,18,S0017,Tinkune Stop,27.6835,85.3486
+R2909799,Kamalbinayak-Ratnapark,19,S0203,Tinkune Subidhanagar,27.686056,85.345662
+R2909799,Kamalbinayak-Ratnapark,20,S0127,Shantinagar Stop,27.687086,85.341372
+R2909799,Kamalbinayak-Ratnapark,21,S0029,Minbhawan,27.6877,85.338462
+R2909799,Kamalbinayak-Ratnapark,22,S0069,Naya Baneshwor Tampoo Station,27.688586,85.334689
+R2909799,Kamalbinayak-Ratnapark,23,S0034,Buddhanagar Stop,27.68933,85.331039
+R2909799,Kamalbinayak-Ratnapark,24,S0062,Babarmahal Stop East,27.69032,85.328762
+R2909799,Kamalbinayak-Ratnapark,25,S0028,Babarmahal,27.692579,85.323905
+R2909799,Kamalbinayak-Ratnapark,26,S0099,Babarmahal Stop West,27.692337,85.3244
+R2909799,Kamalbinayak-Ratnapark,27,S0097,Maitighar,27.693965,85.320962
+R2909799,Kamalbinayak-Ratnapark,28,S0036,Singha Durbar West Stop,27.69659,85.321228
+R2909799,Kamalbinayak-Ratnapark,29,S0102,New Plaza Stop,27.700951,85.322918
+R2909799,Kamalbinayak-Ratnapark,30,S0005,Putalisadak Stop,27.70569,85.322552
+R2909799,Kamalbinayak-Ratnapark,31,S0031,Bagbazar Stop,27.705828,85.317204
+R2975649,Purano Buspark - Chabahil,1,S0198,Purano Bus Park,27.703654,85.316517
+R2975649,Purano Buspark - Chabahil,2,S0086,Tourism Board Stop,27.702332,85.3168
+R2975649,Purano Buspark - Chabahil,3,S0088,Bhadrakali,27.699352,85.317713
+R2975649,Purano Buspark - Chabahil,4,S0036,Singha Durbar West Stop,27.69659,85.321228
+R2975649,Purano Buspark - Chabahil,5,S0097,Maitighar,27.693965,85.320962
+R2975649,Purano Buspark - Chabahil,6,S0028,Babarmahal,27.692579,85.323905
+R2975649,Purano Buspark - Chabahil,7,S0099,Babarmahal Stop West,27.692337,85.3244
+R2975649,Purano Buspark - Chabahil,8,S0034,Buddhanagar Stop,27.68933,85.331039
+R2975649,Purano Buspark - Chabahil,9,S0062,Babarmahal Stop East,27.69032,85.328762
+R2975649,Purano Buspark - Chabahil,10,S0069,Naya Baneshwor Tampoo Station,27.688586,85.334689
+R2975649,Purano Buspark - Chabahil,11,S0029,Minbhawan,27.6877,85.338462
+R2975649,Purano Buspark - Chabahil,12,S0127,Shantinagar Stop,27.687086,85.341372
+R2975649,Purano Buspark - Chabahil,13,S0017,Tinkune Stop,27.6835,85.3486
+R2975649,Purano Buspark - Chabahil,14,S0203,Tinkune Subidhanagar,27.686056,85.345662
+R2975649,Purano Buspark - Chabahil,15,S0053,Gairigaun Stop,27.687275,85.35056
+R2975649,Purano Buspark - Chabahil,16,S0139,Sinamangal/Ring Road Stop सिनामंगल,27.6983,85.3533
+R2975649,Purano Buspark - Chabahil,17,S0070,Airport Bus Station,27.700728,85.353666
+R2975649,Purano Buspark - Chabahil,18,S0071,पिङ्गलस्थान,27.70581,85.347131
+R2975649,Purano Buspark - Chabahil,19,S0204,Gaushala Chowk Stop,27.7082,85.3485
+R2975649,Purano Buspark - Chabahil,20,S0052,JayaBageshwari Stop,27.711989,85.344999
+R2975649,Purano Buspark - Chabahil,21,S0195,Chabahil चाबाहील,27.717,85.3465
+R2975649,Purano Buspark - Chabahil,22,S0134,Gopi Krishna Stop,27.720629,85.346099
+R2975649,Purano Buspark - Chabahil,23,S0217,Sukedhara Stop,27.7245,85.3438
+R2975649,Purano Buspark - Chabahil,24,S0118,Dhumbarahi,27.731787,85.344365
+R2975649,Purano Buspark - Chabahil,25,S0109,Chapal Karkhana stop,27.734807,85.342234
+R2975649,Purano Buspark - Chabahil,26,S0030,Chakrapath Stop-- South,27.739835,85.336915
+R2975649,Purano Buspark - Chabahil,27,S0044,Narayan Gopal Chowk,27.740022,85.337201
+R2988806,Ratnapark-Dadhikot,1,S0013,Ratna Park,27.706705,85.315249
+R2988806,Ratnapark-Dadhikot,2,S0198,Purano Bus Park,27.703654,85.316517
+R2988806,Ratnapark-Dadhikot,3,S0086,Tourism Board Stop,27.702332,85.3168
+R2988806,Ratnapark-Dadhikot,4,S0278,"N.A.Bh (Nepal Army Headquarters, Bhadrakali)",27.69941,85.31481
+R2988806,Ratnapark-Dadhikot,5,S0088,Bhadrakali,27.699352,85.317713
+R2988806,Ratnapark-Dadhikot,6,S0036,Singha Durbar West Stop,27.69659,85.321228
+R2988806,Ratnapark-Dadhikot,7,S0097,Maitighar,27.693965,85.320962
+R2988806,Ratnapark-Dadhikot,8,S0028,Babarmahal,27.692579,85.323905
+R2988806,Ratnapark-Dadhikot,9,S0099,Babarmahal Stop West,27.692337,85.3244
+R2988806,Ratnapark-Dadhikot,10,S0034,Buddhanagar Stop,27.68933,85.331039
+R2988806,Ratnapark-Dadhikot,11,S0062,Babarmahal Stop East,27.69032,85.328762
+R2988806,Ratnapark-Dadhikot,12,S0015,Hanumanthan Stop,27.693522,85.327603
+R2988806,Ratnapark-Dadhikot,13,S0304,Naya Baneshwor Chowk,27.691512,85.333065
+R2988806,Ratnapark-Dadhikot,14,S0069,Naya Baneshwor Tampoo Station,27.688586,85.334689
+R2988806,Ratnapark-Dadhikot,15,S0029,Minbhawan,27.6877,85.338462
+R2988806,Ratnapark-Dadhikot,16,S0127,Shantinagar Stop,27.687086,85.341372
+R2988806,Ratnapark-Dadhikot,17,S0017,Tinkune Stop,27.6835,85.3486
+R2988806,Ratnapark-Dadhikot,18,S0203,Tinkune Subidhanagar,27.686056,85.345662
+R2988806,Ratnapark-Dadhikot,19,S0107,Koteshwor Stop,27.6802001,85.3494489
+R2988806,Ratnapark-Dadhikot,20,S0159,Jadibuti,27.675459,85.3516
+R2988806,Ratnapark-Dadhikot,21,S0022,Lokanthali North,27.674829,85.359862
+R2988806,Ratnapark-Dadhikot,22,S0004,Kaushaltar,27.674541,85.364349
+R2988806,Ratnapark-Dadhikot,23,S0312,Lokanthali South,27.671325,85.358214
+R2988806,Ratnapark-Dadhikot,24,S0313,Balkot Mod,27.668512,85.360124
+R2988806,Ratnapark-Dadhikot,25,S0314,Balkot Chowk,27.666418,85.36215
+R2988806,Ratnapark-Dadhikot,26,S0315,Gamcha Bus Stop,27.659812,85.365318
+R2988806,Ratnapark-Dadhikot,27,S0316,Biruwa / Dadhikot Mod,27.656214,85.367102
+R2988806,Ratnapark-Dadhikot,28,S0317,Dadhikot Health Post,27.653102,85.368845
+R2988806,Ratnapark-Dadhikot,29,S0092,Gathaghar,27.674014,85.373177
+R2988806,Ratnapark-Dadhikot,30,S0007,Chardobato,27.673553,85.381717
+R2988806,Ratnapark-Dadhikot,31,S0110,Thimi Stop,27.673336,85.386293
+R2988809,Purano Bus Park - Sakhu,1,S0198,Purano Bus Park,27.703654,85.316517
+R2988809,Purano Bus Park - Sakhu,2,S0086,Tourism Board Stop,27.702332,85.3168
+R2988809,Purano Bus Park - Sakhu,3,S0088,Bhadrakali,27.699352,85.317713
+R2988809,Purano Bus Park - Sakhu,4,S0036,Singha Durbar West Stop,27.69659,85.321228
+R2988809,Purano Bus Park - Sakhu,5,S0097,Maitighar,27.693965,85.320962
+R2988809,Purano Bus Park - Sakhu,6,S0028,Babarmahal,27.692579,85.323905
+R2988809,Purano Bus Park - Sakhu,7,S0099,Babarmahal Stop West,27.692337,85.3244
+R2988809,Purano Bus Park - Sakhu,8,S0034,Buddhanagar Stop,27.68933,85.331039
+R2988809,Purano Bus Park - Sakhu,9,S0062,Babarmahal Stop East,27.69032,85.328762
+R2988809,Purano Bus Park - Sakhu,10,S0069,Naya Baneshwor Tampoo Station,27.688586,85.334689
+R2988809,Purano Bus Park - Sakhu,11,S0029,Minbhawan,27.6877,85.338462
+R2988809,Purano Bus Park - Sakhu,12,S0127,Shantinagar Stop,27.687086,85.341372
+R2988809,Purano Bus Park - Sakhu,13,S0017,Tinkune Stop,27.6835,85.3486
+R2988809,Purano Bus Park - Sakhu,14,S0203,Tinkune Subidhanagar,27.686056,85.345662
+R2988809,Purano Bus Park - Sakhu,15,S0053,Gairigaun Stop,27.687275,85.35056
+R2988809,Purano Bus Park - Sakhu,16,S0139,Sinamangal/Ring Road Stop सिनामंगल,27.6983,85.3533
+R2988809,Purano Bus Park - Sakhu,17,S0070,Airport Bus Station,27.700728,85.353666
+R2988809,Purano Bus Park - Sakhu,18,S0071,पिङ्गलस्थान,27.70581,85.347131
+R2988809,Purano Bus Park - Sakhu,19,S0204,Gaushala Chowk Stop,27.7082,85.3485
+R2988809,Purano Bus Park - Sakhu,20,S0052,JayaBageshwari Stop,27.711989,85.344999
+R2988809,Purano Bus Park - Sakhu,21,S0195,Chabahil चाबाहील,27.717,85.3465
+R2988809,Purano Bus Park - Sakhu,22,S0172,Hyatt Regency,27.7194,85.354109
+R2988809,Purano Bus Park - Sakhu,23,S0026,Boudha,27.72072,85.36176
+R2988809,Purano Bus Park - Sakhu,24,S0135,Jorpati,27.721763,85.372632
+R2988809,Purano Bus Park - Sakhu,25,S0369,Thali,27.72694,85.40417
+R2988809,Purano Bus Park - Sakhu,26,S0370,Danchhi,27.72989,85.41778
+R2988809,Purano Bus Park - Sakhu,27,S0371,Bramhakhel,27.7299,85.4279
+R2988809,Purano Bus Park - Sakhu,28,S0146,Sakhu Stop,27.727684,85.461668
+R2988810,Purano Bus Park- Budhanilkantha,1,S0198,Purano Bus Park,27.703654,85.316517
+R2988810,Purano Bus Park- Budhanilkantha,2,S0086,Tourism Board Stop,27.702332,85.3168
+R2988810,Purano Bus Park- Budhanilkantha,3,S0067,Shahid Gate,27.699685,85.314748
+R2988810,Purano Bus Park- Budhanilkantha,4,S0076,Sundhara Stop,27.700542,85.313503
+R2988810,Purano Bus Park- Budhanilkantha,5,S0100,RNAC stop,27.70221,85.313638
+R2988810,Purano Bus Park- Budhanilkantha,6,S0171,Bir Hospital,27.705723,85.314074
+R2988810,Purano Bus Park- Budhanilkantha,7,S0166,Kantipath,27.708912,85.314607
+R2988810,Purano Bus Park- Budhanilkantha,8,S0152,Jamal,27.708829,85.315292
+R2988810,Purano Bus Park- Budhanilkantha,9,S0193,Lainchour Chowk Bus Stop,27.717048,85.316046
+R2988810,Purano Bus Park- Budhanilkantha,10,S0087,Lainchaur stop,27.718757,85.317697
+R2988810,Purano Bus Park- Budhanilkantha,11,S0149,Lazimpat stop,27.722523,85.320924
+R2988810,Purano Bus Park- Budhanilkantha,12,S0082,Panipokhari stop,27.730686,85.325986
+R2988810,Purano Bus Park- Budhanilkantha,13,S0124,Teaching Hospital stop,27.734523,85.330711
+R2988810,Purano Bus Park- Budhanilkantha,14,S0030,Chakrapath Stop-- South,27.739835,85.336915
+R2988810,Purano Bus Park- Budhanilkantha,15,S0044,Narayan Gopal Chowk,27.740022,85.337201
+R2988810,Purano Bus Park- Budhanilkantha,16,S0158,Bansbari stop,27.745758,85.342373
+R2988810,Purano Bus Park- Budhanilkantha,17,S0231,Golfutar stop,27.75144,85.345969
+R2988810,Purano Bus Park- Budhanilkantha,18,S0038,Deuba Chowk stop,27.773756,85.36033
+R2988810,Purano Bus Park- Budhanilkantha,19,S0096,Budhanilkantha Micro Stand,27.776459,85.361934
+R2988810,Purano Bus Park- Budhanilkantha,20,S0176,Budhanilkantha Stop,27.776743,85.36214
+R2988835,Ratna Park - Thankot,1,S0013,Ratna Park,27.706705,85.315249
+R2988835,Ratna Park - Thankot,2,S0198,Purano Bus Park,27.703654,85.316517
+R2988835,Ratna Park - Thankot,3,S0086,Tourism Board Stop,27.702332,85.3168
+R2988835,Ratna Park - Thankot,4,S0067,Shahid Gate,27.699685,85.314748
+R2988835,Ratna Park - Thankot,5,S0076,Sundhara Stop,27.700542,85.313503
+R2988835,Ratna Park - Thankot,6,S0056,Tripureshwor,27.694418,85.314128
+R2988835,Ratna Park - Thankot,7,S0023,Kalimati,27.69843,85.29944
+R2988835,Ratna Park - Thankot,8,S0130,Kalanki,27.6938,85.2818
+R2988835,Ratna Park - Thankot,9,S0054,Nikap,27.686091,85.26229
+R2988835,Ratna Park - Thankot,10,S0008,Sataungal,27.686988,85.2506
+R2988835,Ratna Park - Thankot,11,S0119,Thankot Checkpost,27.689002,85.227229
+R2988836,Thankot - Ratna Park,1,S0010,Thankot,27.706627,85.20574
+R2988836,Thankot - Ratna Park,2,S0119,Thankot Checkpost,27.689002,85.227229
+R2988836,Thankot - Ratna Park,3,S0008,Sataungal,27.686988,85.2506
+R2988836,Thankot - Ratna Park,4,S0054,Nikap,27.686091,85.26229
+R2988836,Thankot - Ratna Park,5,S0130,Kalanki,27.6938,85.2818
+R2988836,Thankot - Ratna Park,6,S0023,Kalimati,27.69843,85.29944
+R2988836,Thankot - Ratna Park,7,S0056,Tripureshwor,27.694418,85.314128
+R2988836,Thankot - Ratna Park,8,S0076,Sundhara Stop,27.700542,85.313503
+R2988836,Thankot - Ratna Park,9,S0100,RNAC stop,27.70221,85.313638
+R2988836,Thankot - Ratna Park,10,S0171,Bir Hospital,27.705723,85.314074
+R2988836,Thankot - Ratna Park,11,S0013,Ratna Park,27.706705,85.315249
+R2988890,Bagbazaar-Kamalbinayak,1,S0031,Bagbazar Stop,27.705828,85.317204
+R2988890,Bagbazaar-Kamalbinayak,2,S0198,Purano Bus Park,27.703654,85.316517
+R2988890,Bagbazaar-Kamalbinayak,3,S0086,Tourism Board Stop,27.702332,85.3168
+R2988890,Bagbazaar-Kamalbinayak,4,S0088,Bhadrakali,27.699352,85.317713
+R2988890,Bagbazaar-Kamalbinayak,5,S0036,Singha Durbar West Stop,27.69659,85.321228
+R2988890,Bagbazaar-Kamalbinayak,6,S0097,Maitighar,27.693965,85.320962
+R2988890,Bagbazaar-Kamalbinayak,7,S0028,Babarmahal,27.692579,85.323905
+R2988890,Bagbazaar-Kamalbinayak,8,S0099,Babarmahal Stop West,27.692337,85.3244
+R2988890,Bagbazaar-Kamalbinayak,9,S0034,Buddhanagar Stop,27.68933,85.331039
+R2988890,Bagbazaar-Kamalbinayak,10,S0062,Babarmahal Stop East,27.69032,85.328762
+R2988890,Bagbazaar-Kamalbinayak,11,S0069,Naya Baneshwor Tampoo Station,27.688586,85.334689
+R2988890,Bagbazaar-Kamalbinayak,12,S0029,Minbhawan,27.6877,85.338462
+R2988890,Bagbazaar-Kamalbinayak,13,S0127,Shantinagar Stop,27.687086,85.341372
+R2988890,Bagbazaar-Kamalbinayak,14,S0017,Tinkune Stop,27.6835,85.3486
+R2988890,Bagbazaar-Kamalbinayak,15,S0203,Tinkune Subidhanagar,27.686056,85.345662
+R2988890,Bagbazaar-Kamalbinayak,16,S0107,Koteshwor Stop,27.6802001,85.3494489
+R2988890,Bagbazaar-Kamalbinayak,17,S0159,Jadibuti,27.675459,85.3516
+R2988890,Bagbazaar-Kamalbinayak,18,S0022,Lokanthali North,27.674829,85.359862
+R2988890,Bagbazaar-Kamalbinayak,19,S0004,Kaushaltar,27.674541,85.364349
+R2988890,Bagbazaar-Kamalbinayak,20,S0092,Gathaghar,27.674014,85.373177
+R2988890,Bagbazaar-Kamalbinayak,21,S0007,Chardobato,27.673553,85.381717
+R2988890,Bagbazaar-Kamalbinayak,22,S0110,Thimi Stop,27.673336,85.386293
+R2988890,Bagbazaar-Kamalbinayak,23,S0147,Radhe Radhe,27.67459,85.39748
+R2988890,Bagbazaar-Kamalbinayak,24,S0202,Srijananagar,27.672911,85.404267
+R2988890,Bagbazaar-Kamalbinayak,25,S0098,Tinkune Bhaktapur,27.672289,85.406828
+R2988890,Bagbazaar-Kamalbinayak,26,S0014,Sallaghari North,27.674055,85.409969
+R2988890,Bagbazaar-Kamalbinayak,27,S0081,Bhaktapur Hospital Stop,27.671988,85.422408
+R2988890,Bagbazaar-Kamalbinayak,28,S0161,Bhaktapur Bus Park,27.671307,85.422416
+R2988890,Bagbazaar-Kamalbinayak,29,S0199,Byasi Stop,27.674804,85.427443
+R2988890,Bagbazaar-Kamalbinayak,30,S0165,Mahakali Stop,27.675964,85.431831
+R2988890,Bagbazaar-Kamalbinayak,31,S0050,Mahalaxmi Stop,27.676102,85.433768
+R2988890,Bagbazaar-Kamalbinayak,32,S0025,Kamal Binayak,27.677327,85.436917
+R2988891,Panauti - Ratnapark,1,S0198,Purano Bus Park,27.703654,85.316517
+R2988891,Panauti - Ratnapark,2,S0086,Tourism Board Stop,27.702332,85.3168
+R2988891,Panauti - Ratnapark,3,S0088,Bhadrakali,27.699352,85.317713
+R2988891,Panauti - Ratnapark,4,S0036,Singha Durbar West Stop,27.69659,85.321228
+R2988891,Panauti - Ratnapark,5,S0097,Maitighar,27.693965,85.320962
+R2988891,Panauti - Ratnapark,6,S0028,Babarmahal,27.692579,85.323905
+R2988891,Panauti - Ratnapark,7,S0099,Babarmahal Stop West,27.692337,85.3244
+R2988891,Panauti - Ratnapark,8,S0034,Buddhanagar Stop,27.68933,85.331039
+R2988891,Panauti - Ratnapark,9,S0062,Babarmahal Stop East,27.69032,85.328762
+R2988891,Panauti - Ratnapark,10,S0069,Naya Baneshwor Tampoo Station,27.688586,85.334689
+R2988891,Panauti - Ratnapark,11,S0029,Minbhawan,27.6877,85.338462
+R2988891,Panauti - Ratnapark,12,S0127,Shantinagar Stop,27.687086,85.341372
+R2988891,Panauti - Ratnapark,13,S0017,Tinkune Stop,27.6835,85.3486
+R2988891,Panauti - Ratnapark,14,S0203,Tinkune Subidhanagar,27.686056,85.345662
+R2988891,Panauti - Ratnapark,15,S0107,Koteshwor Stop,27.6802001,85.3494489
+R2988891,Panauti - Ratnapark,16,S0159,Jadibuti,27.675459,85.3516
+R2988891,Panauti - Ratnapark,17,S0022,Lokanthali North,27.674829,85.359862
+R2988891,Panauti - Ratnapark,18,S0004,Kaushaltar,27.674541,85.364349
+R2988891,Panauti - Ratnapark,19,S0092,Gathaghar,27.674014,85.373177
+R2988891,Panauti - Ratnapark,20,S0007,Chardobato,27.673553,85.381717
+R2988891,Panauti - Ratnapark,21,S0110,Thimi Stop,27.673336,85.386293
+R2988891,Panauti - Ratnapark,22,S0147,Radhe Radhe,27.67459,85.39748
+R2988891,Panauti - Ratnapark,23,S0202,Srijananagar,27.672911,85.404267
+R2988891,Panauti - Ratnapark,24,S0098,Tinkune Bhaktapur,27.672289,85.406828
+R2988891,Panauti - Ratnapark,25,S0095,Sallaghari Stop,27.669934,85.41116
+R2988891,Panauti - Ratnapark,26,S0229,Chundevi Bus Stop (Chunudevi),27.6669,85.4172
+R2988891,Panauti - Ratnapark,27,S0019,Barahi Movies,27.665917,85.421493
+R2988891,Panauti - Ratnapark,28,S0089,Suryabinayek,27.66574,85.424212
+R2988891,Panauti - Ratnapark,29,S0178,Adarsha,27.666463,85.433093
+R2988891,Panauti - Ratnapark,30,S0190,Jagati,27.666463,85.436463
+R2988891,Panauti - Ratnapark,31,S0117,Sanga,27.641915,85.477679
+R2988891,Panauti - Ratnapark,32,S0160,Bansdol,27.632201,85.494012
+R2988891,Panauti - Ratnapark,33,S0121,Banepa Tindobato,27.631218,85.51877
+R2988891,Panauti - Ratnapark,34,S0153,Poolbazar Bus Stop (Pulbazar),27.6322,85.5153
+R2988891,Panauti - Ratnapark,35,S0136,Banepa,27.630047,85.523985
+R2988891,Panauti - Ratnapark,36,S0208,Panauti,27.587136,85.513334
+R2988893,Ratnapark-Changu,1,S0031,Bagbazar Stop,27.705828,85.317204
+R2988893,Ratnapark-Changu,2,S0198,Purano Bus Park,27.703654,85.316517
+R2988893,Ratnapark-Changu,3,S0086,Tourism Board Stop,27.702332,85.3168
+R2988893,Ratnapark-Changu,4,S0088,Bhadrakali,27.699352,85.317713
+R2988893,Ratnapark-Changu,5,S0036,Singha Durbar West Stop,27.69659,85.321228
+R2988893,Ratnapark-Changu,6,S0097,Maitighar,27.693965,85.320962
+R2988893,Ratnapark-Changu,7,S0028,Babarmahal,27.692579,85.323905
+R2988893,Ratnapark-Changu,8,S0099,Babarmahal Stop West,27.692337,85.3244
+R2988893,Ratnapark-Changu,9,S0034,Buddhanagar Stop,27.68933,85.331039
+R2988893,Ratnapark-Changu,10,S0062,Babarmahal Stop East,27.69032,85.328762
+R2988893,Ratnapark-Changu,11,S0069,Naya Baneshwor Tampoo Station,27.688586,85.334689
+R2988893,Ratnapark-Changu,12,S0029,Minbhawan,27.6877,85.338462
+R2988893,Ratnapark-Changu,13,S0127,Shantinagar Stop,27.687086,85.341372
+R2988893,Ratnapark-Changu,14,S0017,Tinkune Stop,27.6835,85.3486
+R2988893,Ratnapark-Changu,15,S0203,Tinkune Subidhanagar,27.686056,85.345662
+R2988893,Ratnapark-Changu,16,S0107,Koteshwor Stop,27.6802001,85.3494489
+R2988893,Ratnapark-Changu,17,S0159,Jadibuti,27.675459,85.3516
+R2988893,Ratnapark-Changu,18,S0022,Lokanthali North,27.674829,85.359862
+R2988893,Ratnapark-Changu,19,S0004,Kaushaltar,27.674541,85.364349
+R2988893,Ratnapark-Changu,20,S0092,Gathaghar,27.674014,85.373177
+R2988893,Ratnapark-Changu,21,S0007,Chardobato,27.673553,85.381717
+R2988893,Ratnapark-Changu,22,S0110,Thimi Stop,27.673336,85.386293
+R2988893,Ratnapark-Changu,23,S0147,Radhe Radhe,27.67459,85.39748
+R2988893,Ratnapark-Changu,24,S0202,Srijananagar,27.672911,85.404267
+R2988893,Ratnapark-Changu,25,S0098,Tinkune Bhaktapur,27.672289,85.406828
+R2988893,Ratnapark-Changu,26,S0014,Sallaghari North,27.674055,85.409969
+R2988893,Ratnapark-Changu,27,S0081,Bhaktapur Hospital Stop,27.671988,85.422408
+R2988893,Ratnapark-Changu,28,S0161,Bhaktapur Bus Park,27.671307,85.422416
+R2988893,Ratnapark-Changu,29,S0199,Byasi Stop,27.674804,85.427443
+R2988893,Ratnapark-Changu,30,S0165,Mahakali Stop,27.675964,85.431831
+R2988893,Ratnapark-Changu,31,S0224,Changu Narayan,27.716321,85.43078
+R2988930,Kamal Binayak-Nagarkot,1,S0025,Kamal Binayak,27.677327,85.436917
+R2988930,Kamal Binayak-Nagarkot,2,S0039,Nagarkot,27.718471,85.519066
+R2988983,Chyamasingh to Ratnapark,1,S0145,Chyamasingh,27.673427,85.438368
+R2988983,Chyamasingh to Ratnapark,2,S0190,Jagati,27.666463,85.436463
+R2988983,Chyamasingh to Ratnapark,3,S0178,Adarsha,27.666463,85.433093
+R2988983,Chyamasingh to Ratnapark,4,S0089,Suryabinayek,27.66574,85.424212
+R2988983,Chyamasingh to Ratnapark,5,S0229,Chundevi Bus Stop (Chunudevi),27.6669,85.4172
+R2988983,Chyamasingh to Ratnapark,6,S0019,Barahi Movies,27.665917,85.421493
+R2988983,Chyamasingh to Ratnapark,7,S0095,Sallaghari Stop,27.669934,85.41116
+R2988983,Chyamasingh to Ratnapark,8,S0098,Tinkune Bhaktapur,27.672289,85.406828
+R2988983,Chyamasingh to Ratnapark,9,S0202,Srijananagar,27.672911,85.404267
+R2988983,Chyamasingh to Ratnapark,10,S0147,Radhe Radhe,27.67459,85.39748
+R2988983,Chyamasingh to Ratnapark,11,S0110,Thimi Stop,27.673336,85.386293
+R2988983,Chyamasingh to Ratnapark,12,S0007,Chardobato,27.673553,85.381717
+R2988983,Chyamasingh to Ratnapark,13,S0092,Gathaghar,27.674014,85.373177
+R2988983,Chyamasingh to Ratnapark,14,S0004,Kaushaltar,27.674541,85.364349
+R2988983,Chyamasingh to Ratnapark,15,S0022,Lokanthali North,27.674829,85.359862
+R2988983,Chyamasingh to Ratnapark,16,S0159,Jadibuti,27.675459,85.3516
+R2988983,Chyamasingh to Ratnapark,17,S0107,Koteshwor Stop,27.6802001,85.3494489
+R2988983,Chyamasingh to Ratnapark,18,S0017,Tinkune Stop,27.6835,85.3486
+R2988983,Chyamasingh to Ratnapark,19,S0203,Tinkune Subidhanagar,27.686056,85.345662
+R2988983,Chyamasingh to Ratnapark,20,S0127,Shantinagar Stop,27.687086,85.341372
+R2988983,Chyamasingh to Ratnapark,21,S0029,Minbhawan,27.6877,85.338462
+R2988983,Chyamasingh to Ratnapark,22,S0069,Naya Baneshwor Tampoo Station,27.688586,85.334689
+R2988983,Chyamasingh to Ratnapark,23,S0034,Buddhanagar Stop,27.68933,85.331039
+R2988983,Chyamasingh to Ratnapark,24,S0062,Babarmahal Stop East,27.69032,85.328762
+R2988983,Chyamasingh to Ratnapark,25,S0028,Babarmahal,27.692579,85.323905
+R2988983,Chyamasingh to Ratnapark,26,S0099,Babarmahal Stop West,27.692337,85.3244
+R2988983,Chyamasingh to Ratnapark,27,S0097,Maitighar,27.693965,85.320962
+R2988983,Chyamasingh to Ratnapark,28,S0036,Singha Durbar West Stop,27.69659,85.321228
+R2988983,Chyamasingh to Ratnapark,29,S0088,Bhadrakali,27.699352,85.317713
+R2988983,Chyamasingh to Ratnapark,30,S0067,Shahid Gate,27.699685,85.314748
+R2988983,Chyamasingh to Ratnapark,31,S0076,Sundhara Stop,27.700542,85.313503
+R2988983,Chyamasingh to Ratnapark,32,S0100,RNAC stop,27.70221,85.313638
+R2988983,Chyamasingh to Ratnapark,33,S0171,Bir Hospital,27.705723,85.314074
+R2988983,Chyamasingh to Ratnapark,34,S0013,Ratna Park,27.706705,85.315249
+R2988983,Chyamasingh to Ratnapark,35,S0198,Purano Bus Park,27.703654,85.316517
+R2988993,Ratnapark - Dhulikhel,1,S0198,Purano Bus Park,27.703654,85.316517
+R2988993,Ratnapark - Dhulikhel,2,S0086,Tourism Board Stop,27.702332,85.3168
+R2988993,Ratnapark - Dhulikhel,3,S0088,Bhadrakali,27.699352,85.317713
+R2988993,Ratnapark - Dhulikhel,4,S0036,Singha Durbar West Stop,27.69659,85.321228
+R2988993,Ratnapark - Dhulikhel,5,S0097,Maitighar,27.693965,85.320962
+R2988993,Ratnapark - Dhulikhel,6,S0028,Babarmahal,27.692579,85.323905
+R2988993,Ratnapark - Dhulikhel,7,S0099,Babarmahal Stop West,27.692337,85.3244
+R2988993,Ratnapark - Dhulikhel,8,S0034,Buddhanagar Stop,27.68933,85.331039
+R2988993,Ratnapark - Dhulikhel,9,S0062,Babarmahal Stop East,27.69032,85.328762
+R2988993,Ratnapark - Dhulikhel,10,S0069,Naya Baneshwor Tampoo Station,27.688586,85.334689
+R2988993,Ratnapark - Dhulikhel,11,S0029,Minbhawan,27.6877,85.338462
+R2988993,Ratnapark - Dhulikhel,12,S0127,Shantinagar Stop,27.687086,85.341372
+R2988993,Ratnapark - Dhulikhel,13,S0017,Tinkune Stop,27.6835,85.3486
+R2988993,Ratnapark - Dhulikhel,14,S0203,Tinkune Subidhanagar,27.686056,85.345662
+R2988993,Ratnapark - Dhulikhel,15,S0107,Koteshwor Stop,27.6802001,85.3494489
+R2988993,Ratnapark - Dhulikhel,16,S0159,Jadibuti,27.675459,85.3516
+R2988993,Ratnapark - Dhulikhel,17,S0022,Lokanthali North,27.674829,85.359862
+R2988993,Ratnapark - Dhulikhel,18,S0004,Kaushaltar,27.674541,85.364349
+R2988993,Ratnapark - Dhulikhel,19,S0092,Gathaghar,27.674014,85.373177
+R2988993,Ratnapark - Dhulikhel,20,S0007,Chardobato,27.673553,85.381717
+R2988993,Ratnapark - Dhulikhel,21,S0110,Thimi Stop,27.673336,85.386293
+R2988993,Ratnapark - Dhulikhel,22,S0147,Radhe Radhe,27.67459,85.39748
+R2988993,Ratnapark - Dhulikhel,23,S0202,Srijananagar,27.672911,85.404267
+R2988993,Ratnapark - Dhulikhel,24,S0098,Tinkune Bhaktapur,27.672289,85.406828
+R2988993,Ratnapark - Dhulikhel,25,S0095,Sallaghari Stop,27.669934,85.41116
+R2988993,Ratnapark - Dhulikhel,26,S0229,Chundevi Bus Stop (Chunudevi),27.6669,85.4172
+R2988993,Ratnapark - Dhulikhel,27,S0019,Barahi Movies,27.665917,85.421493
+R2988993,Ratnapark - Dhulikhel,28,S0089,Suryabinayek,27.66574,85.424212
+R2988993,Ratnapark - Dhulikhel,29,S0178,Adarsha,27.666463,85.433093
+R2988993,Ratnapark - Dhulikhel,30,S0190,Jagati,27.666463,85.436463
+R2988993,Ratnapark - Dhulikhel,31,S0117,Sanga,27.641915,85.477679
+R2988993,Ratnapark - Dhulikhel,32,S0160,Bansdol,27.632201,85.494012
+R2988993,Ratnapark - Dhulikhel,33,S0121,Banepa Tindobato,27.631218,85.51877
+R2988993,Ratnapark - Dhulikhel,34,S0153,Poolbazar Bus Stop (Pulbazar),27.6322,85.5153
+R2988993,Ratnapark - Dhulikhel,35,S0136,Banepa,27.630047,85.523985
+R2988993,Ratnapark - Dhulikhel,36,S0001,KU Bus Stand (26 Kilo),27.625178,85.540892
+R2988993,Ratnapark - Dhulikhel,37,S0183,Dhulikhel Stop,27.618415,85.554015
+R2989012,Ratna Park - Daksinkali,1,S0198,Purano Bus Park,27.703654,85.316517
+R2989012,Ratna Park - Daksinkali,2,S0086,Tourism Board Stop,27.702332,85.3168
+R2989012,Ratna Park - Daksinkali,3,S0067,Shahid Gate,27.699685,85.314748
+R2989012,Ratna Park - Daksinkali,4,S0076,Sundhara Stop,27.700542,85.313503
+R2989012,Ratna Park - Daksinkali,5,S0056,Tripureshwor,27.694418,85.314128
+R2989012,Ratna Park - Daksinkali,6,S0023,Kalimati,27.69843,85.29944
+R2989012,Ratna Park - Daksinkali,7,S0230,Balkhu,27.6823,85.2985
+R2989012,Ratna Park - Daksinkali,8,S0233,Balkhu Stop,27.684798,85.298592
+R2989012,Ratna Park - Daksinkali,9,S0225,Kumari Club,27.682663,85.298599
+R2989012,Ratna Park - Daksinkali,10,S0043,TU Gate,27.67888,85.297212
+R2989012,Ratna Park - Daksinkali,11,S0049,Naya Bato,27.676114,85.293897
+R2989012,Ratna Park - Daksinkali,12,S0073,Chobhar Gate,27.670449,85.290622
+R2989012,Ratna Park - Daksinkali,13,S0173,Dakshinkali,27.613062,85.264669
+R2989021,Lagankhel-Chapagaun,1,S0219,Lagankhel,27.662461,85.323946
+R2989021,Lagankhel-Chapagaun,2,S0194,Batuk Bhairav,27.664475,85.324003
+R2989021,Lagankhel-Chapagaun,3,S0112,Lagankhel Stop,27.6668,85.3219
+R2989021,Lagankhel-Chapagaun,4,S0223,Lalitpur Industrial Estate,27.667312,85.322256
+R2989021,Lagankhel-Chapagaun,5,S0011,Satdobato Chowk Stop,27.6656,85.3283
+R2989021,Lagankhel-Chapagaun,6,S0216,Thecho,27.6153,85.319176
+R2989021,Lagankhel-Chapagaun,7,S0060,Chapagaun,27.592941,85.324403
+R2989036,Purano Bus Park - jorpati,1,S0198,Purano Bus Park,27.703654,85.316517
+R2989036,Purano Bus Park - jorpati,2,S0086,Tourism Board Stop,27.702332,85.3168
+R2989036,Purano Bus Park - jorpati,3,S0088,Bhadrakali,27.699352,85.317713
+R2989036,Purano Bus Park - jorpati,4,S0036,Singha Durbar West Stop,27.69659,85.321228
+R2989036,Purano Bus Park - jorpati,5,S0097,Maitighar,27.693965,85.320962
+R2989036,Purano Bus Park - jorpati,6,S0028,Babarmahal,27.692579,85.323905
+R2989036,Purano Bus Park - jorpati,7,S0099,Babarmahal Stop West,27.692337,85.3244
+R2989036,Purano Bus Park - jorpati,8,S0034,Buddhanagar Stop,27.68933,85.331039
+R2989036,Purano Bus Park - jorpati,9,S0062,Babarmahal Stop East,27.69032,85.328762
+R2989036,Purano Bus Park - jorpati,10,S0069,Naya Baneshwor Tampoo Station,27.688586,85.334689
+R2989036,Purano Bus Park - jorpati,11,S0029,Minbhawan,27.6877,85.338462
+R2989036,Purano Bus Park - jorpati,12,S0127,Shantinagar Stop,27.687086,85.341372
+R2989036,Purano Bus Park - jorpati,13,S0017,Tinkune Stop,27.6835,85.3486
+R2989036,Purano Bus Park - jorpati,14,S0203,Tinkune Subidhanagar,27.686056,85.345662
+R2989036,Purano Bus Park - jorpati,15,S0053,Gairigaun Stop,27.687275,85.35056
+R2989036,Purano Bus Park - jorpati,16,S0139,Sinamangal/Ring Road Stop सिनामंगल,27.6983,85.3533
+R2989036,Purano Bus Park - jorpati,17,S0070,Airport Bus Station,27.700728,85.353666
+R2989036,Purano Bus Park - jorpati,18,S0071,पिङ्गलस्थान,27.70581,85.347131
+R2989036,Purano Bus Park - jorpati,19,S0204,Gaushala Chowk Stop,27.7082,85.3485
+R2989036,Purano Bus Park - jorpati,20,S0052,JayaBageshwari Stop,27.711989,85.344999
+R2989036,Purano Bus Park - jorpati,21,S0195,Chabahil चाबाहील,27.717,85.3465
+R2989036,Purano Bus Park - jorpati,22,S0172,Hyatt Regency,27.7194,85.354109
+R2989036,Purano Bus Park - jorpati,23,S0026,Boudha,27.72072,85.36176
+R2989036,Purano Bus Park - jorpati,24,S0135,Jorpati,27.721763,85.372632
+R2989074,Sakhu - Purano Bus Park,1,S0146,Sakhu Stop,27.727684,85.461668
+R2989074,Sakhu - Purano Bus Park,2,S0371,Bramhakhel,27.7299,85.4279
+R2989074,Sakhu - Purano Bus Park,3,S0370,Danchhi,27.72989,85.41778
+R2989074,Sakhu - Purano Bus Park,4,S0369,Thali,27.72694,85.40417
+R2989074,Sakhu - Purano Bus Park,5,S0135,Jorpati,27.721763,85.372632
+R2989074,Sakhu - Purano Bus Park,6,S0026,Boudha,27.72072,85.36176
+R2989074,Sakhu - Purano Bus Park,7,S0172,Hyatt Regency,27.7194,85.354109
+R2989074,Sakhu - Purano Bus Park,8,S0195,Chabahil चाबाहील,27.717,85.3465
+R2989074,Sakhu - Purano Bus Park,9,S0052,JayaBageshwari Stop,27.711989,85.344999
+R2989074,Sakhu - Purano Bus Park,10,S0204,Gaushala Chowk Stop,27.7082,85.3485
+R2989074,Sakhu - Purano Bus Park,11,S0222,Old Baneshwor,27.70152,85.340204
+R2989074,Sakhu - Purano Bus Park,12,S0035,Maiti Devi chowk,27.703944,85.332682
+R2989074,Sakhu - Purano Bus Park,13,S0055,Dillibazaar stop,27.70537,85.326759
+R2989074,Sakhu - Purano Bus Park,14,S0005,Putalisadak Stop,27.70569,85.322552
+R2989074,Sakhu - Purano Bus Park,15,S0031,Bagbazar Stop,27.705828,85.317204
+R2989074,Sakhu - Purano Bus Park,16,S0198,Purano Bus Park,27.703654,85.316517
+R2989075,Jorpati - Purano Bus Park,1,S0135,Jorpati,27.721763,85.372632
+R2989075,Jorpati - Purano Bus Park,2,S0026,Boudha,27.72072,85.36176
+R2989075,Jorpati - Purano Bus Park,3,S0172,Hyatt Regency,27.7194,85.354109
+R2989075,Jorpati - Purano Bus Park,4,S0195,Chabahil चाबाहील,27.717,85.3465
+R2989075,Jorpati - Purano Bus Park,5,S0052,JayaBageshwari Stop,27.711989,85.344999
+R2989075,Jorpati - Purano Bus Park,6,S0204,Gaushala Chowk Stop,27.7082,85.3485
+R2989075,Jorpati - Purano Bus Park,7,S0222,Old Baneshwor,27.70152,85.340204
+R2989075,Jorpati - Purano Bus Park,8,S0035,Maiti Devi chowk,27.703944,85.332682
+R2989075,Jorpati - Purano Bus Park,9,S0055,Dillibazaar stop,27.70537,85.326759
+R2989075,Jorpati - Purano Bus Park,10,S0005,Putalisadak Stop,27.70569,85.322552
+R2989075,Jorpati - Purano Bus Park,11,S0031,Bagbazar Stop,27.705828,85.317204
+R2989075,Jorpati - Purano Bus Park,12,S0198,Purano Bus Park,27.703654,85.316517
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,1,S0081,Bhaktapur Hospital Stop,27.671988,85.422408
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,2,S0161,Bhaktapur Bus Park,27.671307,85.422416
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,3,S0014,Sallaghari North,27.674055,85.409969
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,4,S0319,Siddhapokhari,27.672102,85.415214
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,5,S0202,Srijananagar,27.672911,85.404267
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,6,S0147,Radhe Radhe,27.67459,85.39748
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,7,S0322,Nagadesh,27.676214,85.385102
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,8,S0323,Purano Thimi / Siddhikali Chowk,27.678125,85.378942
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,9,S0324,Balkumari Thimi,27.67631,85.373115
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,10,S0325,Gatthaghar,27.673981,85.366812
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,11,S0326,Kausaltar,27.672102,85.361921
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,12,S0312,Lokanthali South,27.671325,85.358214
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,13,S0159,Jadibuti,27.675459,85.3516
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,14,S0057,Nikosera,27.680054,85.39845
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,15,S0150,Baakha Bazaar,27.682879,85.385831
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,16,S0181,SanoThimi,27.682682,85.37234
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,17,S0156,Pepsi Cola Chowk,27.689209,85.360354
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,18,S0107,Koteshwor Stop,27.6802001,85.3494489
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,19,S0017,Tinkune Stop,27.6835,85.3486
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,20,S0203,Tinkune Subidhanagar,27.686056,85.345662
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,21,S0127,Shantinagar Stop,27.687086,85.341372
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,22,S0029,Minbhawan,27.6877,85.338462
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,23,S0069,Naya Baneshwor Tampoo Station,27.688586,85.334689
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,24,S0034,Buddhanagar Stop,27.68933,85.331039
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,25,S0304,Naya Baneshwor Chowk,27.691512,85.333065
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,26,S0015,Hanumanthan Stop,27.693522,85.327603
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,27,S0062,Babarmahal Stop East,27.69032,85.328762
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,28,S0028,Babarmahal,27.692579,85.323905
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,29,S0099,Babarmahal Stop West,27.692337,85.3244
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,30,S0097,Maitighar,27.693965,85.320962
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,31,S0036,Singha Durbar West Stop,27.69659,85.321228
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,32,S0102,New Plaza Stop,27.700951,85.322918
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,33,S0005,Putalisadak Stop,27.70569,85.322552
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,34,S0278,"N.A.Bh (Nepal Army Headquarters, Bhadrakali)",27.69941,85.31481
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,35,S0013,Ratna Park,27.706705,85.315249
+R3014451,Bhaktapur-Purano Thimi- Purano Bus Park,36,S0031,Bagbazar Stop,27.705828,85.317204
+R3020174,Purano Buspark-Gothatar,1,S0198,Purano Bus Park,27.703654,85.316517
+R3020174,Purano Buspark-Gothatar,2,S0137,Ghantaghar (घण्टाघर) stop,27.708043,85.317116
+R3020174,Purano Buspark-Gothatar,3,S0094,Krishna Pauroti Stop,27.710369,85.322281
+R3020174,Purano Buspark-Gothatar,4,S0042,Kamaladi Road (कमलादी) stop,27.707997,85.321282
+R3020174,Purano Buspark-Gothatar,5,S0005,Putalisadak Stop,27.70569,85.322552
+R3020174,Purano Buspark-Gothatar,6,S0055,Dillibazaar stop,27.70537,85.326759
+R3020174,Purano Buspark-Gothatar,7,S0035,Maiti Devi chowk,27.703944,85.332682
+R3020174,Purano Buspark-Gothatar,8,S0222,Old Baneshwor,27.70152,85.340204
+R3020174,Purano Buspark-Gothatar,9,S0016,Bhimsengola stop,27.700377,85.343256
+R3020174,Purano Buspark-Gothatar,10,S0148,Sinamangal,27.698432,85.348521
+R3020174,Purano Buspark-Gothatar,11,S0027,KMC stop,27.695834,85.352791
+R3020174,Purano Buspark-Gothatar,12,S0139,Sinamangal/Ring Road Stop सिनामंगल,27.6983,85.3533
+R3020174,Purano Buspark-Gothatar,13,S0053,Gairigaun Stop,27.687275,85.35056
+R3020174,Purano Buspark-Gothatar,14,S0107,Koteshwor Stop,27.6802001,85.3494489
+R3020174,Purano Buspark-Gothatar,15,S0159,Jadibuti,27.675459,85.3516
+R3020174,Purano Buspark-Gothatar,16,S0156,Pepsi Cola Chowk,27.689209,85.360354
+R3020174,Purano Buspark-Gothatar,17,S0120,Gothatar,27.703133,85.369443
+R3020212,Dhokashi- Chobar gate- Ratnapark,1,S0073,Chobhar Gate,27.670449,85.290622
+R3020212,Dhokashi- Chobar gate- Ratnapark,2,S0009,Dhokashi,27.670661,85.279034
+R3020212,Dhokashi- Chobar gate- Ratnapark,3,S0049,Naya Bato,27.676114,85.293897
+R3020212,Dhokashi- Chobar gate- Ratnapark,4,S0043,TU Gate,27.67888,85.297212
+R3020212,Dhokashi- Chobar gate- Ratnapark,5,S0225,Kumari Club,27.682663,85.298599
+R3020212,Dhokashi- Chobar gate- Ratnapark,6,S0230,Balkhu,27.6823,85.2985
+R3020212,Dhokashi- Chobar gate- Ratnapark,7,S0233,Balkhu Stop,27.684798,85.298592
+R3020212,Dhokashi- Chobar gate- Ratnapark,8,S0023,Kalimati,27.69843,85.29944
+R3020212,Dhokashi- Chobar gate- Ratnapark,9,S0056,Tripureshwor,27.694418,85.314128
+R3020212,Dhokashi- Chobar gate- Ratnapark,10,S0067,Shahid Gate,27.699685,85.314748
+R3020212,Dhokashi- Chobar gate- Ratnapark,11,S0076,Sundhara Stop,27.700542,85.313503
+R3020212,Dhokashi- Chobar gate- Ratnapark,12,S0086,Tourism Board Stop,27.702332,85.3168
+R3020212,Dhokashi- Chobar gate- Ratnapark,13,S0198,Purano Bus Park,27.703654,85.316517
+R3020213,Ratna Park - Panga Dobato- Dhokashi,1,S0198,Purano Bus Park,27.703654,85.316517
+R3020213,Ratna Park - Panga Dobato- Dhokashi,2,S0086,Tourism Board Stop,27.702332,85.3168
+R3020213,Ratna Park - Panga Dobato- Dhokashi,3,S0067,Shahid Gate,27.699685,85.314748
+R3020213,Ratna Park - Panga Dobato- Dhokashi,4,S0076,Sundhara Stop,27.700542,85.313503
+R3020213,Ratna Park - Panga Dobato- Dhokashi,5,S0056,Tripureshwor,27.694418,85.314128
+R3020213,Ratna Park - Panga Dobato- Dhokashi,6,S0023,Kalimati,27.69843,85.29944
+R3020213,Ratna Park - Panga Dobato- Dhokashi,7,S0230,Balkhu,27.6823,85.2985
+R3020213,Ratna Park - Panga Dobato- Dhokashi,8,S0233,Balkhu Stop,27.684798,85.298592
+R3020213,Ratna Park - Panga Dobato- Dhokashi,9,S0225,Kumari Club,27.682663,85.298599
+R3020213,Ratna Park - Panga Dobato- Dhokashi,10,S0043,TU Gate,27.67888,85.297212
+R3020213,Ratna Park - Panga Dobato- Dhokashi,11,S0049,Naya Bato,27.676114,85.293897
+R3020213,Ratna Park - Panga Dobato- Dhokashi,12,S0047,Tinkune (Kirtipur side),27.676654,85.283543
+R3020213,Ratna Park - Panga Dobato- Dhokashi,13,S0221,Naya Bazar,27.677149,85.28139
+R3020213,Ratna Park - Panga Dobato- Dhokashi,14,S0084,Panga Dobato,27.674758,85.280408
+R3020213,Ratna Park - Panga Dobato- Dhokashi,15,S0009,Dhokashi,27.670661,85.279034
+R3020231,Ratna Park - Panga Dobato- Nagaun- Bhatkepati,1,S0198,Purano Bus Park,27.703654,85.316517
+R3020231,Ratna Park - Panga Dobato- Nagaun- Bhatkepati,2,S0086,Tourism Board Stop,27.702332,85.3168
+R3020231,Ratna Park - Panga Dobato- Nagaun- Bhatkepati,3,S0067,Shahid Gate,27.699685,85.314748
+R3020231,Ratna Park - Panga Dobato- Nagaun- Bhatkepati,4,S0076,Sundhara Stop,27.700542,85.313503
+R3020231,Ratna Park - Panga Dobato- Nagaun- Bhatkepati,5,S0056,Tripureshwor,27.694418,85.314128
+R3020231,Ratna Park - Panga Dobato- Nagaun- Bhatkepati,6,S0023,Kalimati,27.69843,85.29944
+R3020231,Ratna Park - Panga Dobato- Nagaun- Bhatkepati,7,S0230,Balkhu,27.6823,85.2985
+R3020231,Ratna Park - Panga Dobato- Nagaun- Bhatkepati,8,S0233,Balkhu Stop,27.684798,85.298592
+R3020231,Ratna Park - Panga Dobato- Nagaun- Bhatkepati,9,S0225,Kumari Club,27.682663,85.298599
+R3020231,Ratna Park - Panga Dobato- Nagaun- Bhatkepati,10,S0043,TU Gate,27.67888,85.297212
+R3020231,Ratna Park - Panga Dobato- Nagaun- Bhatkepati,11,S0049,Naya Bato,27.676114,85.293897
+R3020231,Ratna Park - Panga Dobato- Nagaun- Bhatkepati,12,S0047,Tinkune (Kirtipur side),27.676654,85.283543
+R3020231,Ratna Park - Panga Dobato- Nagaun- Bhatkepati,13,S0221,Naya Bazar,27.677149,85.28139
+R3020231,Ratna Park - Panga Dobato- Nagaun- Bhatkepati,14,S0084,Panga Dobato,27.674758,85.280408
+R3020231,Ratna Park - Panga Dobato- Nagaun- Bhatkepati,15,S0085,Nagaon Dobato,27.674795,85.277757
+R3020231,Ratna Park - Panga Dobato- Nagaun- Bhatkepati,16,S0048,Bhatkepati,27.665215,85.254394
+R3020244,Attrekhle-Purano Buspark,1,S0198,Purano Bus Park,27.703654,85.316517
+R3020244,Attrekhle-Purano Buspark,2,S0086,Tourism Board Stop,27.702332,85.3168
+R3020244,Attrekhle-Purano Buspark,3,S0088,Bhadrakali,27.699352,85.317713
+R3020244,Attrekhle-Purano Buspark,4,S0036,Singha Durbar West Stop,27.69659,85.321228
+R3020244,Attrekhle-Purano Buspark,5,S0097,Maitighar,27.693965,85.320962
+R3020244,Attrekhle-Purano Buspark,6,S0028,Babarmahal,27.692579,85.323905
+R3020244,Attrekhle-Purano Buspark,7,S0099,Babarmahal Stop West,27.692337,85.3244
+R3020244,Attrekhle-Purano Buspark,8,S0034,Buddhanagar Stop,27.68933,85.331039
+R3020244,Attrekhle-Purano Buspark,9,S0062,Babarmahal Stop East,27.69032,85.328762
+R3020244,Attrekhle-Purano Buspark,10,S0069,Naya Baneshwor Tampoo Station,27.688586,85.334689
+R3020244,Attrekhle-Purano Buspark,11,S0029,Minbhawan,27.6877,85.338462
+R3020244,Attrekhle-Purano Buspark,12,S0127,Shantinagar Stop,27.687086,85.341372
+R3020244,Attrekhle-Purano Buspark,13,S0017,Tinkune Stop,27.6835,85.3486
+R3020244,Attrekhle-Purano Buspark,14,S0203,Tinkune Subidhanagar,27.686056,85.345662
+R3020244,Attrekhle-Purano Buspark,15,S0053,Gairigaun Stop,27.687275,85.35056
+R3020244,Attrekhle-Purano Buspark,16,S0139,Sinamangal/Ring Road Stop सिनामंगल,27.6983,85.3533
+R3020244,Attrekhle-Purano Buspark,17,S0070,Airport Bus Station,27.700728,85.353666
+R3020244,Attrekhle-Purano Buspark,18,S0071,पिङ्गलस्थान,27.70581,85.347131
+R3020244,Attrekhle-Purano Buspark,19,S0204,Gaushala Chowk Stop,27.7082,85.3485
+R3020244,Attrekhle-Purano Buspark,20,S0052,JayaBageshwari Stop,27.711989,85.344999
+R3020244,Attrekhle-Purano Buspark,21,S0195,Chabahil चाबाहील,27.717,85.3465
+R3020244,Attrekhle-Purano Buspark,22,S0172,Hyatt Regency,27.7194,85.354109
+R3020244,Attrekhle-Purano Buspark,23,S0026,Boudha,27.72072,85.36176
+R3020244,Attrekhle-Purano Buspark,24,S0135,Jorpati,27.721763,85.372632
+R3020244,Attrekhle-Purano Buspark,25,S0125,Attarkhel,27.734548,85.382452
+R3028077,Balaju-Ratnapark,1,S0113,Balaju,27.7275,85.3005
+R3028077,Balaju-Ratnapark,2,S0177,Balaju Chowk Bus Stop,27.726165,85.304975
+R3028077,Balaju-Ratnapark,3,S0079,Sorhakhutte,27.718967,85.309619
+R3028077,Balaju-Ratnapark,4,S0003,Shobhabhagwati,27.718204,85.312138
+R3028077,Balaju-Ratnapark,5,S0207,ASCOL Stop,27.71738,85.314811
+R3028077,Balaju-Ratnapark,6,S0193,Lainchour Chowk Bus Stop,27.717048,85.316046
+R3028077,Balaju-Ratnapark,7,S0152,Jamal,27.708829,85.315292
+R3028077,Balaju-Ratnapark,8,S0166,Kantipath,27.708912,85.314607
+R3028077,Balaju-Ratnapark,9,S0137,Ghantaghar (घण्टाघर) stop,27.708043,85.317116
+R3028077,Balaju-Ratnapark,10,S0013,Ratna Park,27.706705,85.315249
+R3068536,Kalanki- Lagankhel,1,S0130,Kalanki,27.6938,85.2818
+R3068536,Kalanki- Lagankhel,2,S0345,Khasi Bazaar,27.6895,85.2845
+R3068536,Kalanki- Lagankhel,3,S0230,Balkhu,27.6823,85.2985
+R3068536,Kalanki- Lagankhel,4,S0233,Balkhu Stop,27.684798,85.298592
+R3068536,Kalanki- Lagankhel,5,S0189,Sanepa height,27.674468,85.302217
+R3068536,Kalanki- Lagankhel,6,S0106,Nakhu Stop,27.668972,85.306293
+R3068536,Kalanki- Lagankhel,7,S0214,Ekantakuna,27.6667865,85.308215
+R3068536,Kalanki- Lagankhel,8,S0011,Satdobato Chowk Stop,27.6656,85.3283
+R3068536,Kalanki- Lagankhel,9,S0219,Lagankhel,27.662461,85.323946
+R3070257,kalanki-Balkumari,1,S0130,Kalanki,27.6938,85.2818
+R3070257,kalanki-Balkumari,2,S0023,Kalimati,27.69843,85.29944
+R3070257,kalanki-Balkumari,3,S0056,Tripureshwor,27.694418,85.314128
+R3070257,kalanki-Balkumari,4,S0185,Thapathali,27.691767,85.318016
+R3070257,kalanki-Balkumari,5,S0132,Maitighar Stop--South,27.694112,85.319308
+R3070257,kalanki-Balkumari,6,S0097,Maitighar,27.693965,85.320962
+R3070257,kalanki-Balkumari,7,S0028,Babarmahal,27.692579,85.323905
+R3070257,kalanki-Balkumari,8,S0099,Babarmahal Stop West,27.692337,85.3244
+R3070257,kalanki-Balkumari,9,S0034,Buddhanagar Stop,27.68933,85.331039
+R3070257,kalanki-Balkumari,10,S0062,Babarmahal Stop East,27.69032,85.328762
+R3070257,kalanki-Balkumari,11,S0069,Naya Baneshwor Tampoo Station,27.688586,85.334689
+R3070257,kalanki-Balkumari,12,S0029,Minbhawan,27.6877,85.338462
+R3070257,kalanki-Balkumari,13,S0127,Shantinagar Stop,27.687086,85.341372
+R3070257,kalanki-Balkumari,14,S0017,Tinkune Stop,27.6835,85.3486
+R3070257,kalanki-Balkumari,15,S0203,Tinkune Subidhanagar,27.686056,85.345662
+R3070257,kalanki-Balkumari,16,S0107,Koteshwor Stop,27.6802001,85.3494489
+R3070257,kalanki-Balkumari,17,S0024,Balkumari Stop,27.6763,85.3395
+R3070257,kalanki-Balkumari,18,S0220,Balkumari Bridge Stop,27.673762,85.342508
+R3070262,Kalanki-Pepsacola,1,S0130,Kalanki,27.6938,85.2818
+R3070262,Kalanki-Pepsacola,2,S0023,Kalimati,27.69843,85.29944
+R3070262,Kalanki-Pepsacola,3,S0056,Tripureshwor,27.694418,85.314128
+R3070262,Kalanki-Pepsacola,4,S0185,Thapathali,27.691767,85.318016
+R3070262,Kalanki-Pepsacola,5,S0132,Maitighar Stop--South,27.694112,85.319308
+R3070262,Kalanki-Pepsacola,6,S0097,Maitighar,27.693965,85.320962
+R3070262,Kalanki-Pepsacola,7,S0028,Babarmahal,27.692579,85.323905
+R3070262,Kalanki-Pepsacola,8,S0099,Babarmahal Stop West,27.692337,85.3244
+R3070262,Kalanki-Pepsacola,9,S0034,Buddhanagar Stop,27.68933,85.331039
+R3070262,Kalanki-Pepsacola,10,S0062,Babarmahal Stop East,27.69032,85.328762
+R3070262,Kalanki-Pepsacola,11,S0069,Naya Baneshwor Tampoo Station,27.688586,85.334689
+R3070262,Kalanki-Pepsacola,12,S0029,Minbhawan,27.6877,85.338462
+R3070262,Kalanki-Pepsacola,13,S0127,Shantinagar Stop,27.687086,85.341372
+R3070262,Kalanki-Pepsacola,14,S0017,Tinkune Stop,27.6835,85.3486
+R3070262,Kalanki-Pepsacola,15,S0203,Tinkune Subidhanagar,27.686056,85.345662
+R3070262,Kalanki-Pepsacola,16,S0107,Koteshwor Stop,27.6802001,85.3494489
+R3070262,Kalanki-Pepsacola,17,S0159,Jadibuti,27.675459,85.3516
+R3070262,Kalanki-Pepsacola,18,S0156,Pepsi Cola Chowk,27.689209,85.360354
+R3070344,Kausaltar-Naikap,1,S0054,Nikap,27.686091,85.26229
+R3070344,Kausaltar-Naikap,2,S0130,Kalanki,27.6938,85.2818
+R3070344,Kausaltar-Naikap,3,S0023,Kalimati,27.69843,85.29944
+R3070344,Kausaltar-Naikap,4,S0056,Tripureshwor,27.694418,85.314128
+R3070344,Kausaltar-Naikap,5,S0185,Thapathali,27.691767,85.318016
+R3070344,Kausaltar-Naikap,6,S0132,Maitighar Stop--South,27.694112,85.319308
+R3070344,Kausaltar-Naikap,7,S0097,Maitighar,27.693965,85.320962
+R3070344,Kausaltar-Naikap,8,S0028,Babarmahal,27.692579,85.323905
+R3070344,Kausaltar-Naikap,9,S0099,Babarmahal Stop West,27.692337,85.3244
+R3070344,Kausaltar-Naikap,10,S0034,Buddhanagar Stop,27.68933,85.331039
+R3070344,Kausaltar-Naikap,11,S0062,Babarmahal Stop East,27.69032,85.328762
+R3070344,Kausaltar-Naikap,12,S0069,Naya Baneshwor Tampoo Station,27.688586,85.334689
+R3070344,Kausaltar-Naikap,13,S0029,Minbhawan,27.6877,85.338462
+R3070344,Kausaltar-Naikap,14,S0127,Shantinagar Stop,27.687086,85.341372
+R3070344,Kausaltar-Naikap,15,S0017,Tinkune Stop,27.6835,85.3486
+R3070344,Kausaltar-Naikap,16,S0203,Tinkune Subidhanagar,27.686056,85.345662
+R3070344,Kausaltar-Naikap,17,S0107,Koteshwor Stop,27.6802001,85.3494489
+R3070344,Kausaltar-Naikap,18,S0159,Jadibuti,27.675459,85.3516
+R3070344,Kausaltar-Naikap,19,S0022,Lokanthali North,27.674829,85.359862
+R3070344,Kausaltar-Naikap,20,S0004,Kaushaltar,27.674541,85.364349
+R3071402,Gokarna-Chabahil-Naya_Bus_Park-Balaju-kalanki,1,S0140,Gokarna Bus Stop,27.740306,85.39072
+R3071402,Gokarna-Chabahil-Naya_Bus_Park-Balaju-kalanki,2,S0125,Attarkhel,27.734548,85.382452
+R3071402,Gokarna-Chabahil-Naya_Bus_Park-Balaju-kalanki,3,S0135,Jorpati,27.721763,85.372632
+R3071402,Gokarna-Chabahil-Naya_Bus_Park-Balaju-kalanki,4,S0026,Boudha,27.72072,85.36176
+R3071402,Gokarna-Chabahil-Naya_Bus_Park-Balaju-kalanki,5,S0172,Hyatt Regency,27.7194,85.354109
+R3071402,Gokarna-Chabahil-Naya_Bus_Park-Balaju-kalanki,6,S0195,Chabahil चाबाहील,27.717,85.3465
+R3071402,Gokarna-Chabahil-Naya_Bus_Park-Balaju-kalanki,7,S0134,Gopi Krishna Stop,27.720629,85.346099
+R3071402,Gokarna-Chabahil-Naya_Bus_Park-Balaju-kalanki,8,S0217,Sukedhara Stop,27.7245,85.3438
+R3071402,Gokarna-Chabahil-Naya_Bus_Park-Balaju-kalanki,9,S0118,Dhumbarahi,27.731787,85.344365
+R3071402,Gokarna-Chabahil-Naya_Bus_Park-Balaju-kalanki,10,S0109,Chapal Karkhana stop,27.734807,85.342234
+R3071402,Gokarna-Chabahil-Naya_Bus_Park-Balaju-kalanki,11,S0030,Chakrapath Stop-- South,27.739835,85.336915
+R3071402,Gokarna-Chabahil-Naya_Bus_Park-Balaju-kalanki,12,S0044,Narayan Gopal Chowk,27.740022,85.337201
+R3071402,Gokarna-Chabahil-Naya_Bus_Park-Balaju-kalanki,13,S0065,Basundhara,27.7378,85.3215
+R3071402,Gokarna-Chabahil-Naya_Bus_Park-Balaju-kalanki,14,S0187,Samakhusi Stop,27.7335,85.3125
+R3071402,Gokarna-Chabahil-Naya_Bus_Park-Balaju-kalanki,15,S0169,Gongabu Chowk,27.734978,85.314447
+R3071402,Gokarna-Chabahil-Naya_Bus_Park-Balaju-kalanki,16,S0174,Naya Bus Park,27.7303,85.3082
+R3071402,Gokarna-Chabahil-Naya_Bus_Park-Balaju-kalanki,17,S0113,Balaju,27.7275,85.3005
+R3071402,Gokarna-Chabahil-Naya_Bus_Park-Balaju-kalanki,18,S0212,Banasthali,27.72483,85.297605
+R3071402,Gokarna-Chabahil-Naya_Bus_Park-Balaju-kalanki,19,S0228,Dhungedhara,27.72341,85.294675
+R3071402,Gokarna-Chabahil-Naya_Bus_Park-Balaju-kalanki,20,S0162,Thulo Bharang Stop,27.719748,85.287051
+R3071402,Gokarna-Chabahil-Naya_Bus_Park-Balaju-kalanki,21,S0090,Sitapaila Stop,27.7086,85.2868
+R3071402,Gokarna-Chabahil-Naya_Bus_Park-Balaju-kalanki,22,S0130,Kalanki,27.6938,85.2818
+R3071562,"Naya Baneshwor, Koteshwor, Satdobato, Lagankhel, Jaulakhel, Kupandol, Naya Baneshwor",1,S0069,Naya Baneshwor Tampoo Station,27.688586,85.334689
+R3071562,"Naya Baneshwor, Koteshwor, Satdobato, Lagankhel, Jaulakhel, Kupandol, Naya Baneshwor",2,S0029,Minbhawan,27.6877,85.338462
+R3071562,"Naya Baneshwor, Koteshwor, Satdobato, Lagankhel, Jaulakhel, Kupandol, Naya Baneshwor",3,S0127,Shantinagar Stop,27.687086,85.341372
+R3071562,"Naya Baneshwor, Koteshwor, Satdobato, Lagankhel, Jaulakhel, Kupandol, Naya Baneshwor",4,S0017,Tinkune Stop,27.6835,85.3486
+R3071562,"Naya Baneshwor, Koteshwor, Satdobato, Lagankhel, Jaulakhel, Kupandol, Naya Baneshwor",5,S0203,Tinkune Subidhanagar,27.686056,85.345662
+R3071562,"Naya Baneshwor, Koteshwor, Satdobato, Lagankhel, Jaulakhel, Kupandol, Naya Baneshwor",6,S0107,Koteshwor Stop,27.6802001,85.3494489
+R3071562,"Naya Baneshwor, Koteshwor, Satdobato, Lagankhel, Jaulakhel, Kupandol, Naya Baneshwor",7,S0024,Balkumari Stop,27.6763,85.3395
+R3071562,"Naya Baneshwor, Koteshwor, Satdobato, Lagankhel, Jaulakhel, Kupandol, Naya Baneshwor",8,S0220,Balkumari Bridge Stop,27.673762,85.342508
+R3071562,"Naya Baneshwor, Koteshwor, Satdobato, Lagankhel, Jaulakhel, Kupandol, Naya Baneshwor",9,S0020,Gwarko Chowk Stop,27.6705,85.334
+R3071562,"Naya Baneshwor, Koteshwor, Satdobato, Lagankhel, Jaulakhel, Kupandol, Naya Baneshwor",10,S0182,B & B Hospital/KCM Stop,27.664221,85.330151
+R3071562,"Naya Baneshwor, Koteshwor, Satdobato, Lagankhel, Jaulakhel, Kupandol, Naya Baneshwor",11,S0011,Satdobato Chowk Stop,27.6656,85.3283
+R3071562,"Naya Baneshwor, Koteshwor, Satdobato, Lagankhel, Jaulakhel, Kupandol, Naya Baneshwor",12,S0219,Lagankhel,27.662461,85.323946
+R3071562,"Naya Baneshwor, Koteshwor, Satdobato, Lagankhel, Jaulakhel, Kupandol, Naya Baneshwor",13,S0194,Batuk Bhairav,27.664475,85.324003
+R3071562,"Naya Baneshwor, Koteshwor, Satdobato, Lagankhel, Jaulakhel, Kupandol, Naya Baneshwor",14,S0112,Lagankhel Stop,27.6668,85.3219
+R3071562,"Naya Baneshwor, Koteshwor, Satdobato, Lagankhel, Jaulakhel, Kupandol, Naya Baneshwor",15,S0223,Lalitpur Industrial Estate,27.667312,85.322256
+R3071562,"Naya Baneshwor, Koteshwor, Satdobato, Lagankhel, Jaulakhel, Kupandol, Naya Baneshwor",16,S0155,Patan Hospital,27.668489,85.321642
+R3071562,"Naya Baneshwor, Koteshwor, Satdobato, Lagankhel, Jaulakhel, Kupandol, Naya Baneshwor",17,S0213,Kumaripati,27.67084,85.320098
+R3071562,"Naya Baneshwor, Koteshwor, Satdobato, Lagankhel, Jaulakhel, Kupandol, Naya Baneshwor",18,S0103,Jawlakhel Stop,27.672577,85.314174
+R3071562,"Naya Baneshwor, Koteshwor, Satdobato, Lagankhel, Jaulakhel, Kupandol, Naya Baneshwor",19,S0116,Damkal,27.675796,85.315747
+R3071562,"Naya Baneshwor, Koteshwor, Satdobato, Lagankhel, Jaulakhel, Kupandol, Naya Baneshwor",20,S0142,UN Stop,27.678104,85.316327
+R3071562,"Naya Baneshwor, Koteshwor, Satdobato, Lagankhel, Jaulakhel, Kupandol, Naya Baneshwor",21,S0168,Jwagal,27.685593,85.318106
+R3071562,"Naya Baneshwor, Koteshwor, Satdobato, Lagankhel, Jaulakhel, Kupandol, Naya Baneshwor",22,S0063,Kupondole stop,27.688005,85.316248
+R3071562,"Naya Baneshwor, Koteshwor, Satdobato, Lagankhel, Jaulakhel, Kupandol, Naya Baneshwor",23,S0185,Thapathali,27.691767,85.318016
+R3071562,"Naya Baneshwor, Koteshwor, Satdobato, Lagankhel, Jaulakhel, Kupandol, Naya Baneshwor",24,S0132,Maitighar Stop--South,27.694112,85.319308
+R3071562,"Naya Baneshwor, Koteshwor, Satdobato, Lagankhel, Jaulakhel, Kupandol, Naya Baneshwor",25,S0097,Maitighar,27.693965,85.320962
+R3071562,"Naya Baneshwor, Koteshwor, Satdobato, Lagankhel, Jaulakhel, Kupandol, Naya Baneshwor",26,S0028,Babarmahal,27.692579,85.323905
+R3071562,"Naya Baneshwor, Koteshwor, Satdobato, Lagankhel, Jaulakhel, Kupandol, Naya Baneshwor",27,S0099,Babarmahal Stop West,27.692337,85.3244
+R3071562,"Naya Baneshwor, Koteshwor, Satdobato, Lagankhel, Jaulakhel, Kupandol, Naya Baneshwor",28,S0034,Buddhanagar Stop,27.68933,85.331039
+R3071562,"Naya Baneshwor, Koteshwor, Satdobato, Lagankhel, Jaulakhel, Kupandol, Naya Baneshwor",29,S0062,Babarmahal Stop East,27.69032,85.328762
+R3072924,Matathirtha-Naikap-Thapathali-KrishnaPauroti-Ratopul-Chabahil-kapan,1,S0232,Matatirtha Stop,27.680577,85.232858
+R3072924,Matathirtha-Naikap-Thapathali-KrishnaPauroti-Ratopul-Chabahil-kapan,2,S0008,Sataungal,27.686988,85.2506
+R3072924,Matathirtha-Naikap-Thapathali-KrishnaPauroti-Ratopul-Chabahil-kapan,3,S0054,Nikap,27.686091,85.26229
+R3072924,Matathirtha-Naikap-Thapathali-KrishnaPauroti-Ratopul-Chabahil-kapan,4,S0130,Kalanki,27.6938,85.2818
+R3072924,Matathirtha-Naikap-Thapathali-KrishnaPauroti-Ratopul-Chabahil-kapan,5,S0023,Kalimati,27.69843,85.29944
+R3072924,Matathirtha-Naikap-Thapathali-KrishnaPauroti-Ratopul-Chabahil-kapan,6,S0056,Tripureshwor,27.694418,85.314128
+R3072924,Matathirtha-Naikap-Thapathali-KrishnaPauroti-Ratopul-Chabahil-kapan,7,S0185,Thapathali,27.691767,85.318016
+R3072924,Matathirtha-Naikap-Thapathali-KrishnaPauroti-Ratopul-Chabahil-kapan,8,S0132,Maitighar Stop--South,27.694112,85.319308
+R3072924,Matathirtha-Naikap-Thapathali-KrishnaPauroti-Ratopul-Chabahil-kapan,9,S0036,Singha Durbar West Stop,27.69659,85.321228
+R3072924,Matathirtha-Naikap-Thapathali-KrishnaPauroti-Ratopul-Chabahil-kapan,10,S0102,New Plaza Stop,27.700951,85.322918
+R3072924,Matathirtha-Naikap-Thapathali-KrishnaPauroti-Ratopul-Chabahil-kapan,11,S0005,Putalisadak Stop,27.70569,85.322552
+R3072924,Matathirtha-Naikap-Thapathali-KrishnaPauroti-Ratopul-Chabahil-kapan,12,S0042,Kamaladi Road (कमलादी) stop,27.707997,85.321282
+R3072924,Matathirtha-Naikap-Thapathali-KrishnaPauroti-Ratopul-Chabahil-kapan,13,S0094,Krishna Pauroti Stop,27.710369,85.322281
+R3072924,Matathirtha-Naikap-Thapathali-KrishnaPauroti-Ratopul-Chabahil-kapan,14,S0210,Ciy Center Stop,27.709819,85.326984
+R3072924,Matathirtha-Naikap-Thapathali-KrishnaPauroti-Ratopul-Chabahil-kapan,15,S0083,Gyaneshwor Chowk,27.708687,85.331826
+R3072924,Matathirtha-Naikap-Thapathali-KrishnaPauroti-Ratopul-Chabahil-kapan,16,S0045,Ratopul,27.708117,85.336428
+R3072924,Matathirtha-Naikap-Thapathali-KrishnaPauroti-Ratopul-Chabahil-kapan,17,S0204,Gaushala Chowk Stop,27.7082,85.3485
+R3072924,Matathirtha-Naikap-Thapathali-KrishnaPauroti-Ratopul-Chabahil-kapan,18,S0052,JayaBageshwari Stop,27.711989,85.344999
+R3072924,Matathirtha-Naikap-Thapathali-KrishnaPauroti-Ratopul-Chabahil-kapan,19,S0195,Chabahil चाबाहील,27.717,85.3465
+R3072924,Matathirtha-Naikap-Thapathali-KrishnaPauroti-Ratopul-Chabahil-kapan,20,S0134,Gopi Krishna Stop,27.720629,85.346099
+R3072924,Matathirtha-Naikap-Thapathali-KrishnaPauroti-Ratopul-Chabahil-kapan,21,S0078,Saat Tale Chowk,27.726959,85.350484
+R3072924,Matathirtha-Naikap-Thapathali-KrishnaPauroti-Ratopul-Chabahil-kapan,22,S0002,Kapan Stop,27.729418,85.354064
+R3074202,kapan-Chabahil-Mitidevi-Ratnapark,1,S0002,Kapan Stop,27.729418,85.354064
+R3074202,kapan-Chabahil-Mitidevi-Ratnapark,2,S0078,Saat Tale Chowk,27.726959,85.350484
+R3074202,kapan-Chabahil-Mitidevi-Ratnapark,3,S0134,Gopi Krishna Stop,27.720629,85.346099
+R3074202,kapan-Chabahil-Mitidevi-Ratnapark,4,S0195,Chabahil चाबाहील,27.717,85.3465
+R3074202,kapan-Chabahil-Mitidevi-Ratnapark,5,S0052,JayaBageshwari Stop,27.711989,85.344999
+R3074202,kapan-Chabahil-Mitidevi-Ratnapark,6,S0204,Gaushala Chowk Stop,27.7082,85.3485
+R3074202,kapan-Chabahil-Mitidevi-Ratnapark,7,S0222,Old Baneshwor,27.70152,85.340204
+R3074202,kapan-Chabahil-Mitidevi-Ratnapark,8,S0035,Maiti Devi chowk,27.703944,85.332682
+R3074202,kapan-Chabahil-Mitidevi-Ratnapark,9,S0055,Dillibazaar stop,27.70537,85.326759
+R3074202,kapan-Chabahil-Mitidevi-Ratnapark,10,S0005,Putalisadak Stop,27.70569,85.322552
+R3074202,kapan-Chabahil-Mitidevi-Ratnapark,11,S0031,Bagbazar Stop,27.705828,85.317204
+R3074202,kapan-Chabahil-Mitidevi-Ratnapark,12,S0013,Ratna Park,27.706705,85.315249
+R3101629,Lagankhel-Satdobato-Khumaltar-Dhapakhel,1,S0219,Lagankhel,27.662461,85.323946
+R3101629,Lagankhel-Satdobato-Khumaltar-Dhapakhel,2,S0194,Batuk Bhairav,27.664475,85.324003
+R3101629,Lagankhel-Satdobato-Khumaltar-Dhapakhel,3,S0112,Lagankhel Stop,27.6668,85.3219
+R3101629,Lagankhel-Satdobato-Khumaltar-Dhapakhel,4,S0223,Lalitpur Industrial Estate,27.667312,85.322256
+R3101629,Lagankhel-Satdobato-Khumaltar-Dhapakhel,5,S0011,Satdobato Chowk Stop,27.6656,85.3283
+R3101629,Lagankhel-Satdobato-Khumaltar-Dhapakhel,6,S0101,MAV School,27.657068,85.326288
+R3101629,Lagankhel-Satdobato-Khumaltar-Dhapakhel,7,S0138,Khumaltar Stop,27.65382,85.329107
+R3101629,Lagankhel-Satdobato-Khumaltar-Dhapakhel,8,S0032,Dhapakhel Stop,27.628084,85.327973
+R3102120,Lagankhel-Lamatar,1,S0112,Lagankhel Stop,27.6668,85.3219
+R3102120,Lagankhel-Lamatar,2,S0223,Lalitpur Industrial Estate,27.667312,85.322256
+R3102120,Lagankhel-Lamatar,3,S0020,Gwarko Chowk Stop,27.6705,85.334
+R3102120,Lagankhel-Lamatar,4,S0104,Lubhu Bus Stop,27.642901,85.373398
+R3102120,Lagankhel-Lamatar,5,S0200,Lamatar,27.628007,85.395369
+R3102124,RNAC-Bishalnagar-Chapal_Karkhana-Mandikhatar,1,S0100,RNAC stop,27.70221,85.313638
+R3102124,RNAC-Bishalnagar-Chapal_Karkhana-Mandikhatar,2,S0171,Bir Hospital,27.705723,85.314074
+R3102124,RNAC-Bishalnagar-Chapal_Karkhana-Mandikhatar,3,S0166,Kantipath,27.708912,85.314607
+R3102124,RNAC-Bishalnagar-Chapal_Karkhana-Mandikhatar,4,S0152,Jamal,27.708829,85.315292
+R3102124,RNAC-Bishalnagar-Chapal_Karkhana-Mandikhatar,5,S0193,Lainchour Chowk Bus Stop,27.717048,85.316046
+R3102124,RNAC-Bishalnagar-Chapal_Karkhana-Mandikhatar,6,S0087,Lainchaur stop,27.718757,85.317697
+R3102124,RNAC-Bishalnagar-Chapal_Karkhana-Mandikhatar,7,S0188,Gairidhara,27.717774,85.327892
+R3102124,RNAC-Bishalnagar-Chapal_Karkhana-Mandikhatar,8,S0051,Tangal,27.717202,85.330449
+R3102124,RNAC-Bishalnagar-Chapal_Karkhana-Mandikhatar,9,S0197,Police Headquarter Stop,27.716634,85.330214
+R3102124,RNAC-Bishalnagar-Chapal_Karkhana-Mandikhatar,10,S0105,Bhatbhatini Stop,27.719211,85.331082
+R3102124,RNAC-Bishalnagar-Chapal_Karkhana-Mandikhatar,11,S0093,Bishalnagar Stop,27.721954,85.335587
+R3102124,RNAC-Bishalnagar-Chapal_Karkhana-Mandikhatar,12,S0109,Chapal Karkhana stop,27.734807,85.342234
+R3102124,RNAC-Bishalnagar-Chapal_Karkhana-Mandikhatar,13,S0118,Dhumbarahi,27.731787,85.344365
+R3102124,RNAC-Bishalnagar-Chapal_Karkhana-Mandikhatar,14,S0072,Mandikhatar Stop,27.736293,85.347685
+R3102319,Lagankhel-Tika Bhairab,1,S0112,Lagankhel Stop,27.6668,85.3219
+R3102319,Lagankhel-Tika Bhairab,2,S0223,Lalitpur Industrial Estate,27.667312,85.322256
+R3102319,Lagankhel-Tika Bhairab,3,S0103,Jawlakhel Stop,27.672577,85.314174
+R3102319,Lagankhel-Tika Bhairab,4,S0214,Ekantakuna,27.6667865,85.308215
+R3102319,Lagankhel-Tika Bhairab,5,S0179,Khokana,27.635969,85.300606
+R3102319,Lagankhel-Tika Bhairab,6,S0129,Bungmati,27.62857,85.304032
+R3102319,Lagankhel-Tika Bhairab,7,S0269,Tikabhairab Temple,27.5746276,85.3128817
+R3102605,Swyambhu-Chakrapath parikrama,1,S0090,Sitapaila Stop,27.7086,85.2868
+R3102605,Swyambhu-Chakrapath parikrama,2,S0211,Swayambhu Parikarma,27.7125,85.2862
+R3102605,Swyambhu-Chakrapath parikrama,3,S0162,Thulo Bharang Stop,27.719748,85.287051
+R3102605,Swyambhu-Chakrapath parikrama,4,S0228,Dhungedhara,27.72341,85.294675
+R3102605,Swyambhu-Chakrapath parikrama,5,S0212,Banasthali,27.72483,85.297605
+R3102605,Swyambhu-Chakrapath parikrama,6,S0113,Balaju,27.7275,85.3005
+R3102605,Swyambhu-Chakrapath parikrama,7,S0174,Naya Bus Park,27.7303,85.3082
+R3102605,Swyambhu-Chakrapath parikrama,8,S0169,Gongabu Chowk,27.734978,85.314447
+R3102605,Swyambhu-Chakrapath parikrama,9,S0187,Samakhusi Stop,27.7335,85.3125
+R3102605,Swyambhu-Chakrapath parikrama,10,S0065,Basundhara,27.7378,85.3215
+R3102605,Swyambhu-Chakrapath parikrama,11,S0030,Chakrapath Stop-- South,27.739835,85.336915
+R3102605,Swyambhu-Chakrapath parikrama,12,S0044,Narayan Gopal Chowk,27.740022,85.337201
+R3102605,Swyambhu-Chakrapath parikrama,13,S0109,Chapal Karkhana stop,27.734807,85.342234
+R3102605,Swyambhu-Chakrapath parikrama,14,S0118,Dhumbarahi,27.731787,85.344365
+R3102605,Swyambhu-Chakrapath parikrama,15,S0217,Sukedhara Stop,27.7245,85.3438
+R3102605,Swyambhu-Chakrapath parikrama,16,S0134,Gopi Krishna Stop,27.720629,85.346099
+R3102605,Swyambhu-Chakrapath parikrama,17,S0195,Chabahil चाबाहील,27.717,85.3465
+R3102605,Swyambhu-Chakrapath parikrama,18,S0052,JayaBageshwari Stop,27.711989,85.344999
+R3102605,Swyambhu-Chakrapath parikrama,19,S0204,Gaushala Chowk Stop,27.7082,85.3485
+R3102605,Swyambhu-Chakrapath parikrama,20,S0071,पिङ्गलस्थान,27.70581,85.347131
+R3102605,Swyambhu-Chakrapath parikrama,21,S0070,Airport Bus Station,27.700728,85.353666
+R3102605,Swyambhu-Chakrapath parikrama,22,S0139,Sinamangal/Ring Road Stop सिनामंगल,27.6983,85.3533
+R3102605,Swyambhu-Chakrapath parikrama,23,S0053,Gairigaun Stop,27.687275,85.35056
+R3102605,Swyambhu-Chakrapath parikrama,24,S0107,Koteshwor Stop,27.6802001,85.3494489
+R3102605,Swyambhu-Chakrapath parikrama,25,S0024,Balkumari Stop,27.6763,85.3395
+R3102605,Swyambhu-Chakrapath parikrama,26,S0220,Balkumari Bridge Stop,27.673762,85.342508
+R3102605,Swyambhu-Chakrapath parikrama,27,S0020,Gwarko Chowk Stop,27.6705,85.334
+R3102605,Swyambhu-Chakrapath parikrama,28,S0182,B & B Hospital/KCM Stop,27.664221,85.330151
+R3102605,Swyambhu-Chakrapath parikrama,29,S0011,Satdobato Chowk Stop,27.6656,85.3283
+R3102605,Swyambhu-Chakrapath parikrama,30,S0214,Ekantakuna,27.6667865,85.308215
+R3102605,Swyambhu-Chakrapath parikrama,31,S0106,Nakhu Stop,27.668972,85.306293
+R3102605,Swyambhu-Chakrapath parikrama,32,S0189,Sanepa height,27.674468,85.302217
+R3102605,Swyambhu-Chakrapath parikrama,33,S0230,Balkhu,27.6823,85.2985
+R3102605,Swyambhu-Chakrapath parikrama,34,S0233,Balkhu Stop,27.684798,85.298592
+R3102605,Swyambhu-Chakrapath parikrama,35,S0345,Khasi Bazaar,27.6895,85.2845
+R3102605,Swyambhu-Chakrapath parikrama,36,S0130,Kalanki,27.6938,85.2818
+R3203278,Airport - Ratna Park,1,S0070,Airport Bus Station,27.700728,85.353666
+R3203278,Airport - Ratna Park,2,S0139,Sinamangal/Ring Road Stop सिनामंगल,27.6983,85.3533
+R3203278,Airport - Ratna Park,3,S0347,Tilganga,27.7145,85.3495
+R3203278,Airport - Ratna Park,4,S0204,Gaushala Chowk Stop,27.7082,85.3485
+R3203278,Airport - Ratna Park,5,S0348,Battisputali,27.704,85.335
+R3203278,Airport - Ratna Park,6,S0126,Maitidevi Temple stop,27.706412,85.333733
+R3203278,Airport - Ratna Park,7,S0083,Gyaneshwor Chowk,27.708687,85.331826
+R3203278,Airport - Ratna Park,8,S0338,Kamalpokhari,27.7107,85.3252
+R3203278,Airport - Ratna Park,9,S0339,Hattisar,27.7095,85.3238
+R3203278,Airport - Ratna Park,10,S0341,Durbar Marg,27.712,85.317
+R3203278,Airport - Ratna Park,11,S0005,Putalisadak Stop,27.70569,85.322552
+R3203278,Airport - Ratna Park,12,S0013,Ratna Park,27.706705,85.315249
+R3204165,Thimi - Ratna Park,1,S0110,Thimi Stop,27.673336,85.386293
+R3204165,Thimi - Ratna Park,2,S0323,Purano Thimi / Siddhikali Chowk,27.678125,85.378942
+R3204165,Thimi - Ratna Park,3,S0147,Radhe Radhe,27.67459,85.39748
+R3204165,Thimi - Ratna Park,4,S0022,Lokanthali North,27.674829,85.359862
+R3204165,Thimi - Ratna Park,5,S0159,Jadibuti,27.675459,85.3516
+R3204165,Thimi - Ratna Park,6,S0107,Koteshwor Stop,27.6802001,85.3494489
+R3204165,Thimi - Ratna Park,7,S0017,Tinkune Stop,27.6835,85.3486
+R3204165,Thimi - Ratna Park,8,S0127,Shantinagar Stop,27.687086,85.341372
+R3204165,Thimi - Ratna Park,9,S0075,New Baneshwor West,27.690327,85.335954
+R3204165,Thimi - Ratna Park,10,S0097,Maitighar,27.693965,85.320962
+R3204165,Thimi - Ratna Park,11,S0031,Bagbazar Stop,27.705828,85.317204
+R3204165,Thimi - Ratna Park,12,S0013,Ratna Park,27.706705,85.315249
+R3211395,Bhaktapur - Ratna Park,1,S0161,Bhaktapur Bus Park,27.671307,85.422416
+R3211395,Bhaktapur - Ratna Park,2,S0199,Byasi Stop,27.674804,85.427443
+R3211395,Bhaktapur - Ratna Park,3,S0089,Suryabinayek,27.66574,85.424212
+R3211395,Bhaktapur - Ratna Park,4,S0014,Sallaghari North,27.674055,85.409969
+R3211395,Bhaktapur - Ratna Park,5,S0202,Srijananagar,27.672911,85.404267
+R3211395,Bhaktapur - Ratna Park,6,S0325,Gatthaghar,27.673981,85.366812
+R3211395,Bhaktapur - Ratna Park,7,S0022,Lokanthali North,27.674829,85.359862
+R3211395,Bhaktapur - Ratna Park,8,S0159,Jadibuti,27.675459,85.3516
+R3211395,Bhaktapur - Ratna Park,9,S0107,Koteshwor Stop,27.6802001,85.3494489
+R3211395,Bhaktapur - Ratna Park,10,S0017,Tinkune Stop,27.6835,85.3486
+R3211395,Bhaktapur - Ratna Park,11,S0075,New Baneshwor West,27.690327,85.335954
+R3211395,Bhaktapur - Ratna Park,12,S0097,Maitighar,27.693965,85.320962
+R3211395,Bhaktapur - Ratna Park,13,S0088,Bhadrakali,27.699352,85.317713
+R3211395,Bhaktapur - Ratna Park,14,S0013,Ratna Park,27.706705,85.315249
+R3213434,Kalanki - Koteshwor,1,S0130,Kalanki,27.6938,85.2818
+R3213434,Kalanki - Koteshwor,2,S0211,Swayambhu Parikarma,27.7125,85.2862
+R3213434,Kalanki - Koteshwor,3,S0353,Sano Bharyang,27.7198,85.2915
+R3213434,Kalanki - Koteshwor,4,S0228,Dhungedhara,27.72341,85.294675
+R3213434,Kalanki - Koteshwor,5,S0212,Banasthali,27.72483,85.297605
+R3213434,Kalanki - Koteshwor,6,S0113,Balaju,27.7275,85.3005
+R3213434,Kalanki - Koteshwor,7,S0349,Macchapokhari,27.728,85.302
+R3213434,Kalanki - Koteshwor,8,S0174,Naya Bus Park,27.7303,85.3082
+R3213434,Kalanki - Koteshwor,9,S0187,Samakhusi Stop,27.7335,85.3125
+R3213434,Kalanki - Koteshwor,10,S0065,Basundhara,27.7378,85.3215
+R3213434,Kalanki - Koteshwor,11,S0044,Narayan Gopal Chowk,27.740022,85.337201
+R3213434,Kalanki - Koteshwor,12,S0354,Chappal Karkhana,27.7305,85.332
+R3213434,Kalanki - Koteshwor,13,S0118,Dhumbarahi,27.731787,85.344365
+R3213434,Kalanki - Koteshwor,14,S0217,Sukedhara Stop,27.7245,85.3438
+R3213434,Kalanki - Koteshwor,15,S0355,Gopikrishna,27.719,85.356
+R3213434,Kalanki - Koteshwor,16,S0195,Chabahil चाबाहील,27.717,85.3465
+R3213434,Kalanki - Koteshwor,17,S0204,Gaushala Chowk Stop,27.7082,85.3485
+R3213434,Kalanki - Koteshwor,18,S0070,Airport Bus Station,27.700728,85.353666
+R3213434,Kalanki - Koteshwor,19,S0139,Sinamangal/Ring Road Stop सिनामंगल,27.6983,85.3533
+R3213434,Kalanki - Koteshwor,20,S0053,Gairigaun Stop,27.687275,85.35056
+R3213434,Kalanki - Koteshwor,21,S0107,Koteshwor Stop,27.6802001,85.3494489
+R3214592,Koteshwor - Kalanki (via New Baneshwor),1,S0107,Koteshwor Stop,27.6802001,85.3494489
+R3214592,Koteshwor - Kalanki (via New Baneshwor),2,S0017,Tinkune Stop,27.6835,85.3486
+R3214592,Koteshwor - Kalanki (via New Baneshwor),3,S0127,Shantinagar Stop,27.687086,85.341372
+R3214592,Koteshwor - Kalanki (via New Baneshwor),4,S0029,Minbhawan,27.6877,85.338462
+R3214592,Koteshwor - Kalanki (via New Baneshwor),5,S0075,New Baneshwor West,27.690327,85.335954
+R3214592,Koteshwor - Kalanki (via New Baneshwor),6,S0028,Babarmahal,27.692579,85.323905
+R3214592,Koteshwor - Kalanki (via New Baneshwor),7,S0097,Maitighar,27.693965,85.320962
+R3214592,Koteshwor - Kalanki (via New Baneshwor),8,S0185,Thapathali,27.691767,85.318016
+R3214592,Koteshwor - Kalanki (via New Baneshwor),9,S0056,Tripureshwor,27.694418,85.314128
+R3214592,Koteshwor - Kalanki (via New Baneshwor),10,S0276,Tek (Teku),27.696325,85.306981
+R3214592,Koteshwor - Kalanki (via New Baneshwor),11,S0023,Kalimati,27.69843,85.29944
+R3214592,Koteshwor - Kalanki (via New Baneshwor),12,S0271,Soalteemode West,27.7005956,85.2858267
+R3214592,Koteshwor - Kalanki (via New Baneshwor),13,S0130,Kalanki,27.6938,85.2818
+R3218289,Jorpati - Ekantakuna,1,S0135,Jorpati,27.721763,85.372632
+R3218289,Jorpati - Ekantakuna,2,S0026,Boudha,27.72072,85.36176
+R3218289,Jorpati - Ekantakuna,3,S0195,Chabahil चाबाहील,27.717,85.3465
+R3218289,Jorpati - Ekantakuna,4,S0204,Gaushala Chowk Stop,27.7082,85.3485
+R3218289,Jorpati - Ekantakuna,5,S0139,Sinamangal/Ring Road Stop सिनामंगल,27.6983,85.3533
+R3218289,Jorpati - Ekantakuna,6,S0017,Tinkune Stop,27.6835,85.3486
+R3218289,Jorpati - Ekantakuna,7,S0075,New Baneshwor West,27.690327,85.335954
+R3218289,Jorpati - Ekantakuna,8,S0028,Babarmahal,27.692579,85.323905
+R3218289,Jorpati - Ekantakuna,9,S0097,Maitighar,27.693965,85.320962
+R3218289,Jorpati - Ekantakuna,10,S0185,Thapathali,27.691767,85.318016
+R3218289,Jorpati - Ekantakuna,11,S0063,Kupondole stop,27.688005,85.316248
+R3218289,Jorpati - Ekantakuna,12,S0234,Pulchowk,27.6782,85.3169
+R3218289,Jorpati - Ekantakuna,13,S0103,Jawlakhel Stop,27.672577,85.314174
+R3218289,Jorpati - Ekantakuna,14,S0214,Ekantakuna,27.6667865,85.308215
+R3229256,Jorpati - Naikap,1,S0135,Jorpati,27.721763,85.372632
+R3229256,Jorpati - Naikap,2,S0026,Boudha,27.72072,85.36176
+R3229256,Jorpati - Naikap,3,S0195,Chabahil चाबाहील,27.717,85.3465
+R3229256,Jorpati - Naikap,4,S0204,Gaushala Chowk Stop,27.7082,85.3485
+R3229256,Jorpati - Naikap,5,S0348,Battisputali,27.704,85.335
+R3229256,Jorpati - Naikap,6,S0126,Maitidevi Temple stop,27.706412,85.333733
+R3229256,Jorpati - Naikap,7,S0338,Kamalpokhari,27.7107,85.3252
+R3229256,Jorpati - Naikap,8,S0339,Hattisar,27.7095,85.3238
+R3229256,Jorpati - Naikap,9,S0005,Putalisadak Stop,27.70569,85.322552
+R3229256,Jorpati - Naikap,10,S0013,Ratna Park,27.706705,85.315249
+R3229256,Jorpati - Naikap,11,S0067,Shahid Gate,27.699685,85.314748
+R3229256,Jorpati - Naikap,12,S0056,Tripureshwor,27.694418,85.314128
+R3229256,Jorpati - Naikap,13,S0276,Tek (Teku),27.696325,85.306981
+R3229256,Jorpati - Naikap,14,S0023,Kalimati,27.69843,85.29944
+R3229256,Jorpati - Naikap,15,S0271,Soalteemode West,27.7005956,85.2858267
+R3229256,Jorpati - Naikap,16,S0130,Kalanki,27.6938,85.2818
+R3229256,Jorpati - Naikap,17,S0291,Naikap Bus Stop,27.689104,85.263889
+R3232098,Narayangopal Chowk - Satdobato,1,S0044,Narayan Gopal Chowk,27.740022,85.337201
+R3232098,Narayangopal Chowk - Satdobato,2,S0124,Teaching Hospital stop,27.734523,85.330711
+R3232098,Narayangopal Chowk - Satdobato,3,S0082,Panipokhari stop,27.730686,85.325986
+R3232098,Narayangopal Chowk - Satdobato,4,S0149,Lazimpat stop,27.722523,85.320924
+R3232098,Narayangopal Chowk - Satdobato,5,S0087,Lainchaur stop,27.718757,85.317697
+R3232098,Narayangopal Chowk - Satdobato,6,S0152,Jamal,27.708829,85.315292
+R3232098,Narayangopal Chowk - Satdobato,7,S0166,Kantipath,27.708912,85.314607
+R3232098,Narayangopal Chowk - Satdobato,8,S0067,Shahid Gate,27.699685,85.314748
+R3232098,Narayangopal Chowk - Satdobato,9,S0056,Tripureshwor,27.694418,85.314128
+R3232098,Narayangopal Chowk - Satdobato,10,S0185,Thapathali,27.691767,85.318016
+R3232098,Narayangopal Chowk - Satdobato,11,S0063,Kupondole stop,27.688005,85.316248
+R3232098,Narayangopal Chowk - Satdobato,12,S0234,Pulchowk,27.6782,85.3169
+R3232098,Narayangopal Chowk - Satdobato,13,S0103,Jawlakhel Stop,27.672577,85.314174
+R3232098,Narayangopal Chowk - Satdobato,14,S0112,Lagankhel Stop,27.6668,85.3219
+R3232098,Narayangopal Chowk - Satdobato,15,S0194,Batuk Bhairav,27.664475,85.324003
+R3232098,Narayangopal Chowk - Satdobato,16,S0011,Satdobato Chowk Stop,27.6656,85.3283
+R3236048,Koteshwor - New Bus Park,1,S0107,Koteshwor Stop,27.6802001,85.3494489
+R3236048,Koteshwor - New Bus Park,2,S0053,Gairigaun Stop,27.687275,85.35056
+R3236048,Koteshwor - New Bus Park,3,S0139,Sinamangal/Ring Road Stop सिनामंगल,27.6983,85.3533
+R3236048,Koteshwor - New Bus Park,4,S0070,Airport Bus Station,27.700728,85.353666
+R3236048,Koteshwor - New Bus Park,5,S0204,Gaushala Chowk Stop,27.7082,85.3485
+R3236048,Koteshwor - New Bus Park,6,S0350,Jayabageshwori,27.7165,85.352
+R3236048,Koteshwor - New Bus Park,7,S0123,Naxal Bhagwati,27.712698,85.328691
+R3236048,Koteshwor - New Bus Park,8,S0351,Maligaun,27.7225,85.332
+R3236048,Koteshwor - New Bus Park,9,S0149,Lazimpat stop,27.722523,85.320924
+R3236048,Koteshwor - New Bus Park,10,S0087,Lainchaur stop,27.718757,85.317697
+R3236048,Koteshwor - New Bus Park,11,S0079,Sorhakhutte,27.718967,85.309619
+R3236048,Koteshwor - New Bus Park,12,S0113,Balaju,27.7275,85.3005
+R3236048,Koteshwor - New Bus Park,13,S0349,Macchapokhari,27.728,85.302
+R3236048,Koteshwor - New Bus Park,14,S0174,Naya Bus Park,27.7303,85.3082
+R3255302,Suryabinayak - Kirtipur,1,S0089,Suryabinayek,27.66574,85.424212
+R3255302,Suryabinayak - Kirtipur,2,S0014,Sallaghari North,27.674055,85.409969
+R3255302,Suryabinayak - Kirtipur,3,S0325,Gatthaghar,27.673981,85.366812
+R3255302,Suryabinayak - Kirtipur,4,S0022,Lokanthali North,27.674829,85.359862
+R3255302,Suryabinayak - Kirtipur,5,S0107,Koteshwor Stop,27.6802001,85.3494489
+R3255302,Suryabinayak - Kirtipur,6,S0024,Balkumari Stop,27.6763,85.3395
+R3255302,Suryabinayak - Kirtipur,7,S0020,Gwarko Chowk Stop,27.6705,85.334
+R3255302,Suryabinayak - Kirtipur,8,S0011,Satdobato Chowk Stop,27.6656,85.3283
+R3255302,Suryabinayak - Kirtipur,9,S0214,Ekantakuna,27.6667865,85.308215
+R3255302,Suryabinayak - Kirtipur,10,S0230,Balkhu,27.6823,85.2985
+R3255302,Suryabinayak - Kirtipur,11,S0358,Kirtipur Mod,27.68,85.292
+R3255302,Suryabinayak - Kirtipur,12,S0221,Naya Bazar,27.677149,85.28139
+R3255302,Suryabinayak - Kirtipur,13,S0043,TU Gate,27.67888,85.297212
+R3271482,Lagankhel - Koteshwor,1,S0112,Lagankhel Stop,27.6668,85.3219
+R3271482,Lagankhel - Koteshwor,2,S0103,Jawlakhel Stop,27.672577,85.314174
+R3271482,Lagankhel - Koteshwor,3,S0234,Pulchowk,27.6782,85.3169
+R3271482,Lagankhel - Koteshwor,4,S0063,Kupondole stop,27.688005,85.316248
+R3271482,Lagankhel - Koteshwor,5,S0185,Thapathali,27.691767,85.318016
+R3271482,Lagankhel - Koteshwor,6,S0097,Maitighar,27.693965,85.320962
+R3271482,Lagankhel - Koteshwor,7,S0028,Babarmahal,27.692579,85.323905
+R3271482,Lagankhel - Koteshwor,8,S0075,New Baneshwor West,27.690327,85.335954
+R3271482,Lagankhel - Koteshwor,9,S0029,Minbhawan,27.6877,85.338462
+R3271482,Lagankhel - Koteshwor,10,S0127,Shantinagar Stop,27.687086,85.341372
+R3271482,Lagankhel - Koteshwor,11,S0017,Tinkune Stop,27.6835,85.3486
+R3271482,Lagankhel - Koteshwor,12,S0107,Koteshwor Stop,27.6802001,85.3494489
+R3277397,Bhaktapur - Gongabu,1,S0089,Suryabinayek,27.66574,85.424212
+R3277397,Bhaktapur - Gongabu,2,S0014,Sallaghari North,27.674055,85.409969
+R3277397,Bhaktapur - Gongabu,3,S0022,Lokanthali North,27.674829,85.359862
+R3277397,Bhaktapur - Gongabu,4,S0107,Koteshwor Stop,27.6802001,85.3494489
+R3277397,Bhaktapur - Gongabu,5,S0053,Gairigaun Stop,27.687275,85.35056
+R3277397,Bhaktapur - Gongabu,6,S0139,Sinamangal/Ring Road Stop सिनामंगल,27.6983,85.3533
+R3277397,Bhaktapur - Gongabu,7,S0070,Airport Bus Station,27.700728,85.353666
+R3277397,Bhaktapur - Gongabu,8,S0204,Gaushala Chowk Stop,27.7082,85.3485
+R3277397,Bhaktapur - Gongabu,9,S0195,Chabahil चाबाहील,27.717,85.3465
+R3277397,Bhaktapur - Gongabu,10,S0355,Gopikrishna,27.719,85.356
+R3277397,Bhaktapur - Gongabu,11,S0217,Sukedhara Stop,27.7245,85.3438
+R3277397,Bhaktapur - Gongabu,12,S0118,Dhumbarahi,27.731787,85.344365
+R3277397,Bhaktapur - Gongabu,13,S0065,Basundhara,27.7378,85.3215
+R3277397,Bhaktapur - Gongabu,14,S0187,Samakhusi Stop,27.7335,85.3125
+R3277397,Bhaktapur - Gongabu,15,S0174,Naya Bus Park,27.7303,85.3082
+R3283810,Ratna Park - Naikap,1,S0013,Ratna Park,27.706705,85.315249
+R3283810,Ratna Park - Naikap,2,S0067,Shahid Gate,27.699685,85.314748
+R3283810,Ratna Park - Naikap,3,S0056,Tripureshwor,27.694418,85.314128
+R3283810,Ratna Park - Naikap,4,S0276,Tek (Teku),27.696325,85.306981
+R3283810,Ratna Park - Naikap,5,S0023,Kalimati,27.69843,85.29944
+R3283810,Ratna Park - Naikap,6,S0271,Soalteemode West,27.7005956,85.2858267
+R3283810,Ratna Park - Naikap,7,S0246,Bafal,27.7021638,85.2780949
+R3283810,Ratna Park - Naikap,8,S0130,Kalanki,27.6938,85.2818
+R3283810,Ratna Park - Naikap,9,S0345,Khasi Bazaar,27.6895,85.2845
+R3283810,Ratna Park - Naikap,10,S0346,Syuchatar,27.70096,85.27484
+R3283810,Ratna Park - Naikap,11,S0291,Naikap Bus Stop,27.689104,85.263889
+R3288696,Lagankhel - Ratna Park,1,S0112,Lagankhel Stop,27.6668,85.3219
+R3288696,Lagankhel - Ratna Park,2,S0103,Jawlakhel Stop,27.672577,85.314174
+R3288696,Lagankhel - Ratna Park,3,S0234,Pulchowk,27.6782,85.3169
+R3288696,Lagankhel - Ratna Park,4,S0063,Kupondole stop,27.688005,85.316248
+R3288696,Lagankhel - Ratna Park,5,S0185,Thapathali,27.691767,85.318016
+R3288696,Lagankhel - Ratna Park,6,S0056,Tripureshwor,27.694418,85.314128
+R3288696,Lagankhel - Ratna Park,7,S0067,Shahid Gate,27.699685,85.314748
+R3288696,Lagankhel - Ratna Park,8,S0013,Ratna Park,27.706705,85.315249
+R3296530,Koteshwor - Kalanki (via Satdobato),1,S0107,Koteshwor Stop,27.6802001,85.3494489
+R3296530,Koteshwor - Kalanki (via Satdobato),2,S0024,Balkumari Stop,27.6763,85.3395
+R3296530,Koteshwor - Kalanki (via Satdobato),3,S0020,Gwarko Chowk Stop,27.6705,85.334
+R3296530,Koteshwor - Kalanki (via Satdobato),4,S0182,B & B Hospital/KCM Stop,27.664221,85.330151
+R3296530,Koteshwor - Kalanki (via Satdobato),5,S0011,Satdobato Chowk Stop,27.6656,85.3283
+R3296530,Koteshwor - Kalanki (via Satdobato),6,S0352,Mahalaxmisthan,27.6651,85.3218
+R3296530,Koteshwor - Kalanki (via Satdobato),7,S0214,Ekantakuna,27.6667865,85.308215
+R3296530,Koteshwor - Kalanki (via Satdobato),8,S0258,Nakkhu (bus stop),27.6638808,85.306311
+R3296530,Koteshwor - Kalanki (via Satdobato),9,S0230,Balkhu,27.6823,85.2985
+R3296530,Koteshwor - Kalanki (via Satdobato),10,S0189,Sanepa height,27.674468,85.302217
+R3296530,Koteshwor - Kalanki (via Satdobato),11,S0130,Kalanki,27.6938,85.2818
+R3297080,Lagankhel - Balkhu,1,S0112,Lagankhel Stop,27.6668,85.3219
+R3297080,Lagankhel - Balkhu,2,S0194,Batuk Bhairav,27.664475,85.324003
+R3297080,Lagankhel - Balkhu,3,S0103,Jawlakhel Stop,27.672577,85.314174
+R3297080,Lagankhel - Balkhu,4,S0214,Ekantakuna,27.6667865,85.308215
+R3297080,Lagankhel - Balkhu,5,S0258,Nakkhu (bus stop),27.6638808,85.306311
+R3297080,Lagankhel - Balkhu,6,S0189,Sanepa height,27.674468,85.302217
+R3297080,Lagankhel - Balkhu,7,S0230,Balkhu,27.6823,85.2985
+R3297196,New Bus Park - Ratna Park,1,S0174,Naya Bus Park,27.7303,85.3082
+R3297196,New Bus Park - Ratna Park,2,S0349,Macchapokhari,27.728,85.302
+R3297196,New Bus Park - Ratna Park,3,S0113,Balaju,27.7275,85.3005
+R3297196,New Bus Park - Ratna Park,4,S0079,Sorhakhutte,27.718967,85.309619
+R3297196,New Bus Park - Ratna Park,5,S0087,Lainchaur stop,27.718757,85.317697
+R3297196,New Bus Park - Ratna Park,6,S0166,Kantipath,27.708912,85.314607
+R3297196,New Bus Park - Ratna Park,7,S0152,Jamal,27.708829,85.315292
+R3297196,New Bus Park - Ratna Park,8,S0013,Ratna Park,27.706705,85.315249
+R3319772,Thamel - Sorhakhutte Feeder,1,S0079,Sorhakhutte,27.718967,85.309619
+R3319772,Thamel - Sorhakhutte Feeder,2,S0356,Naya Bazar (Thamel),27.7135,85.3095
+R3319772,Thamel - Sorhakhutte Feeder,3,S0357,Chhetrapati,27.7128,85.309
+R3319772,Thamel - Sorhakhutte Feeder,4,S0342,Thamel,27.7154,85.3123
+R3319772,Thamel - Sorhakhutte Feeder,5,S0087,Lainchaur stop,27.718757,85.317697
+R3319772,Thamel - Sorhakhutte Feeder,6,S0341,Durbar Marg,27.712,85.317
+R3319772,Thamel - Sorhakhutte Feeder,7,S0152,Jamal,27.708829,85.315292
+R3319772,Thamel - Sorhakhutte Feeder,8,S0013,Ratna Park,27.706705,85.315249
+R3342445,Baluwatar - Naxal - Putalisadak Loop,1,S0337,Maharajgunj Chowk,27.736,85.3308
+R3342445,Baluwatar - Naxal - Putalisadak Loop,2,S0068,Baluwatar,27.724427,85.331034
+R3342445,Baluwatar - Naxal - Putalisadak Loop,3,S0051,Tangal,27.717202,85.330449
+R3342445,Baluwatar - Naxal - Putalisadak Loop,4,S0123,Naxal Bhagwati,27.712698,85.328691
+R3342445,Baluwatar - Naxal - Putalisadak Loop,5,S0083,Gyaneshwor Chowk,27.708687,85.331826
+R3342445,Baluwatar - Naxal - Putalisadak Loop,6,S0055,Dillibazaar stop,27.70537,85.326759
+R3342445,Baluwatar - Naxal - Putalisadak Loop,7,S0005,Putalisadak Stop,27.70569,85.322552
+R3342445,Baluwatar - Naxal - Putalisadak Loop,8,S0013,Ratna Park,27.706705,85.315249
+R3351750,Narayantar - Jorpati Central Line,1,S0344,Narayantar,27.724563,85.379906
+R3351750,Narayantar - Jorpati Central Line,2,S0135,Jorpati,27.721763,85.372632
+R3351750,Narayantar - Jorpati Central Line,3,S0026,Boudha,27.72072,85.36176
+R3351750,Narayantar - Jorpati Central Line,4,S0195,Chabahil चाबाहील,27.717,85.3465
+R3351750,Narayantar - Jorpati Central Line,5,S0083,Gyaneshwor Chowk,27.708687,85.331826
+R3351750,Narayantar - Jorpati Central Line,6,S0338,Kamalpokhari,27.7107,85.3252
+R3351750,Narayantar - Jorpati Central Line,7,S0339,Hattisar,27.7095,85.3238
+R3351750,Narayantar - Jorpati Central Line,8,S0031,Bagbazar Stop,27.705828,85.317204
+R3351750,Narayantar - Jorpati Central Line,9,S0013,Ratna Park,27.706705,85.315249
+R-NY-03,Pepsicola-Pepsicola (loop),1,S0372,Pepsicola,27.6915,85.3621
+R-NY-03,Pepsicola-Pepsicola (loop),2,S0159,Jadibuti,27.675459,85.3516
+R-NY-03,Pepsicola-Pepsicola (loop),3,S0107,Koteshwor Stop,27.6802001,85.3494489
+R-NY-03,Pepsicola-Pepsicola (loop),4,S0185,Thapathali,27.691767,85.318016
+R-NY-03,Pepsicola-Pepsicola (loop),5,S0056,Tripureshwor,27.694418,85.314128
+R-NY-03,Pepsicola-Pepsicola (loop),6,S0276,Tek (Teku),27.696325,85.306981
+R-NY-03,Pepsicola-Pepsicola (loop),7,S0023,Kalimati,27.69843,85.29944
+R-NY-03,Pepsicola-Pepsicola (loop),8,S0214,Ekantakuna,27.6667865,85.308215
+R-NY-03,Pepsicola-Pepsicola (loop),9,S0103,Jawlakhel Stop,27.672577,85.314174
+R-NY-03,Pepsicola-Pepsicola (loop),10,S0234,Pulchowk,27.6782,85.3169
+R-NY-03,Pepsicola-Pepsicola (loop),11,S0063,Kupondole stop,27.688005,85.316248
+R-NY-03,Pepsicola-Pepsicola (loop),12,S0185,Thapathali,27.691767,85.318016
+R-NY-03,Pepsicola-Pepsicola (loop),13,S0107,Koteshwor Stop,27.6802001,85.3494489
+R-NY-03,Pepsicola-Pepsicola (loop),14,S0159,Jadibuti,27.675459,85.3516
+R-NY-03,Pepsicola-Pepsicola (loop),15,S0372,Pepsicola,27.6915,85.3621
+R-NY-04,Babachowk-Putalisadak,1,S0373,Babachowk,27.6975,85.3686
+R-NY-04,Babachowk-Putalisadak,2,S0374,Gothatar Height/Tarigaon,27.702,85.367
+R-NY-04,Babachowk-Putalisadak,3,S0375,Gothatar Chowk,27.7005,85.365
+R-NY-04,Babachowk-Putalisadak,4,S0376,Gothatar School,27.699,85.364
+R-NY-04,Babachowk-Putalisadak,5,S0377,Khahare,27.688,85.359
+R-NY-04,Babachowk-Putalisadak,6,S0378,Khahare Chowk,27.6875,85.3585
+R-NY-04,Babachowk-Putalisadak,7,S0159,Jadibuti,27.675459,85.3516
+R-NY-04,Babachowk-Putalisadak,8,S0107,Koteshwor Stop,27.6802001,85.3494489
+R-NY-04,Babachowk-Putalisadak,9,S0029,Minbhawan,27.6877,85.338462
+R-NY-04,Babachowk-Putalisadak,10,S0127,Shantinagar Stop,27.687086,85.341372
+R-NY-04,Babachowk-Putalisadak,11,S0033,Bijulibazar Stop,27.692332,85.329615
+R-NY-04,Babachowk-Putalisadak,12,S0066,Bhrikuti Mandap Stop,27.702122,85.318738
+R-NY-04,Babachowk-Putalisadak,13,S0031,Bagbazar Stop,27.705828,85.317204
+R-NY-04,Babachowk-Putalisadak,14,S0005,Putalisadak Stop,27.70569,85.322552
+R-NY-05,Harharmahadev-Balkhu,1,S0383,Harharmahadev,27.693,85.372
+R-NY-05,Harharmahadev-Balkhu,2,S0384,Kandaghari,27.695,85.368
+R-NY-05,Harharmahadev-Balkhu,3,S0159,Jadibuti,27.675459,85.3516
+R-NY-05,Harharmahadev-Balkhu,4,S0107,Koteshwor Stop,27.6802001,85.3494489
+R-NY-05,Harharmahadev-Balkhu,5,S0185,Thapathali,27.691767,85.318016
+R-NY-05,Harharmahadev-Balkhu,6,S0056,Tripureshwor,27.694418,85.314128
+R-NY-05,Harharmahadev-Balkhu,7,S0276,Tek (Teku),27.696325,85.306981
+R-NY-05,Harharmahadev-Balkhu,8,S0023,Kalimati,27.69843,85.29944
+R-NY-06,Gopi Krishna-Balkumari,1,S0134,Gopi Krishna Stop,27.720629,85.346099
+R-NY-06,Gopi Krishna-Balkumari,2,S0030,Chakrapath Stop-- South,27.739835,85.336915
+R-NY-06,Gopi Krishna-Balkumari,3,S0337,Maharajgunj Chowk,27.736,85.3308
+R-NY-06,Gopi Krishna-Balkumari,4,S0068,Baluwatar,27.724427,85.331034
+R-NY-06,Gopi Krishna-Balkumari,5,S0123,Naxal Bhagwati,27.712698,85.328691
+R-NY-06,Gopi Krishna-Balkumari,6,S0005,Putalisadak Stop,27.70569,85.322552
+R-NY-06,Gopi Krishna-Balkumari,7,S0196,Anamnagar Stop,27.699488,85.3286
+R-NY-06,Gopi Krishna-Balkumari,8,S0209,Singha Durbar East Stop,27.696608,85.32815
+R-NY-06,Gopi Krishna-Balkumari,9,S0379,Hanumansthan,27.6965,85.3275
+R-NY-06,Gopi Krishna-Balkumari,10,S0108,Thapagaun Stop,27.691133,85.334031
+R-NY-06,Gopi Krishna-Balkumari,11,S0107,Koteshwor Stop,27.6802001,85.3494489
+R-NY-07,Gopi Krishna-Koteshwor,1,S0134,Gopi Krishna Stop,27.720629,85.346099
+R-NY-07,Gopi Krishna-Koteshwor,2,S0217,Sukedhara Stop,27.7245,85.3438
+R-NY-07,Gopi Krishna-Koteshwor,3,S0030,Chakrapath Stop-- South,27.739835,85.336915
+R-NY-07,Gopi Krishna-Koteshwor,4,S0102,New Plaza Stop,27.700951,85.322918
+R-NY-07,Gopi Krishna-Koteshwor,5,S0382,Baidya Khana,27.698,85.33
+R-NY-07,Gopi Krishna-Koteshwor,6,S0196,Anamnagar Stop,27.699488,85.3286
+R-NY-07,Gopi Krishna-Koteshwor,7,S0209,Singha Durbar East Stop,27.696608,85.32815
+R-NY-07,Gopi Krishna-Koteshwor,8,S0379,Hanumansthan,27.6965,85.3275
+R-NY-07,Gopi Krishna-Koteshwor,9,S0108,Thapagaun Stop,27.691133,85.334031
+R-NY-07,Gopi Krishna-Koteshwor,10,S0107,Koteshwor Stop,27.6802001,85.3494489
+R-SAJHA-01,Lagankhel-Gongabu Buspark,1,S0112,Lagankhel Stop,27.6668,85.3219
+R-SAJHA-01,Lagankhel-Gongabu Buspark,2,S0213,Kumaripati,27.67084,85.320098
+R-SAJHA-01,Lagankhel-Gongabu Buspark,3,S0103,Jawlakhel Stop,27.672577,85.314174
+R-SAJHA-01,Lagankhel-Gongabu Buspark,4,S0234,Pulchowk,27.6782,85.3169
+R-SAJHA-01,Lagankhel-Gongabu Buspark,5,S0237,Harihar Bhawan,27.6808,85.3131
+R-SAJHA-01,Lagankhel-Gongabu Buspark,6,S0063,Kupondole stop,27.688005,85.316248
+R-SAJHA-01,Lagankhel-Gongabu Buspark,7,S0056,Tripureshwor,27.694418,85.314128
+R-SAJHA-01,Lagankhel-Gongabu Buspark,8,S0236,"NAC (Nepal Airlines Corporation, Kantipath)",27.7076,85.3143
+R-SAJHA-01,Lagankhel-Gongabu Buspark,9,S0152,Jamal,27.708829,85.315292
+R-SAJHA-01,Lagankhel-Gongabu Buspark,10,S0087,Lainchaur stop,27.718757,85.317697
+R-SAJHA-01,Lagankhel-Gongabu Buspark,11,S0149,Lazimpat stop,27.722523,85.320924
+R-SAJHA-01,Lagankhel-Gongabu Buspark,12,S0082,Panipokhari stop,27.730686,85.325986
+R-SAJHA-01,Lagankhel-Gongabu Buspark,13,S0241,"President's Residence (Sheetal Niwas, Maharajgunj)",27.71716,85.31648
+R-SAJHA-01,Lagankhel-Gongabu Buspark,14,S0124,Teaching Hospital stop,27.734523,85.330711
+R-SAJHA-01,Lagankhel-Gongabu Buspark,15,S0044,Narayan Gopal Chowk,27.740022,85.337201
+R-SAJHA-01,Lagankhel-Gongabu Buspark,16,S0065,Basundhara,27.7378,85.3215
+R-SAJHA-01,Lagankhel-Gongabu Buspark,17,S0187,Samakhusi Stop,27.7335,85.3125
+R-SAJHA-01,Lagankhel-Gongabu Buspark,18,S0169,Gongabu Chowk,27.734978,85.314447
+R-SAJHA-01,Lagankhel-Gongabu Buspark,19,S0252,Gongabu Bus Park,27.7331364,85.3083967
+R-SAJHA-02,Lagankhel-Budhanilkantha,1,S0112,Lagankhel Stop,27.6668,85.3219
+R-SAJHA-02,Lagankhel-Budhanilkantha,2,S0213,Kumaripati,27.67084,85.320098
+R-SAJHA-02,Lagankhel-Budhanilkantha,3,S0103,Jawlakhel Stop,27.672577,85.314174
+R-SAJHA-02,Lagankhel-Budhanilkantha,4,S0234,Pulchowk,27.6782,85.3169
+R-SAJHA-02,Lagankhel-Budhanilkantha,5,S0237,Harihar Bhawan,27.6808,85.3131
+R-SAJHA-02,Lagankhel-Budhanilkantha,6,S0063,Kupondole stop,27.688005,85.316248
+R-SAJHA-02,Lagankhel-Budhanilkantha,7,S0056,Tripureshwor,27.694418,85.314128
+R-SAJHA-02,Lagankhel-Budhanilkantha,8,S0236,"NAC (Nepal Airlines Corporation, Kantipath)",27.7076,85.3143
+R-SAJHA-02,Lagankhel-Budhanilkantha,9,S0152,Jamal,27.708829,85.315292
+R-SAJHA-02,Lagankhel-Budhanilkantha,10,S0087,Lainchaur stop,27.718757,85.317697
+R-SAJHA-02,Lagankhel-Budhanilkantha,11,S0149,Lazimpat stop,27.722523,85.320924
+R-SAJHA-02,Lagankhel-Budhanilkantha,12,S0082,Panipokhari stop,27.730686,85.325986
+R-SAJHA-02,Lagankhel-Budhanilkantha,13,S0241,"President's Residence (Sheetal Niwas, Maharajgunj)",27.71716,85.31648
+R-SAJHA-02,Lagankhel-Budhanilkantha,14,S0124,Teaching Hospital stop,27.734523,85.330711
+R-SAJHA-02,Lagankhel-Budhanilkantha,15,S0044,Narayan Gopal Chowk,27.740022,85.337201
+R-SAJHA-02,Lagankhel-Budhanilkantha,16,S0238,Gangalal Hospital (Shahid Gangalal National Heart Centre),27.746,85.3438
+R-SAJHA-02,Lagankhel-Budhanilkantha,17,S0260,Neuro Hospital Bansbari (Upendra Devkota Memorial NINAS),27.7486124,85.3460046
+R-SAJHA-02,Lagankhel-Budhanilkantha,18,S0231,Golfutar stop,27.75144,85.345969
+R-SAJHA-02,Lagankhel-Budhanilkantha,19,S0268,Nepal Telecom (Budhanilkantha),27.733891,85.3595657
+R-SAJHA-02,Lagankhel-Budhanilkantha,20,S0255,Hattigauda,27.7553479,85.3478614
+R-SAJHA-02,Lagankhel-Budhanilkantha,21,S0249,Chapali Bhadrakali,27.7803217,85.3730428
+R-SAJHA-02,Lagankhel-Budhanilkantha,22,S0038,Deuba Chowk stop,27.773756,85.36033
+R-SAJHA-02,Lagankhel-Budhanilkantha,23,S0096,Budhanilkantha Micro Stand,27.776459,85.361934
+R-SAJHA-03,Godawari-Ratnapark,1,S0239,Godawari,27.597,85.3798
+R-SAJHA-03,Godawari-Ratnapark,2,S0267,Taukhel,27.6117622,85.357324
+R-SAJHA-03,Godawari-Ratnapark,3,S0272,Handegaun,27.6145,85.3555
+R-SAJHA-03,Godawari-Ratnapark,4,S0245,Badegaun,27.6172763,85.3536735
+R-SAJHA-03,Godawari-Ratnapark,5,S0253,Harisiddhi,27.6388413,85.3420486
+R-SAJHA-03,Godawari-Ratnapark,6,S0254,Hattiban,27.6503757,85.3368812
+R-SAJHA-03,Godawari-Ratnapark,7,S0138,Khumaltar Stop,27.65382,85.329107
+R-SAJHA-03,Godawari-Ratnapark,8,S0011,Satdobato Chowk Stop,27.6656,85.3283
+R-SAJHA-03,Godawari-Ratnapark,9,S0112,Lagankhel Stop,27.6668,85.3219
+R-SAJHA-03,Godawari-Ratnapark,10,S0213,Kumaripati,27.67084,85.320098
+R-SAJHA-03,Godawari-Ratnapark,11,S0103,Jawlakhel Stop,27.672577,85.314174
+R-SAJHA-03,Godawari-Ratnapark,12,S0234,Pulchowk,27.6782,85.3169
+R-SAJHA-03,Godawari-Ratnapark,13,S0237,Harihar Bhawan,27.6808,85.3131
+R-SAJHA-03,Godawari-Ratnapark,14,S0063,Kupondole stop,27.688005,85.316248
+R-SAJHA-03,Godawari-Ratnapark,15,S0056,Tripureshwor,27.694418,85.314128
+R-SAJHA-03,Godawari-Ratnapark,16,S0236,"NAC (Nepal Airlines Corporation, Kantipath)",27.7076,85.3143
+R-SAJHA-03,Godawari-Ratnapark,17,S0013,Ratna Park,27.706705,85.315249
+R-SAJHA-04,Lamatar-Ratnapark,1,S0200,Lamatar,27.628007,85.395369
+R-SAJHA-04,Lamatar-Ratnapark,2,S0273,Dungin,27.6355,85.3844
+R-SAJHA-04,Lamatar-Ratnapark,3,S0104,Lubhu Bus Stop,27.642901,85.373398
+R-SAJHA-04,Lamatar-Ratnapark,4,S0264,Sana Gaun Bus Stop,27.649786,85.3589255
+R-SAJHA-04,Lamatar-Ratnapark,5,S0274,"Kamalpokhari (Lamatar-area, distinct from central Kathmandu Kamalpokhari)",27.66583,85.334253
+R-SAJHA-04,Lamatar-Ratnapark,6,S0256,Imadol Krishna Mandir Road,27.6631915,85.3423521
+R-SAJHA-04,Lamatar-Ratnapark,7,S0262,Rata Makai Chowk,27.6648107,85.3410552
+R-SAJHA-04,Lamatar-Ratnapark,8,S0257,KIST Medical College Teaching Hospital,27.6628241,85.3347172
+R-SAJHA-04,Lamatar-Ratnapark,9,S0020,Gwarko Chowk Stop,27.6705,85.334
+R-SAJHA-04,Lamatar-Ratnapark,10,S0011,Satdobato Chowk Stop,27.6656,85.3283
+R-SAJHA-04,Lamatar-Ratnapark,11,S0112,Lagankhel Stop,27.6668,85.3219
+R-SAJHA-04,Lamatar-Ratnapark,12,S0103,Jawlakhel Stop,27.672577,85.314174
+R-SAJHA-04,Lamatar-Ratnapark,13,S0234,Pulchowk,27.6782,85.3169
+R-SAJHA-04,Lamatar-Ratnapark,14,S0237,Harihar Bhawan,27.6808,85.3131
+R-SAJHA-04,Lamatar-Ratnapark,15,S0063,Kupondole stop,27.688005,85.316248
+R-SAJHA-04,Lamatar-Ratnapark,16,S0056,Tripureshwor,27.694418,85.314128
+R-SAJHA-04,Lamatar-Ratnapark,17,S0236,"NAC (Nepal Airlines Corporation, Kantipath)",27.7076,85.3143
+R-SAJHA-04,Lamatar-Ratnapark,18,S0152,Jamal,27.708829,85.315292
+R-SAJHA-04,Lamatar-Ratnapark,19,S0149,Lazimpat stop,27.722523,85.320924
+R-SAJHA-04,Lamatar-Ratnapark,20,S0087,Lainchaur stop,27.718757,85.317697
+R-SAJHA-04,Lamatar-Ratnapark,21,S0013,Ratna Park,27.706705,85.315249
+R-SAJHA-05,Thankot-Tribhuvan International Airport,1,S0010,Thankot,27.706627,85.20574
+R-SAJHA-05,Thankot-Tribhuvan International Airport,2,S0270,Tribhuwan Park,27.689954,85.220857
+R-SAJHA-05,Thankot-Tribhuvan International Airport,3,S0119,Thankot Checkpost,27.689002,85.227229
+R-SAJHA-05,Thankot-Tribhuvan International Airport,4,S0266,Satungal,27.6825156,85.2489603
+R-SAJHA-05,Thankot-Tribhuvan International Airport,5,S0192,Naya Naikap,27.701283,85.289181
+R-SAJHA-05,Thankot-Tribhuvan International Airport,6,S0275,Dui Adda (Dhunga Adda),27.691351,85.275754
+R-SAJHA-05,Thankot-Tribhuvan International Airport,7,S0130,Kalanki,27.6938,85.2818
+R-SAJHA-05,Thankot-Tribhuvan International Airport,8,S0263,Ravi Bhavan,27.6950507,85.2948778
+R-SAJHA-05,Thankot-Tribhuvan International Airport,9,S0271,Soalteemode West,27.7005956,85.2858267
+R-SAJHA-05,Thankot-Tribhuvan International Airport,10,S0023,Kalimati,27.69843,85.29944
+R-SAJHA-05,Thankot-Tribhuvan International Airport,11,S0276,Tek (Teku),27.696325,85.306981
+R-SAJHA-05,Thankot-Tribhuvan International Airport,12,S0056,Tripureshwor,27.694418,85.314128
+R-SAJHA-05,Thankot-Tribhuvan International Airport,13,S0278,"N.A.Bh (Nepal Army Headquarters, Bhadrakali)",27.69941,85.31481
+R-SAJHA-05,Thankot-Tribhuvan International Airport,14,S0013,Ratna Park,27.706705,85.315249
+R-SAJHA-05,Thankot-Tribhuvan International Airport,15,S0036,Singha Durbar West Stop,27.69659,85.321228
+R-SAJHA-05,Thankot-Tribhuvan International Airport,16,S0097,Maitighar,27.693965,85.320962
+R-SAJHA-05,Thankot-Tribhuvan International Airport,17,S0033,Bijulibazar Stop,27.692332,85.329615
+R-SAJHA-05,Thankot-Tribhuvan International Airport,18,S0259,New Baneshwor East,27.6915196,85.3420486
+R-SAJHA-05,Thankot-Tribhuvan International Airport,19,S0017,Tinkune Stop,27.6835,85.3486
+R-SAJHA-05,Thankot-Tribhuvan International Airport,20,S0139,Sinamangal/Ring Road Stop सिनामंगल,27.6983,85.3533
+R-SAJHA-05,Thankot-Tribhuvan International Airport,21,S0240,Tribhuvan International Airport,27.6966,85.3591
+R-SAJHA-06,Thankot-Budhanilkantha,1,S0010,Thankot,27.706627,85.20574
+R-SAJHA-06,Thankot-Budhanilkantha,2,S0270,Tribhuwan Park,27.689954,85.220857
+R-SAJHA-06,Thankot-Budhanilkantha,3,S0119,Thankot Checkpost,27.689002,85.227229
+R-SAJHA-06,Thankot-Budhanilkantha,4,S0266,Satungal,27.6825156,85.2489603
+R-SAJHA-06,Thankot-Budhanilkantha,5,S0192,Naya Naikap,27.701283,85.289181
+R-SAJHA-06,Thankot-Budhanilkantha,6,S0130,Kalanki,27.6938,85.2818
+R-SAJHA-06,Thankot-Budhanilkantha,7,S0246,Bafal,27.7021638,85.2780949
+R-SAJHA-06,Thankot-Budhanilkantha,8,S0090,Sitapaila Stop,27.7086,85.2868
+R-SAJHA-06,Thankot-Budhanilkantha,9,S0211,Swayambhu Parikarma,27.7125,85.2862
+R-SAJHA-06,Thankot-Budhanilkantha,10,S0212,Banasthali,27.72483,85.297605
+R-SAJHA-06,Thankot-Budhanilkantha,11,S0113,Balaju,27.7275,85.3005
+R-SAJHA-06,Thankot-Budhanilkantha,12,S0187,Samakhusi Stop,27.7335,85.3125
+R-SAJHA-06,Thankot-Budhanilkantha,13,S0065,Basundhara,27.7378,85.3215
+R-SAJHA-06,Thankot-Budhanilkantha,14,S0044,Narayan Gopal Chowk,27.740022,85.337201
+R-SAJHA-06,Thankot-Budhanilkantha,15,S0238,Gangalal Hospital (Shahid Gangalal National Heart Centre),27.746,85.3438
+R-SAJHA-06,Thankot-Budhanilkantha,16,S0260,Neuro Hospital Bansbari (Upendra Devkota Memorial NINAS),27.7486124,85.3460046
+R-SAJHA-06,Thankot-Budhanilkantha,17,S0231,Golfutar stop,27.75144,85.345969
+R-SAJHA-06,Thankot-Budhanilkantha,18,S0255,Hattigauda,27.7553479,85.3478614
+R-SAJHA-06,Thankot-Budhanilkantha,19,S0038,Deuba Chowk stop,27.773756,85.36033
+R-SAJHA-06,Thankot-Budhanilkantha,20,S0096,Budhanilkantha Micro Stand,27.776459,85.361934
+R-SAJHA-07,Lele-Jamal,1,S0243,Lele,27.57,85.34
+R-SAJHA-07,Lele-Jamal,2,S0269,Tikabhairab Temple,27.5746276,85.3128817
+R-SAJHA-07,Lele-Jamal,3,S0279,Takhal,27.586,85.318
+R-SAJHA-07,Lele-Jamal,4,S0261,Pyangaun,27.5981685,85.3251264
+R-SAJHA-07,Lele-Jamal,5,S0216,Thecho,27.6153,85.319176
+R-SAJHA-07,Lele-Jamal,6,S0244,Sunakothi,27.64,85.32
+R-SAJHA-07,Lele-Jamal,7,S0250,Dholahiti,27.6402341,85.3181452
+R-SAJHA-07,Lele-Jamal,8,S0138,Khumaltar Stop,27.65382,85.329107
+R-SAJHA-07,Lele-Jamal,9,S0248,Chapagaun Dobato,27.6579362,85.3225346
+R-SAJHA-07,Lele-Jamal,10,S0112,Lagankhel Stop,27.6668,85.3219
+R-SAJHA-07,Lele-Jamal,11,S0213,Kumaripati,27.67084,85.320098
+R-SAJHA-07,Lele-Jamal,12,S0103,Jawlakhel Stop,27.672577,85.314174
+R-SAJHA-07,Lele-Jamal,13,S0234,Pulchowk,27.6782,85.3169
+R-SAJHA-07,Lele-Jamal,14,S0237,Harihar Bhawan,27.6808,85.3131
+R-SAJHA-07,Lele-Jamal,15,S0063,Kupondole stop,27.688005,85.316248
+R-SAJHA-07,Lele-Jamal,16,S0056,Tripureshwor,27.694418,85.314128
+R-SAJHA-07,Lele-Jamal,17,S0236,"NAC (Nepal Airlines Corporation, Kantipath)",27.7076,85.3143
+R-SAJHA-07,Lele-Jamal,18,S0152,Jamal,27.708829,85.315292
+R-SAJHA-08,Bungamati-Jamal,1,S0242,Bungamati,27.62,85.3
+R-SAJHA-08,Bungamati-Jamal,2,S0247,Bhaisepati,27.6525418,85.3048668
+R-SAJHA-08,Bungamati-Jamal,3,S0258,Nakkhu (bus stop),27.6638808,85.306311
+R-SAJHA-08,Bungamati-Jamal,4,S0214,Ekantakuna,27.6667865,85.308215
+R-SAJHA-08,Bungamati-Jamal,5,S0112,Lagankhel Stop,27.6668,85.3219
+R-SAJHA-08,Bungamati-Jamal,6,S0103,Jawlakhel Stop,27.672577,85.314174
+R-SAJHA-08,Bungamati-Jamal,7,S0234,Pulchowk,27.6782,85.3169
+R-SAJHA-08,Bungamati-Jamal,8,S0063,Kupondole stop,27.688005,85.316248
+R-SAJHA-08,Bungamati-Jamal,9,S0185,Thapathali,27.691767,85.318016
+R-SAJHA-08,Bungamati-Jamal,10,S0036,Singha Durbar West Stop,27.69659,85.321228
+R-SAJHA-08,Bungamati-Jamal,11,S0088,Bhadrakali,27.699352,85.317713
+R-SAJHA-08,Bungamati-Jamal,12,S0236,"NAC (Nepal Airlines Corporation, Kantipath)",27.7076,85.3143
+R-SAJHA-08,Bungamati-Jamal,13,S0152,Jamal,27.708829,85.315292

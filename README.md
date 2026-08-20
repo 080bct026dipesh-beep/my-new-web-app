@@ -1,53 +1,118 @@
 # Kathmandu Bus Route Finder
 
-A web-based public transport navigation system for the Kathmandu Valley. Enter an origin and destination and get a direct or single-transfer bus route, rendered on an interactive map.
+A web-based public transport navigation system for the Kathmandu Valley. Riders enter an origin and destination stop and get a direct or single-transfer bus route — with road-following geometry, walking connections, and historical traffic-congestion overlays — rendered on an interactive map.
 
 BE Minor Project — Department of Electronics & Computer Engineering, IOE Pulchowk Campus.
 
 **Team:** Dinesh Bhatta (080BCT025) · Dipesh S Saud (080BCT026) · Janak S Pujara (080BCT035)
 
-## Repo layout
+## Overview
 
-```
-backend/     FastAPI + NetworkX (graph engine) + PostGIS data access layer
-frontend/    Next.js 14 + Leaflet.js map UI
-data/        Raw exports, cleaned dataset, ETL scripts
-docs/        Proposal, defense materials, diagrams
+Kathmandu's public bus network has no unified digital route-finding tool — riders rely on word of mouth or informal route lists. This project builds a searchable, map-based route finder: pick an origin and destination stop (by name, or by detecting your current location), and the app returns the best route — direct where possible, with a single walking transfer otherwise — drawn on a Leaflet map with real road/footpath geometry from OSRM.
+
+## Features
+
+- Bus stop search with autocomplete
+- Direct route search between two stops
+- Single and Multi-transfer route search (walking connection between nearby stops) when no direct route exists
+- Origin/destination swap
+- Current-location detection, with nearby-stop selection based on it
+- Walking path from the user's location (or a chosen point) to the nearest stop
+- Interactive Leaflet map: colored polylines per route leg (dashed for walking transfers), distinct origin/destination/transfer markers, and a legend
+- Road-following route geometry via OSRM (falls back to straight-line segments if OSRM is unavailable)
+- Historical traffic-congestion overlay — a toggleable panel showing free-flow/moderate/heavy congestion by day-of-week and time-of-day bucket, colored on the map
+- FastAPI backend with NetworkX-based graph routing
+- PostgreSQL + PostGIS spatial data layer
+- Admin data-entry API for stops, routes, and route-stop assignments, with a separate JWT-based admin-account login
+
+There is no real-time GPS bus tracking, live schedules, or fare estimation in the running app — see [Known Limitations](#known-limitations).
+
+## System Architecture
+
+```mermaid
+flowchart LR
+    U[User] --> FE[Next.js / React frontend]
+    FE --> BE[FastAPI backend]
+    BE --> DB[(PostgreSQL + PostGIS)]
+    BE --> NX[NetworkX routing graph]
+    BE --> OSRM[OSRM driving + foot instances]
 ```
 
-## Tech stack
+The frontend calls the FastAPI backend over REST. The backend builds an in-memory NetworkX graph from the `stops`/`routes`/`route_stops` tables (cached, rebuildable via an admin endpoint) to find direct or single-transfer paths, then optionally enriches each ride leg with road-following geometry from OSRM before returning the result. Ride legs are recorded in the background afterwards to build up the historical congestion dataset.
+
+## Tech Stack
 
 | Layer      | Tech                                  |
 |------------|----------------------------------------|
-| Frontend   | Next.js 14, TypeScript, Tailwind CSS, Leaflet.js |
-| Backend    | Python 3.11, FastAPI, NetworkX, Pydantic |
-| Database   | PostgreSQL 16.14 + PostGIS                |
-| Routing    | OSRM (road-network geometry)           |
+| Frontend   | Next.js 16, React 18, TypeScript, Tailwind CSS, Leaflet.js / react-leaflet |
+| Backend    | Python 3.11, FastAPI 0.111, NetworkX 3.3, SQLAlchemy 2.0, Pydantic 2.7, PyJWT + passlib (admin auth) |
+| Database   | PostgreSQL 15 + PostGIS 3.4 (via the `postgis/postgis:15-3.4` image — matches `docker-compose.yml` and CI) |
+| Routing    | OSRM (separate driving and foot instances, road/walking-network geometry) |
+| Migrations | Alembic |
 
-## Local development
+## Project Structure
+
+```
+backend/     FastAPI app, SQLAlchemy models, NetworkX routing, Alembic migrations, tests
+frontend/    Next.js + TypeScript + Leaflet UI
+data/        Raw exports, cleaning/validation scripts, processed CSVs, schema.sql, import.sql
+docs/        Project proposal, Gantt chart, defense materials, architecture diagrams
+```
+
+See `backend/README.md` and `frontend/README.md` for the folder-level breakdown of each.
+
+## Prerequisites
+
+- Python 3.11
+- Node.js (for Next.js 16 / npm)
+- Docker (Postgres/PostGIS, and optionally OSRM)
+
+## Local Development Setup
 
 ```bash
-# 1. Start Postgres + PostGIS
+# 1. Clone
+git clone https://github.com/080bct026dipesh-beep/my-new-web-app.git
+cd my-new-web-app
+
+# 2. Start Postgres + PostGIS
 docker compose up -d db
 
-# 2. Backend
+# 3. Backend
 cd backend
-python -m venv venv && source venv/bin/activate
+python -m venv venv && source venv/bin/activate   # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-alembic upgrade head        # creates stops / routes / route_stops
+cp .env.example .env
+alembic upgrade head          # applies the full migration chain (see below)
+python3 -m scripts.seed_admin # creates the first admin account
 uvicorn app.main:app --reload
 
-# 3. Frontend
+# 4. Frontend (separate terminal)
 cd frontend
 npm install
 npm run dev
 ```
 
-Backend runs at `http://localhost:8000` (docs at `/docs`). Frontend runs at `http://localhost:3000`.
+Backend runs at `http://localhost:8000` (interactive docs at `/docs`). Frontend runs at `http://localhost:3000`.
 
-## Database migrations
+OSRM (road-following geometry) is optional for local dev — see [OSRM](#osrm) below. Full step-by-step commands, including the admin API and OSRM setup, are in `backend/README.md`.
 
-Schema changes are tracked with Alembic (`backend/migrations/`), per the reproducibility requirement in the proposal (Section 5.5.4).
+### Running backend on host vs. inside Docker
+
+- **On host** (`uvicorn` run directly, as above): `DATABASE_URL` should point at `localhost` — this is the default in `.env.example`.
+- **Inside Docker** (`docker compose up -d backend`): the `backend` service in `docker-compose.yml` already sets `DATABASE_URL` to use the Compose service name `db` as the host, since containers can't reach each other via `localhost`.
+
+## Database Setup
+
+PostgreSQL/PostGIS creates the empty database (via the `db` service in `docker-compose.yml`); Alembic then manages the schema inside it. These are separate steps:
+
+```bash
+docker compose up -d db      # PostgreSQL creates the ktm_bus_route_finder database
+cd backend && alembic upgrade head   # Alembic creates/updates the tables inside it
+```
+
+Use `alembic upgrade head` on a **new/empty** database. Don't blindly re-run it against a database that already has a migration history you're not sure about — check `alembic current` first, since re-applying isn't idempotent for a database whose state has diverged.
+
+The migration chain currently creates (in order): `stops`, `routes`, `route_stops` (initial schema) → replaced with the full schema (`operators`, `stops`, `routes`, `route_stops`, `route_operators`, `fare_rules`) → `admin_users` → `segment_congestion_stats`. An auxiliary `route_return_leg_priority` QA table was created and later dropped.
 
 ```bash
 cd backend
@@ -56,6 +121,133 @@ alembic revision -m "add fare column"          # create a new migration
 alembic downgrade -1                           # roll back one step
 ```
 
-## Team task boards
+## OSRM
 
-Tracked in Jira (Scrum board, 3 sprints, 7 epics). See `docs/` for the project proposal and Gantt schedule.
+The backend talks to two independent OSRM instances over HTTP:
+
+- **Driving profile** (`OSRM_BASE_URL`, default `http://localhost:5000`) — road-following geometry for ride legs on `/route-finder`.
+- **Foot profile** (`OSRM_FOOT_BASE_URL`, default `http://localhost:5001`) — pedestrian geometry for `/walking-route` ("walk to nearest stop").
+
+Both are optional. If a leg's OSRM call fails or the service is unreachable, `/route-finder` still returns a correct route with `road_geometry: null` for that leg (the frontend falls back to a straight line), and `/walking-route` returns HTTP 502.
+
+Start them via Docker Compose from the repo root: `docker compose up -d osrm osrm-foot`. Each needs a one-time `.osrm` data extract built from a Nepal OSM export first — see `backend/README.md` for the exact `osrm-extract` / `osrm-partition` / `osrm-customize` commands (driving and foot use separate extracts, since one `osrm-routed` process only serves the profile it was extracted with).
+
+## Running the Application
+
+```bash
+# Backend
+cd backend
+uvicorn app.main:app --reload
+
+# Frontend
+cd frontend
+npm run dev
+```
+
+## API
+
+Interactive OpenAPI/Swagger docs are available at `http://localhost:8000/docs` once the backend is running. Key endpoints (see `backend/app/api/`):
+
+| Method | Path | Purpose | Auth |
+|---|---|---|---|
+| GET | `/health` | Liveness check | — |
+| GET | `/stops` | List stops | — |
+| GET | `/stops/nearby` | Nearest stops to a lat/lng | — |
+| GET | `/routes` | List routes | — |
+| GET | `/routes/{route_id}` | Route detail | — |
+| GET | `/routes/{route_id}/stops` | Ordered stops on a route | — |
+| GET | `/route-finder` | Find a route between an origin and destination `stop_id` (direct, else single-transfer) | — |
+| GET | `/walking-route` | Foot-profile route between two coordinates (e.g. to the nearest stop) | — |
+| GET | `/congestion` | Historical congestion by day-of-week / hour-bucket (defaults to now, Nepal time) | — |
+| GET | `/congestion/buckets` | The fixed set of valid hour buckets | — |
+| POST | `/stops` | Create a stop | `X-Admin-Api-Key` |
+| POST | `/routes` | Create a route | `X-Admin-Api-Key` |
+| POST | `/routes/{route_id}/stops` | Add a stop to a route | `X-Admin-Api-Key` |
+| PATCH | `/routes/{route_id}/status` | Update a route's status | `X-Admin-Api-Key` |
+| POST | `/graph/reload` | Force-rebuild the cached routing graph | `X-Admin-Api-Key` |
+| POST | `/admin/rebuild-graph` | Same as above, defined in `main.py` | `X-Admin-Api-Key` |
+| POST | `/admin/login` | Log in an `AdminUser`, returns a JWT | — |
+
+## Routing Algorithm
+
+For a given origin/destination `stop_id` pair, `backend/app/routing/pathfinder.py`:
+
+1. **Direct route search** — scans every active route for one that contains both stops (checking all occurrences, so loop routes work correctly), and, if the route is marked bidirectional, both directions of travel. If more than one direct route qualifies, the shortest by distance wins. A direct route always wins over a multi-route path.
+2. **Transfer search (fallback)** — if no direct route exists, falls back to a NetworkX Dijkstra shortest-path search over a graph where each ride node is `(stop_id, route_id, sequence_no)` (so repeated stops on loop routes stay distinct), with `board`/`alight`/`ride` edges per route and `walk` edges between different physical stops within `INTERCHANGE_DISTANCE` (100 m) of each other. Boarding a route costs a fixed `TRANSFER_PENALTY` (3000, in the same distance units as edge weights) so Dijkstra prefers fewer transfers over marginal distance savings.
+3. **Geometry** — each ride leg's stop sequence is sent to OSRM as waypoints (thinned to a minimum 80 m spacing to avoid OSRM zig-zagging between nearly-adjacent stops) to get road-following polylines; walking transfer legs are rendered as straight lines by the frontend.
+4. **Congestion recording** — after the response is sent, each ride leg with real OSRM geometry is recorded as a sample into `segment_congestion_stats`, bucketed by day-of-week and 3-hour time bucket (Nepal time), feeding the `/congestion` endpoint.
+
+The routing graph is built once and cached in memory; it's invalidated and rebuilt via `/graph/reload` or `/admin/rebuild-graph`, and automatically on certain admin writes (e.g. a route status flip).
+
+## Data Pipeline
+
+```
+data/raw/  →  scripts/clean_data.py  →  data/processed/*_clean.csv  →  schema.sql + import.sql  →  PostgreSQL/PostGIS  →  routing graph
+```
+
+`scripts/clean_data.py` removes orphaned `route_stops`, re-sequences stop order per route, recomputes each route's `start_stop_id`/`end_stop_id`/`total_stops`, resolves or nulls `operator_id`, flags distance outliers, and checks for orphan `route_operators`/`operators` pairs — writing validated CSVs plus a `processed/report.md` describing exactly what changed. `scripts/validate_clean.py` re-runs the same integrity checks against the CSVs with no database required. `schema.sql` then builds the schema and `import.sql` loads the CSVs via `\copy` in dependency order, ending with a built-in referential-integrity sanity check. See `data/README.md` and `data/scripts/README.md` for full detail and current dataset row counts.
+
+## Testing
+
+Backend tests use **pytest**:
+
+```bash
+cd backend
+pytest -v
+```
+
+- `tests/test_routing.py` — unit tests for graph construction and the pathfinder (bidirectional/one-directional edges, transfer edges, direct-vs-transfer preference, graph caching), no database required.
+- `tests/test_stops.py`, `tests/test_route_finder_api.py`, `tests/test_admin_route_status.py` — integration tests against a live database; they skip cleanly if Postgres isn't reachable (`docker compose up -d db` + `alembic upgrade head` first).
+- CI (`.github/workflows/ci.yml`) runs the full suite against a real `postgis/postgis:15-3.4` container on every PR.
+
+## Environment Variables
+
+Set in `backend/.env` (see `backend/.env.example`):
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `DATABASE_URL` | Yes | Postgres connection string |
+| `CORS_ORIGINS` | No (defaults to the local Next.js dev origin) | Comma-separated allowed frontend origins |
+| `ADMIN_API_KEY` | Yes (no default) | Shared secret for the `X-Admin-Api-Key` data-entry endpoints |
+| `JWT_SECRET_KEY` | Yes (no default) | Signs `AdminUser` login JWTs |
+| `OSRM_BASE_URL` | No (defaults to `http://localhost:5000`) | Driving-profile OSRM instance |
+| `OSRM_FOOT_BASE_URL` | No (in code, falls back to `OSRM_BASE_URL` if unset — `.env.example` sets it explicitly to `http://localhost:5001`) | Foot-profile OSRM instance |
+
+## Admin/Data Management
+
+Two independent auth mechanisms:
+
+- **`X-Admin-Api-Key` header** — one shared secret gating the data-entry endpoints (`POST /stops`, `POST /routes`, `POST /routes/{id}/stops`, `POST /graph/reload`, `POST /admin/rebuild-graph`).
+- **JWT via `POST /admin/login`** — authenticates an `AdminUser` account (seeded with `python3 -m scripts.seed_admin`) and returns a bearer token. Not currently required by the data-entry endpoints above — the two systems coexist rather than one gating the other.
+
+New `stop_id`/`route_id` values are server-generated, not caller-supplied. See `backend/README.md` for details.
+
+## Known Limitations
+
+- No real-time bus location/GPS tracking or live schedules — routing is based on the static stop/route dataset, and the congestion overlay is historical (day-of-week/time-bucket averages), not live traffic.
+- No fare estimation in the API/frontend yet, though a `fare_rules` table (distance-banded fares) exists in the schema.
+- Route geometry depends on OSRM being reachable; without it, legs fall back to straight-line segments.
+- Dataset coverage and field verification vary by record — see `data/README.md` / `data/processed/README.md` for current caveats (e.g. fare figures are a desk estimate, not yet field-verified).
+
+## Future Improvements
+
+Not implemented — potential future work:
+
+- Real-time bus location tracking
+- Live traffic-aware routing (beyond the current historical congestion overlay)
+- ETA estimation
+- Fare display in the app, using the existing `fare_rules` table
+- Expanded dataset coverage
+- Mobile/PWA support
+- Route reliability metrics
+- Multi-transfer (2+) route search
+
+## Team
+
+Dinesh Bhatta (080BCT025) · Dipesh S Saud (080BCT026) · Janak S Pujara (080BCT035) — BE Minor Project, Department of Electronics & Computer Engineering, IOE Pulchowk Campus.
+
+Task ownership and day-to-day workflow are documented in `CONTRIBUTING.md`. Team tasks are tracked in Jira (Scrum board, 3 sprints, 7 epics); see `docs/` for the project proposal and Gantt schedule.
+
+## License
+
+See `LICENSE`.

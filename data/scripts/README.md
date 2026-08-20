@@ -56,11 +56,11 @@ them without a test failing.
 
 ## CI
 
-`ci_data_pipeline.yml` (move to `.github/workflows/` to activate) runs the
-tests, re-runs the full pipeline against `data/raw`, validates the committed
-`data/processed` output, and warns if a fresh run would produce different
-output than what's currently committed — a signal that `data/raw` changed
-but `data/processed` wasn't regenerated to match.
+There's no dedicated data-pipeline CI workflow committed yet (only
+`.github/workflows/ci.yml`, which covers the backend/frontend test suites,
+not this pipeline). A workflow that re-runs the pipeline against `data/raw`,
+validates the committed `data/processed` output, and warns on drift would
+be a natural addition here.
 
 ## Known caveats / things to verify against your real data
 
@@ -89,3 +89,25 @@ Run the pipeline against your real `data/raw`, diff the output against the
 currently-committed `data/processed`, and adjust the three items above until
 they match (or intentionally differ, if you're improving on the original
 logic).
+
+## Other scripts in this folder
+
+Not part of the main `clean_data.py` → `validate_clean.py` pipeline above —
+one-off tools used during dataset QA:
+
+- **`merge_stops.py`** — applies confirmed stop-duplicate merges from
+  `stop_dedup_overrides.yaml` directly against the live database (repoints
+  `route_stops`/`routes` references, then deletes the now-orphaned `stops`
+  rows). Human-reviewed input required; not run automatically.
+- **`fix_stops_aliases.py`** — one-off fixer for rows in
+  `stops_production_v2.csv` where an unquoted comma inside `aliases` shifted
+  later columns; re-quotes the field using a Kathmandu-valley lat/lng
+  plausibility check.
+- **`verify_stop_coordinates.py`** / **`verify_stop_coordinates_v2.py`** —
+  cross-check stop coordinates against OpenStreetMap (Nominatim) by name/
+  alias; read-only, writes a verification report CSV rather than modifying
+  the input.
+- **`stop_dedup_overrides.yaml`**, **`route_dedup_overrides.yaml`**,
+  **`return_leg_overrides.yaml`** — human-confirmed override files consumed
+  by the pipeline/merge scripts above for candidate duplicates flagged
+  during cleaning.

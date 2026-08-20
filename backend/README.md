@@ -79,9 +79,9 @@ Two separate auth mechanisms, for two separate purposes:
 
 - **`X-Admin-Api-Key` header** (`ADMIN_API_KEY` in `.env`) — gates the
   data-entry endpoints in `app/api/admin.py`: `POST /stops`, `POST /routes`,
-  `POST /routes/{route_id}/stops`, `POST /graph/reload`, and
-  `POST /admin/rebuild-graph` (in `main.py`). One shared secret for the
-  small team doing data entry — not per-user.
+  `POST /routes/{route_id}/stops`, `PATCH /routes/{route_id}/status`,
+  `POST /graph/reload`, and `POST /admin/rebuild-graph` (in `main.py`).
+  One shared secret for the small team doing data entry — not per-user.
 - **JWT via `POST /admin/login`** — authenticates an `AdminUser` account
   (seeded with `python3 -m scripts.seed_admin`, see Setup step 5) and
   returns a bearer token. Not currently required by anything in
@@ -94,12 +94,27 @@ a reserved `M######` prefix (kept separate from the existing `R`-number
 space, which is OSM-sourced and not sequential — see
 `app/db/id_generator.py`).
 
+Flipping a route's status via `PATCH /routes/{route_id}/status` automatically invalidates and rebuilds the cached routing graph, so an inactive route stops (or an active one starts) showing up in `/route-finder` results immediately, without a separate `/graph/reload` call.
+
 `routes.operator_id` can legitimately be `NULL` — this isn't a data bug.
 Some routes are run by informal/unregistered local microbus services with
 no known formal operator; for these, `operator_id` is left null while the
 free-text `operator` column (e.g. "Local Microbus") still describes who
 runs it. Don't assume a null `operator_id` means missing data that needs
 fixing — check `operator` first before treating it as an issue.
+
+## Traffic congestion
+
+`GET /route-finder` records a background sample (day-of-week + 3-hour Nepal-time
+bucket, duration/distance from OSRM) for every ride leg that got real road
+geometry, upserting into `segment_congestion_stats`. `GET /congestion`
+(optionally with `day_of_week`/`hour` query params, defaulting to "now") reads
+those aggregates back and classifies each segment as `free_flow`, `moderate`,
+or `heavy` based on `avg_duration_s / free_flow_duration_s`. `GET
+/congestion/buckets` exposes the fixed set of valid hour buckets. The table
+can also be pre-populated with `scripts/seed_congestion_stats.py` — seeded
+rows are flagged `is_seeded=true` so real samples aren't confused with them.
+See `app/api/congestion.py` and `app/routing/time_buckets.py`.
 
 ## Running tests
 
@@ -146,14 +161,16 @@ docker exec -it ktm_bus_db psql -U ktm_bus -d ktm_bus_route_finder -c "\d <table
 ```
 backend/
 ├── app/
-│   ├── api/            FastAPI route handlers
+│   ├── api/            FastAPI route handlers (stops, routes, routing,
+│   │                     congestion, admin, admin_auth)
 │   ├── core/            Config, security (shared-key + JWT auth)
 │   ├── db/               Session, queries, id_generator, base
 │   ├── models/          SQLAlchemy ORM models (hand-synced with migrations — see above)
-│   ├── routing/          NetworkX routing logic (graph_builder, pathfinder, constants)
+│   ├── routing/          NetworkX routing logic (graph_builder, pathfinder,
+│   │                     constants, osrm_client, time_buckets)
 │   └── main.py
 ├── migrations/          Alembic migration scripts
-├── scripts/              One-off admin scripts (e.g. seed_admin.py)
+├── scripts/              One-off admin scripts (seed_admin.py, seed_congestion_stats.py)
 ├── tests/                DB-backed integration tests + routing unit tests
 ├── .env.example
 ├── alembic.ini

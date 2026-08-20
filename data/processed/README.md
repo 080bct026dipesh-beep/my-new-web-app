@@ -7,8 +7,9 @@ dataset — raw/unverified sources and the full audit trail live in
 
 ## Requirements
 
-Tested live against this exact stack (stock Ubuntu 24.04 LTS apt packages —
-no manual version pinning needed):
+The processed dataset and `schema.sql`/`import.sql` were validated against
+this stack (stock Ubuntu 24.04 LTS apt packages — no manual version pinning
+needed):
 
 | Component  | Version |
 |---|---|
@@ -21,12 +22,20 @@ no manual version pinning needed):
 sudo apt install postgresql-16 postgresql-16-postgis-3
 ```
 
+> **Note:** the schema itself is PostgreSQL-version-agnostic (no
+> version-specific SQL features are used), so it also runs unmodified
+> against the app's actual Docker/CI database, which uses
+> `postgis/postgis:15-3.4` (PostgreSQL 15 + PostGIS 3.4) — see the root
+> `docker-compose.yml` and `.github/workflows/ci.yml`. The 16.14 stack
+> above was this validation round's local environment, not a hard
+> requirement.
+
 ## Files
 
 | File | Contents |
 |---|---|
 | `schema.sql` | Table definitions, indexes, triggers, constraints. Run first. |
-| `import.sql` | `\copy` statements for all 7 CSVs + sanity checks. Run second. |
+| `import.sql` | `\copy` statements for all 6 CSVs + sanity checks. Run second. |
 | `operators_clean.csv` | 29 rows — bus/microbus/tempo operators |
 | `stops_clean.csv` | 302 rows — physical stops (lat/lng, amenities) |
 | `routes_clean.csv` | 88 rows — routes (distance, timing, operator link) |

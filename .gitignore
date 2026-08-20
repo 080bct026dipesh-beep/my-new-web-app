@@ -36,6 +36,9 @@ data/raw/*.osm
 !data/raw/yatayat_export.osm
 data/raw/*.pbf
 
+# Output of scripts/validate_clean.py --write-ready — regenerated on every run
+data/processed/ready/
+
 # --- Docker ---
 *.log
 !data/raw/yatayat_export.osm
@@ -44,3 +47,4 @@ data/import_run.sql
 # Ignore ad-hoc SQL backups that may contain sensitive dumps
 backup_*.sql
 *.sql.bak
+.rotated_admin_password.txt

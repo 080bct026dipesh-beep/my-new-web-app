@@ -6,9 +6,13 @@ This folder holds the unprocessed inputs to the cleaning pipeline documented in
 ## 1. OSM / Overpass Turbo exports
 **Source:** [Overpass Turbo](https://overpass-turbo.eu/) queries against OpenStreetMap,
 filtered to `bus`, `microbus`, and `tempo` route/stop tags for the Kathmandu Valley.
-**Method:** manual Overpass QL query, exported as CSV/GeoJSON then converted.
+**Method:** manual Overpass QL query, exported as raw OSM XML, then converted
+to CSV for the cleaning pipeline.
 **Files:**
-- `stops_production_v2.csv` — stop locations, names, tags
+- `overpass_export_2026-07-11_1331.osm`, `overpass_export_2026-07-11_1335.osm`
+  — raw Overpass XML exports (2026-07-11)
+- `stops_production_v2.csv` — stop locations, names, tags (converted from the
+  exports above)
 - `route_stops_production_v2.csv` — stop sequences per route
 - `routes_production_v2_fixed.csv` — route geometries/metadata
 
@@ -18,10 +22,10 @@ a community mapping project by Kathmandu University Geomatics and the Monsoon
 Collective, built on OSM data with a Leaflet routing UI and fare reference page.
 **Method:** exported/scraped route and fare listings from the site.
 **Files:**
+- `yatayat_export.osm` — the underlying 2013 OSM export (`osm_base` timestamp
+  2013-08-07) the Yatayat project was built on
 - Cross-referenced against `routes_production_v2_fixed.csv` and
   `route_stops_production_v2.csv` for route naming and continuity
-- Contributed to `return_leg_verification_priority_production_fixed.csv`
-  (routes flagged for manual return-leg verification)
 
 ## 3. DOTM (Department of Transport Management) records
 **Source:** Nepal DOTM operator/route registration records.

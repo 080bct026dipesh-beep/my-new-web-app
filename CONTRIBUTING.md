@@ -15,8 +15,8 @@ You'll still touch each other's folders sometimes (e.g. Janak's graph engine nee
 ## One-time setup (each person, once)
 
 ```bash
-git clone https://github.com/<username>/kathmandu-bus-route-finder.git
-cd kathmandu-bus-route-finder
+git clone https://github.com/080bct026dipesh-beep/my-new-web-app.git
+cd my-new-web-app
 
 # Backend
 cd backend
@@ -25,7 +25,7 @@ pip install -r requirements.txt
 cp .env.example .env
 cd ..
 
-# Frontend (once Dinesh scaffolds it)
+# Frontend
 cd frontend
 npm install
 cd ..

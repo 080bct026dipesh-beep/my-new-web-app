@@ -54,18 +54,20 @@ data/
    # exits 1 and prints failures if any check is non-zero
 ```
 
-3. **`schema.sql`** — builds the full schema (7 tables: `operators`,
-   `stops`, `routes`, `route_stops`, `route_operators`,
-   `route_return_leg_priority`, `fare_rules`) against a PostgreSQL 16.14 +
-   PostGIS 3.4.2 instance. Applied via Alembic migration
+3. **`schema.sql`** — builds the full schema (6 tables: `operators`,
+   `stops`, `routes`, `route_stops`, `route_operators`, `fare_rules`)
+   against the app's PostgreSQL + PostGIS instance (`postgis/postgis:15-3.4`
+   per `docker-compose.yml` and CI). Applied via Alembic migration
    `0002_replace_with_full_schema` in the backend's migration chain, so the
-   live app DB and this file stay in sync going forward.
+   live app DB and this file stay in sync going forward. An auxiliary
+   `route_return_leg_priority` QA table existed for a time but was dropped
+   in a later migration (`b3c9d1e4c6a7`) and is no longer part of the schema.
 
 4. **`import.sql`** — loads all `processed/*_clean.csv` files directly via
    `\copy` into the schema from step 3, in dependency order (operators →
-   stops → routes → route_stops → route_operators →
-   route_return_leg_priority → fare_rules), followed by a built-in
-   referential-integrity sanity check — all currently passing clean.
+   stops → routes → route_stops → route_operators → fare_rules), followed
+   by a built-in referential-integrity sanity check — all currently passing
+   clean.
 
    > **Before running:** paths inside `import.sql` are placeholders
    > (`/path/to/csv/`). Replace with your local absolute path to
@@ -77,15 +79,18 @@ data/
 
 | Table              | Row count |
 |--------------------|-----------|
-| `routes`           | 88        |
-| `stops`             | 302       |
+| `routes`           | 93        |
+| `stops`             | 313       |
 | `operators`         | 29        |
-| `route_stops`       | 1,662     |
+| `route_stops`       | 1,680     |
 | `route_operators`   | 86        |
 | `fare_rules`        | 5         |
 
 All of the above are confirmed loaded successfully into a live
-PostgreSQL 16.14 + PostGIS 3.4.2 instance via `import.sql`.
+PostgreSQL 15 + PostGIS 3.4 instance (matching `docker-compose.yml`/CI) via
+`import.sql`. `data/processed/README.md` lists PostgreSQL 16.14 as the
+version tested against for the standalone import path — see the note there;
+the app's own database (Docker/CI) currently runs PostgreSQL 15.
 
 **Referential-integrity audit** — passed clean end-to-end:
   - `route_stops → stops` orphan check: **0**
@@ -109,4 +114,3 @@ the `EXCLUDE USING gist` constraint) and correctly computed as
 
 **Unresolved operator matches** — none currently. All routes have a
 resolved `operator_id` as of the latest cleaned dataset.
-
