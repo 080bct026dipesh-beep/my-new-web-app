@@ -115,3 +115,16 @@ export interface RouteStopEntry {
   sequence_no: number;
   stop: Stop;
 }
+
+// GET /stops -- mirrors StopListOut in backend/app/schemas.py.
+export interface StopListOut {
+  total: number;
+  limit: number;
+  offset: number;
+  items: Stop[];
+}
+
+// GET /routes/{route_id} -- same shape as RouteSummary (RouteOut in the
+// backend), aliased separately so call sites reading a single route don't
+// have to import "RouteSummary" for a non-list context.
+export type RouteOut = RouteSummary;

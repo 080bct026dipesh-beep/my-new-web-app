@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { Stop, StopPickTarget } from "@/types/route";
-import { buildStopLabelIndex } from "@/lib/stopLabel";
+import { buildStopLabel, buildStopLabelIndex } from "@/lib/stopLabel";
+import StopAutocomplete from "./StopAutocomplete";
 
 interface SearchFormProps {
   stops: Stop[];
@@ -42,10 +43,10 @@ export default function SearchForm({
 }: SearchFormProps) {
   const [fieldError, setFieldError] = useState<FieldError>(null);
 
-  // See lib/stopLabel.ts -- must stay identical to how page.tsx labels a
+  // See lib/stopLabel.ts -- must stay identical to how the parent labels a
   // picked Stop (map click, geolocation, "use my location"), or typed
   // text and programmatically-set text would resolve differently.
-  const { labelToStop, labels } = useMemo(() => buildStopLabelIndex(stops), [stops]);
+  const { labelToStop } = useMemo(() => buildStopLabelIndex(stops), [stops]);
 
   function resolveStop(typedLabel: string): Stop | null {
     return labelToStop.get(typedLabel.trim().toLowerCase()) ?? null;
@@ -98,11 +99,23 @@ export default function SearchForm({
         </p>
       )}
 
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center justify-between">
-          <label htmlFor="origin" className="text-xs uppercase tracking-wide text-neutral-400">
-            From
-          </label>
+      <StopAutocomplete
+        id="origin"
+        label="From"
+        stops={stops}
+        stopsLoading={stopsLoading}
+        value={originText}
+        onChange={(v) => {
+          onOriginTextChange(v);
+          if (fieldError) setFieldError(null);
+        }}
+        onSelect={(stop) => {
+          onOriginTextChange(buildStopLabel(stop, stops));
+          setFieldError(null);
+        }}
+        invalid={originInvalid}
+        placeholder="Origin stop"
+        headerActions={
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -110,7 +123,7 @@ export default function SearchForm({
               disabled={locating}
               className="text-xs text-route-accent hover:underline disabled:opacity-50"
             >
-              {locating ? "Locating…" : "Use my location"}
+              {locating ? "Locating…" : "📍 Use my location"}
             </button>
             <button
               type="button"
@@ -123,23 +136,8 @@ export default function SearchForm({
               {pickTarget === "origin" ? "Picking…" : "Pick on map"}
             </button>
           </div>
-        </div>
-        <input
-          id="origin"
-          list="stop-options"
-          value={originText}
-          onChange={(e) => {
-            onOriginTextChange(e.target.value);
-            if (fieldError) setFieldError(null);
-          }}
-          placeholder={stopsLoading ? "Loading stops…" : "Origin stop"}
-          autoComplete="off"
-          aria-invalid={originInvalid}
-          className={`rounded-md border bg-route-bg px-3 py-2 text-sm outline-none focus:border-route-accent ${
-            originInvalid ? "border-red-700" : "border-route-line"
-          }`}
-        />
-      </div>
+        }
+      />
 
       <div className="-my-1 flex justify-center">
         <button
@@ -153,11 +151,23 @@ export default function SearchForm({
         </button>
       </div>
 
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center justify-between">
-          <label htmlFor="destination" className="text-xs uppercase tracking-wide text-neutral-400">
-            To
-          </label>
+      <StopAutocomplete
+        id="destination"
+        label="To"
+        stops={stops}
+        stopsLoading={stopsLoading}
+        value={destinationText}
+        onChange={(v) => {
+          onDestinationTextChange(v);
+          if (fieldError) setFieldError(null);
+        }}
+        onSelect={(stop) => {
+          onDestinationTextChange(buildStopLabel(stop, stops));
+          setFieldError(null);
+        }}
+        invalid={destinationInvalid}
+        placeholder="Destination stop"
+        headerActions={
           <button
             type="button"
             onClick={() => togglePick("destination")}
@@ -168,31 +178,8 @@ export default function SearchForm({
           >
             {pickTarget === "destination" ? "Picking…" : "Pick on map"}
           </button>
-        </div>
-        <input
-          id="destination"
-          list="stop-options"
-          value={destinationText}
-          onChange={(e) => {
-            onDestinationTextChange(e.target.value);
-            if (fieldError) setFieldError(null);
-          }}
-          placeholder={stopsLoading ? "Loading stops…" : "Destination stop"}
-          autoComplete="off"
-          aria-invalid={destinationInvalid}
-          className={`rounded-md border bg-route-bg px-3 py-2 text-sm outline-none focus:border-route-accent ${
-            destinationInvalid ? "border-red-700" : "border-route-line"
-          }`}
-        />
-      </div>
-
-      {/* Fine for small stop counts. If the full stop list is large,
-          swap this for a debounced /stops?search= call instead. */}
-      <datalist id="stop-options">
-        {labels.map(({ stop_id, label }) => (
-          <option key={stop_id} value={label} />
-        ))}
-      </datalist>
+        }
+      />
 
       {fieldError && (
         <p className="text-xs text-red-400" role="alert">

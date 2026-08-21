@@ -1,22 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import dynamic from "next/dynamic";
-import SearchForm from "@/components/SearchForm";
+import SearchForm from "@/components/search/SearchForm";
 import CongestionPanel from "@/components/CongestionPanel";
 import RoutesPanel from "@/components/RoutesPanel";
-import {
-  CongestionSegment,
-  LatLng,
-  RouteSearchResult,
-  RouteStopEntry,
-  RouteSummary,
-  Stop,
-  StopPickTarget,
-  WalkingRoute,
-} from "@/types/route";
+import RouteResultPanel from "@/components/route/RouteResultPanel";
+import { Stop, StopPickTarget } from "@/types/route";
 import { buildStopLabel } from "@/lib/stopLabel";
-import { LEG_COLORS } from "@/lib/constants";
+import { useStops } from "@/hooks/useStops";
+import { useGeolocation } from "@/hooks/useGeolocation";
+import { useRouteSearch } from "@/hooks/useRouteSearch";
+import { useCongestion } from "@/hooks/useCongestion";
+import { useRouteBrowser } from "@/hooks/useRouteBrowser";
 
 // Leaflet touches `window`, so the map must load client-side only.
 const BusMap = dynamic(() => import("@/components/BusMap"), {
@@ -28,23 +24,8 @@ const BusMap = dynamic(() => import("@/components/BusMap"), {
   ),
 });
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
-
-function formatDuration(totalSeconds: number): string {
-  const minutes = Math.round(totalSeconds / 60);
-  if (minutes < 60) return `${minutes} min`;
-  const hours = Math.floor(minutes / 60);
-  const remaining = minutes % 60;
-  return remaining === 0 ? `${hours} hr` : `${hours} hr ${remaining} min`;
-}
-
 export default function Home() {
-  const [stops, setStops] = useState<Stop[]>([]);
-  const [stopsLoading, setStopsLoading] = useState(true);
-  const [stopsError, setStopsError] = useState(false);
-  const [result, setResult] = useState<RouteSearchResult | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { stops, loading: stopsLoading, error: stopsError } = useStops();
 
   // Origin/destination text lives here (not inside SearchForm) so both the
   // form and a map click can write to it.
@@ -52,103 +33,23 @@ export default function Home() {
   const [destinationText, setDestinationText] = useState("");
   const [pickTarget, setPickTarget] = useState<StopPickTarget>(null);
 
-  // Auto-detected location + walk-to-nearest-stop path.
-  const [userLocation, setUserLocation] = useState<LatLng | null>(null);
-  const [nearestStop, setNearestStop] = useState<Stop | null>(null);
-  const [walkingRoute, setWalkingRoute] = useState<WalkingRoute | null>(null);
-  const [locating, setLocating] = useState(false);
-  const [locateError, setLocateError] = useState<string | null>(null);
+  const { userLocation, nearestStop, walkingRoute, locating, locateError, useMyLocation } =
+    useGeolocation({
+      stops,
+      // Offer the detected stop as the origin, but only if the user hasn't
+      // already typed/picked something themselves.
+      onStopFound: (label) => setOriginText((prev) => prev || label),
+    });
 
-  // Given a location, find + store the nearest stop and the walking path to
-  // it. Shared by the automatic on-load detect and the manual "Use my
-  // location" button so they behave identically.
-  const locateNearestStop = useCallback(async (lat: number, lng: number) => {
-    setUserLocation({ lat, lng });
-    try {
-      const params = new URLSearchParams({ lat: String(lat), lng: String(lng), limit: "1" });
-      const res = await fetch(`${API_BASE}/stops/nearby?${params.toString()}`);
-      if (!res.ok) throw new Error();
-      const nearby: Stop[] = await res.json();
-      if (nearby.length === 0) {
-        setLocateError("No stops found near your location.");
-        return;
-      }
-      const stop = nearby[0];
-      setNearestStop(stop);
-      // Offer it as the origin, but only if the user hasn't already
-      // typed/picked something themselves. Functional update reads the
-      // latest originText without needing it in this callback's deps.
-      // Must use the same disambiguated label SearchForm's datalist and
-      // resolveStop() use (lib/stopLabel.ts) -- setting bare stop_name
-      // here would silently fail to resolve for any stop whose name
-      // isn't unique across the valley.
-      setOriginText((prev) => prev || buildStopLabel(stop, stops));
+  const { result, loading, error, search } = useRouteSearch();
 
-      try {
-        const walkParams = new URLSearchParams({
-          from_lat: String(lat),
-          from_lng: String(lng),
-          to_lat: String(stop.lat),
-          to_lng: String(stop.lng),
-        });
-        const walkRes = await fetch(`${API_BASE}/walking-route?${walkParams.toString()}`);
-        // Walking directions are a nice-to-have (needs a foot-profile OSRM
-        // instance running); BusMap falls back to a straight line if this
-        // 404s/502s, so just leave walkingRoute null rather than surfacing
-        // an error.
-        if (walkRes.ok) {
-          setWalkingRoute(await walkRes.json());
-        } else {
-          setWalkingRoute(null);
-        }
-      } catch {
-        setWalkingRoute(null);
-      }
-    } catch {
-      setLocateError("Couldn't find a nearby stop. Try again.");
-    }
-  }, [stops]);
-
-  function handleUseMyLocation() {
-    if (!navigator.geolocation) {
-      setLocateError("Geolocation isn't available in this browser.");
-      return;
-    }
-    setLocating(true);
-    setLocateError(null);
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        await locateNearestStop(position.coords.latitude, position.coords.longitude);
-        setLocating(false);
-      },
-      () => {
-        setLocateError("Location permission denied.");
-        setLocating(false);
-      },
-      { timeout: 8000 }
-    );
-  }
-
-  // Auto-detect location once on load. This only asks for permission (the
-  // browser's native prompt) -- it never overwrites text the user already
-  // typed, and a denial is treated as a silent no-op rather than an error
-  // message on a page they haven't interacted with yet.
-  useEffect(() => {
-    if (!navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        locateNearestStop(position.coords.latitude, position.coords.longitude);
-      },
-      () => {
-        /* permission denied or unavailable -- fine, "Use my location" is still there */
-      },
-      { timeout: 8000 }
-    );
-  }, [locateNearestStop]);
+  const congestion = useCongestion();
+  const routeBrowser = useRouteBrowser();
 
   function handleStopPick(stop: Stop) {
-    // Same disambiguation as above -- a bare stop_name would break
-    // resolveStop() in SearchForm for any name that isn't unique.
+    // Same disambiguation as the geolocation flow -- a bare stop_name
+    // would break SearchForm's resolveStop() for any name that isn't
+    // unique.
     const label = buildStopLabel(stop, stops);
     if (pickTarget === "origin") {
       setOriginText(label);
@@ -158,253 +59,20 @@ export default function Home() {
     setPickTarget(null); // one pick and done, same as most map apps
   }
 
-  // Congestion overlay: off by default (extra map clutter + a fetch most
-  // visits don't need), with a day/hour picker that defers to the
-  // server's "now" bucket when both are null.
-  const [congestionEnabled, setCongestionEnabled] = useState(false);
-  const [congestionDayOfWeek, setCongestionDayOfWeek] = useState<number | null>(null);
-  const [congestionHourBucket, setCongestionHourBucket] = useState<number | null>(null);
-  const [congestionSegments, setCongestionSegments] = useState<CongestionSegment[]>([]);
-  const [congestionLoading, setCongestionLoading] = useState(false);
-
-  useEffect(() => {
-    if (!congestionEnabled) return;
-
-    let cancelled = false;
-
-    async function loadCongestion() {
-      setCongestionLoading(true);
-      try {
-        const params = new URLSearchParams();
-        if (congestionDayOfWeek !== null) params.set("day_of_week", String(congestionDayOfWeek));
-        if (congestionHourBucket !== null) params.set("hour", String(congestionHourBucket));
-        const res = await fetch(`${API_BASE}/congestion?${params.toString()}`);
-        if (!res.ok || cancelled) return;
-        const data: { segments: CongestionSegment[] } = await res.json();
-        if (!cancelled) setCongestionSegments(data.segments);
-      } catch {
-        // Congestion is a nice-to-have overlay -- fail silently and just
-        // leave whatever was last successfully loaded (or empty) rather
-        // than surfacing an error banner for a non-critical layer.
-      } finally {
-        if (!cancelled) setCongestionLoading(false);
-      }
-    }
-
-    loadCongestion();
-
-    // Only auto-refresh when following "now" (both pickers unset) --
-    // otherwise the user is deliberately browsing a fixed time and a
-    // refetch would just be wasted requests.
-    let interval: ReturnType<typeof setInterval> | undefined;
-    if (congestionDayOfWeek === null && congestionHourBucket === null) {
-      interval = setInterval(loadCongestion, 3 * 60 * 1000);
-    }
-
-    return () => {
-      cancelled = true;
-      if (interval) clearInterval(interval);
-    };
-  }, [congestionEnabled, congestionDayOfWeek, congestionHourBucket]);
-
-  const hasSeededOnly = congestionSegments.length > 0 && congestionSegments.every((s) => s.is_seeded);
-
-  // Route browser: paged/searchable list of routes, with one route at a
-  // time toggle-able "visible" (its ordered stops shown both inline in
-  // the panel and drawn on the map). Only one visible at a time keeps the
-  // map readable -- matches the congestion/walking overlays' approach.
-  const ROUTES_PAGE_SIZE = 50;
-  const [routes, setRoutes] = useState<RouteSummary[]>([]);
-  const [routesTotal, setRoutesTotal] = useState(0);
-  const [routesLoading, setRoutesLoading] = useState(false);
-  const [routesLoadingMore, setRoutesLoadingMore] = useState(false);
-  const [routeSearchQuery, setRouteSearchQuery] = useState("");
-  const [visibleRouteId, setVisibleRouteId] = useState<string | null>(null);
-  const [visibleRouteStops, setVisibleRouteStops] = useState<RouteStopEntry[]>([]);
-  const [visibleRouteStopsLoading, setVisibleRouteStopsLoading] = useState(false);
-  const [routeStopsCache, setRouteStopsCache] = useState<Record<string, RouteStopEntry[]>>({});
-
-  // Debounced search -- re-fetch page 1 whenever the query settles, rather
-  // than on every keystroke.
-  useEffect(() => {
-    let cancelled = false;
-
-    const timer = setTimeout(async () => {
-      setRoutesLoading(true);
-      try {
-        const params = new URLSearchParams({ limit: String(ROUTES_PAGE_SIZE), offset: "0" });
-        if (routeSearchQuery.trim()) params.set("q", routeSearchQuery.trim());
-        const res = await fetch(`${API_BASE}/routes?${params.toString()}`);
-        if (!res.ok || cancelled) return;
-        const data: { items: RouteSummary[]; total: number } = await res.json();
-        if (!cancelled) {
-          setRoutes(data.items);
-          setRoutesTotal(data.total);
-        }
-      } catch {
-        // Route browser is supplementary -- fail silently, panel just
-        // shows "no routes" rather than an error banner.
-      } finally {
-        if (!cancelled) setRoutesLoading(false);
-      }
-    }, 300);
-
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [routeSearchQuery]);
-
-  async function handleLoadMoreRoutes() {
-    setRoutesLoadingMore(true);
-    try {
-      const params = new URLSearchParams({
-        limit: String(ROUTES_PAGE_SIZE),
-        offset: String(routes.length),
-      });
-      if (routeSearchQuery.trim()) params.set("q", routeSearchQuery.trim());
-      const res = await fetch(`${API_BASE}/routes?${params.toString()}`);
-      if (res.ok) {
-        const data: { items: RouteSummary[]; total: number } = await res.json();
-        setRoutes((prev) => [...prev, ...data.items]);
-        setRoutesTotal(data.total);
-      }
-    } catch {
-      // supplementary feature -- ignore
-    } finally {
-      setRoutesLoadingMore(false);
-    }
-  }
-
-  async function handleToggleRouteVisible(route: RouteSummary) {
-    if (visibleRouteId === route.route_id) {
-      setVisibleRouteId(null);
-      setVisibleRouteStops([]);
-      return;
-    }
-
-    setVisibleRouteId(route.route_id);
-
-    const cached = routeStopsCache[route.route_id];
-    if (cached) {
-      setVisibleRouteStops(cached);
-      return;
-    }
-
-    setVisibleRouteStopsLoading(true);
-    setVisibleRouteStops([]);
-    try {
-      const res = await fetch(`${API_BASE}/routes/${route.route_id}/stops`);
-      if (res.ok) {
-        const data: RouteStopEntry[] = await res.json();
-        setVisibleRouteStops(data);
-        setRouteStopsCache((prev) => ({ ...prev, [route.route_id]: data }));
-      }
-    } catch {
-      // supplementary feature -- leave the list empty rather than erroring
-    } finally {
-      setVisibleRouteStopsLoading(false);
-    }
-  }
-
-  // Load the full stop list for the autocomplete datalist, paging through
-  // /stops since `limit` is capped server-side by settings.MAX_PAGE_SIZE.
-  useEffect(() => {
-    async function loadStops() {
-      try {
-        const pageSize = 100; // stays under MAX_PAGE_SIZE regardless of its exact value
-
-        // Fetch page 1 first to learn `total`, then fire every remaining
-        // page in parallel instead of one round-trip at a time -- with
-        // ~330 stops at pageSize=100 that was 4 sequential requests
-        // before the autocomplete list was ready.
-        const firstRes = await fetch(`${API_BASE}/stops?limit=${pageSize}&offset=0`);
-        if (!firstRes.ok) {
-          setStopsError(true);
-          return;
-        }
-        const first: { total: number; items: Stop[] } = await firstRes.json();
-        const all: Stop[] = [...first.items];
-
-        const remainingOffsets: number[] = [];
-        for (let offset = pageSize; offset < first.total; offset += pageSize) {
-          remainingOffsets.push(offset);
-        }
-
-        if (remainingOffsets.length > 0) {
-          const pages = await Promise.all(
-            remainingOffsets.map(async (offset) => {
-              const res = await fetch(`${API_BASE}/stops?limit=${pageSize}&offset=${offset}`);
-              if (!res.ok) throw new Error(`stops page at offset ${offset} failed`);
-              const data: { total: number; items: Stop[] } = await res.json();
-              return data.items;
-            })
-          );
-          for (const items of pages) all.push(...items);
-        }
-
-        setStops(all);
-      } catch {
-        // Search still works if the user knows a stop_id, but the
-        // autocomplete/"use my location" affordances need this list.
-        setStopsError(true);
-      } finally {
-        setStopsLoading(false);
-      }
-    }
-    loadStops();
-  }, []);
-
-  async function handleSearch(originId: string, destinationId: string) {
-    setLoading(true);
-    setError(null);
-    setResult(null);
-
-    try {
-      const params = new URLSearchParams({
-        origin: originId,
-        destination: destinationId,
-      });
-      const res = await fetch(`${API_BASE}/route-finder?${params.toString()}`);
-
-      if (res.status === 404) {
-        setResult({ found: false });
-        return;
-      }
-      if (!res.ok) {
-        setError("Something went wrong. Try again.");
-        return;
-      }
-
-      const data = await res.json();
-      setResult({ found: true, ...data });
-    } catch {
-      setError("Couldn't reach the server. Check your connection and try again.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  // Only meaningful if every leg has road geometry (OSRM succeeded for all of them).
-  const totalDurationS =
-    result?.found && result.legs.every((leg) => leg.road_geometry)
-      ? result.legs.reduce((sum, leg) => sum + (leg.road_geometry?.duration_s ?? 0), 0)
-      : null;
-
   return (
     <main className="flex h-screen w-screen flex-col md:flex-row">
       <aside className="flex w-full flex-col gap-4 overflow-y-auto border-b border-route-line p-4 md:h-full md:max-w-sm md:border-b-0 md:border-r">
         <div>
-          <h1 className="text-lg font-semibold">Kathmandu Bus Route Finder</h1>
+          <h1 className="text-lg font-semibold">🚌 KTM Bus</h1>
           <p className="text-sm text-neutral-400">
-            Find a direct or single-transfer bus route across the Valley.
+            Kathmandu Valley public transit navigator — direct or single-transfer routes.
           </p>
         </div>
 
         <SearchForm
           stops={stops}
           stopsLoading={stopsLoading}
-          onSearch={handleSearch}
+          onSearch={search}
           loading={loading}
           originText={originText}
           destinationText={destinationText}
@@ -414,100 +82,51 @@ export default function Home() {
           onPickTargetChange={setPickTarget}
           locating={locating}
           locateError={locateError}
-          onUseMyLocation={handleUseMyLocation}
+          onUseMyLocation={useMyLocation}
         />
 
         <CongestionPanel
-          enabled={congestionEnabled}
-          onToggle={() => setCongestionEnabled((v) => !v)}
-          dayOfWeek={congestionDayOfWeek}
-          hourBucket={congestionHourBucket}
-          onDayChange={setCongestionDayOfWeek}
-          onHourChange={setCongestionHourBucket}
-          loading={congestionLoading}
-          segmentCount={congestionSegments.length}
-          hasSeededOnly={hasSeededOnly}
+          enabled={congestion.enabled}
+          onToggle={congestion.toggle}
+          dayOfWeek={congestion.dayOfWeek}
+          hourBucket={congestion.hourBucket}
+          onDayChange={congestion.setDayOfWeek}
+          onHourChange={congestion.setHourBucket}
+          loading={congestion.loading}
+          segmentCount={congestion.segments.length}
+          hasSeededOnly={congestion.hasSeededOnly}
         />
 
         <RoutesPanel
-          routes={routes}
-          routesLoading={routesLoading}
-          total={routesTotal}
-          searchQuery={routeSearchQuery}
-          onSearchChange={setRouteSearchQuery}
-          visibleRouteId={visibleRouteId}
-          visibleRouteStops={visibleRouteStops}
-          visibleRouteStopsLoading={visibleRouteStopsLoading}
-          onToggleVisible={handleToggleRouteVisible}
-          hasMore={routes.length < routesTotal}
-          onLoadMore={handleLoadMoreRoutes}
-          loadingMore={routesLoadingMore}
+          routes={routeBrowser.routes}
+          routesLoading={routeBrowser.loading}
+          total={routeBrowser.total}
+          searchQuery={routeBrowser.searchQuery}
+          onSearchChange={routeBrowser.setSearchQuery}
+          visibleRouteId={routeBrowser.visibleRouteId}
+          visibleRouteStops={routeBrowser.visibleRouteStops}
+          visibleRouteStopsLoading={routeBrowser.visibleRouteStopsLoading}
+          onToggleVisible={routeBrowser.toggleVisible}
+          hasMore={routeBrowser.hasMore}
+          onLoadMore={routeBrowser.loadMore}
+          loadingMore={routeBrowser.loadingMore}
         />
 
         {stopsError && (
           <p className="rounded-md border border-amber-900 bg-amber-950/40 px-3 py-2 text-sm text-amber-300">
             Couldn&apos;t load the stop list from the server. You can still search if you know
             exact stop names, but suggestions won&apos;t be available.
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="ml-2 font-medium text-amber-200 underline"
+            >
+              Retry
+            </button>
           </p>
         )}
 
-        <div aria-live="polite" className="flex flex-col gap-2">
-          {error && (
-            <p className="rounded-md border border-red-900 bg-red-950/40 px-3 py-2 text-sm text-red-400">
-              {error}
-            </p>
-          )}
-
-          {result && !result.found && (
-            <p className="rounded-md bg-route-panel px-3 py-2 text-sm text-neutral-300">
-              No direct or single-transfer route found between those stops.
-            </p>
-          )}
-
-          {result && result.found && (
-            <div className="flex flex-col gap-2 text-sm">
-              <p className="text-neutral-400">
-                {result.transfer_count === 0
-                  ? "Direct route"
-                  : `${result.transfer_count} transfer${result.transfer_count > 1 ? "s" : ""}`}
-                {" · "}
-                {(result.total_cost / 1000).toFixed(1)} km
-                {totalDurationS !== null && <> · ~{formatDuration(totalDurationS)}</>}
-              </p>
-              {result.legs.map((leg, i) => {
-                const isWalk = leg.route_id === "TRANSFER";
-                return (
-                  <div
-                    key={`${leg.route_id}-${i}`}
-                    className="flex items-start gap-2 rounded-md bg-route-panel px-3 py-2"
-                  >
-                    <span
-                      className="mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full"
-                      style={{
-                        backgroundColor: isWalk
-                          ? "#9CA3AF"
-                          : LEG_COLORS[i % LEG_COLORS.length],
-                      }}
-                      aria-hidden
-                    />
-                    <div>
-                      <p className="font-medium">{leg.route_name}</p>
-                      <p className="text-neutral-400">
-                        {leg.board_stop.stop_name} → {leg.alight_stop.stop_name}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {!result && !error && (
-            <p className="text-sm text-neutral-500">
-              Pick a starting stop and a destination, then hit Find route to see it on the map.
-            </p>
-          )}
-        </div>
+        <RouteResultPanel result={result} loading={loading} error={error} />
       </aside>
 
       <div className="min-h-[50vh] flex-1 md:min-h-0">
@@ -520,8 +139,8 @@ export default function Home() {
           userLocation={userLocation}
           walkingRoute={walkingRoute}
           nearestStop={nearestStop}
-          congestionSegments={congestionEnabled ? congestionSegments : []}
-          browseRouteStops={visibleRouteStops}
+          congestionSegments={congestion.enabled ? congestion.segments : []}
+          browseRouteStops={routeBrowser.visibleRouteStops}
         />
       </div>
     </main>
