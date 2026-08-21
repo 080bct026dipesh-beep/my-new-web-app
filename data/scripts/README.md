@@ -103,10 +103,17 @@ one-off tools used during dataset QA:
   `stops_production_v2.csv` where an unquoted comma inside `aliases` shifted
   later columns; re-quotes the field using a Kathmandu-valley lat/lng
   plausibility check.
-- **`verify_stop_coordinates.py`** / **`verify_stop_coordinates_v2.py`** —
-  cross-check stop coordinates against OpenStreetMap (Nominatim) by name/
-  alias; read-only, writes a verification report CSV rather than modifying
-  the input.
+- **`verify_stop_coordinates.py`** — cross-checks stop coordinates against
+  OpenStreetMap (Nominatim) by name/alias/zone-district context; read-only,
+  writes a verification report CSV rather than modifying the input. Run
+  with no flags for a full pass over every stop, or pass
+  `--previous <prior verification CSV>` to only re-query stops that came
+  back `NO_MATCH` last time (much faster re-runs — everything else is
+  carried over unchanged from the previous file). (Previously two separate
+  files, `verify_stop_coordinates.py` and `verify_stop_coordinates_v2.py`,
+  which duplicated ~90% of the same code; merged into one script with a
+  flag once it became clear they were sequential stages of one workflow,
+  not two independent tools.)
 - **`stop_dedup_overrides.yaml`**, **`route_dedup_overrides.yaml`**,
   **`return_leg_overrides.yaml`** — human-confirmed override files consumed
   by the pipeline/merge scripts above for candidate duplicates flagged
