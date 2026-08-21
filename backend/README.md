@@ -86,7 +86,9 @@ Two separate auth mechanisms, for two separate purposes:
   (seeded with `python3 -m scripts.seed_admin`, see Setup step 5) and
   returns a bearer token. Not currently required by anything in
   `admin.py` — the two systems coexist; `admin.py`'s endpoints still use
-  the shared key.
+  the shared key. Rate-limited to 5 requests/minute per IP (see
+  `app/core/rate_limit.py`) -- expect a 429 if you're hammering this
+  endpoint repeatedly while testing.
 
 `stop_id`/`route_id` for newly created rows are server-generated, not
 caller-supplied: stops get the next sequential `S####` value, routes get
@@ -94,7 +96,7 @@ a reserved `M######` prefix (kept separate from the existing `R`-number
 space, which is OSM-sourced and not sequential — see
 `app/db/id_generator.py`).
 
-Flipping a route's status via `PATCH /routes/{route_id}/status` automatically invalidates and rebuilds the cached routing graph, so an inactive route stops (or an active one starts) showing up in `/route-finder` results immediately, without a separate `/graph/reload` call.
+Flipping a route's status via `PATCH /routes/{route_id}/status`, or adding a stop to a route via `POST /routes/{route_id}/stops`, bumps a shared `graph_meta.version` counter in the database and refreshes this process's own cache immediately. Every other worker process/replica notices the version change on its own next request and rebuilds automatically -- this is what makes cache invalidation correct beyond a single-process deployment, rather than relying solely on the request that happened to make the change. See `app/models/graph_meta.py` for the full rationale. `/graph/reload` and `/admin/rebuild-graph` remain available as manual escape hatches.
 
 `routes.operator_id` can legitimately be `NULL` — this isn't a data bug.
 Some routes are run by informal/unregistered local microbus services with
@@ -163,9 +165,9 @@ backend/
 ├── app/
 │   ├── api/            FastAPI route handlers (stops, routes, routing,
 │   │                     congestion, admin, admin_auth)
-│   ├── core/            Config, security (shared-key + JWT auth)
+│   ├── core/            Config, security (shared-key + JWT auth), rate_limit (slowapi Limiter shared across endpoints)
 │   ├── db/               Session, queries, id_generator, base
-│   ├── models/          SQLAlchemy ORM models (hand-synced with migrations — see above)
+│   ├── models/          SQLAlchemy ORM models (hand-synced with migrations — see above; includes graph_meta, the routing-graph cache version counter)
 │   ├── routing/          NetworkX routing logic (graph_builder, pathfinder,
 │   │                     constants, osrm_client, time_buckets)
 │   └── main.py

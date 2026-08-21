@@ -38,7 +38,7 @@ flowchart LR
     BE --> OSRM[OSRM driving + foot instances]
 ```
 
-The frontend calls the FastAPI backend over REST. The backend builds an in-memory NetworkX graph from the `stops`/`routes`/`route_stops` tables (cached, rebuildable via an admin endpoint) to find direct or single-transfer paths, then optionally enriches each ride leg with road-following geometry from OSRM before returning the result. Ride legs are recorded in the background afterwards to build up the historical congestion dataset.
+The frontend calls the FastAPI backend over REST. The backend builds an in-memory NetworkX graph from the `stops`/`routes`/`route_stops` tables to find direct or single-transfer paths, then optionally enriches each ride leg with road-following geometry from OSRM before returning the result. Ride legs are recorded in the background afterwards to build up the historical congestion dataset. The graph is cached in memory per worker process and rebuilt lazily: a `graph_meta` table holds a version counter that every admin write bumps, and every request cheaply checks it against what the current process last built from -- so cache invalidation works correctly even across multiple worker processes/replicas, not just the one that happened to handle a given admin write.
 
 ## Tech Stack
 
@@ -112,7 +112,7 @@ cd backend && alembic upgrade head   # Alembic creates/updates the tables inside
 
 Use `alembic upgrade head` on a **new/empty** database. Don't blindly re-run it against a database that already has a migration history you're not sure about — check `alembic current` first, since re-applying isn't idempotent for a database whose state has diverged.
 
-The migration chain currently creates (in order): `stops`, `routes`, `route_stops` (initial schema) → replaced with the full schema (`operators`, `stops`, `routes`, `route_stops`, `route_operators`, `fare_rules`) → `admin_users` → `segment_congestion_stats`. An auxiliary `route_return_leg_priority` QA table was created and later dropped.
+The migration chain currently creates (in order): `stops`, `routes`, `route_stops` (initial schema) → replaced with the full schema (`operators`, `stops`, `routes`, `route_stops`, `route_operators`, `fare_rules`) → `admin_users` → `segment_congestion_stats` → `graph_meta` (single-row version counter for cross-process routing-graph cache invalidation). An auxiliary `route_return_leg_priority` QA table was created and later dropped.
 
 ```bash
 cd backend
@@ -177,7 +177,7 @@ For a given origin/destination `stop_id` pair, `backend/app/routing/pathfinder.p
 3. **Geometry** — each ride leg's stop sequence is sent to OSRM as waypoints (thinned to a minimum 80 m spacing to avoid OSRM zig-zagging between nearly-adjacent stops) to get road-following polylines; walking transfer legs are rendered as straight lines by the frontend.
 4. **Congestion recording** — after the response is sent, each ride leg with real OSRM geometry is recorded as a sample into `segment_congestion_stats`, bucketed by day-of-week and 3-hour time bucket (Nepal time), feeding the `/congestion` endpoint.
 
-The routing graph is built once and cached in memory; it's invalidated and rebuilt via `/graph/reload` or `/admin/rebuild-graph`, and automatically on certain admin writes (e.g. a route status flip).
+The routing graph is cached per worker process and rebuilt automatically whenever a `graph_meta.version` bump (from any admin write that changes graph shape, or a manual `/graph/reload` call) is newer than what that process last built from -- see [System Architecture](#system-architecture) above.
 
 ## Data Pipeline
 
@@ -218,7 +218,7 @@ Set in `backend/.env` (see `backend/.env.example`):
 Two independent auth mechanisms:
 
 - **`X-Admin-Api-Key` header** — one shared secret gating the data-entry endpoints (`POST /stops`, `POST /routes`, `POST /routes/{id}/stops`, `POST /graph/reload`, `POST /admin/rebuild-graph`).
-- **JWT via `POST /admin/login`** — authenticates an `AdminUser` account (seeded with `python3 -m scripts.seed_admin`) and returns a bearer token. Not currently required by the data-entry endpoints above — the two systems coexist rather than one gating the other.
+- **JWT via `POST /admin/login`** — authenticates an `AdminUser` account (seeded with `python3 -m scripts.seed_admin`) and returns a bearer token. Not currently required by the data-entry endpoints above — the two systems coexist rather than one gating the other. Rate-limited to 5 requests/minute per IP.
 
 New `stop_id`/`route_id` values are server-generated, not caller-supplied. See `backend/README.md` for details.
 
@@ -240,7 +240,6 @@ Not implemented — potential future work:
 - Expanded dataset coverage
 - Mobile/PWA support
 - Route reliability metrics
-- Multi-transfer (2+) route search
 
 ## Team
 

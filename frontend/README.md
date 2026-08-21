@@ -34,22 +34,58 @@ npm run start
 
 ## What's here
 
-- `app/page.tsx` — top-level layout, stop-list loading, geolocation
-  ("Use my location") handling, and the `/route-finder` search flow.
-- `components/SearchForm.tsx` — origin/destination inputs with autocomplete,
-  a swap button, and a "Use my location" button backed by `/stops/nearby`.
-- `components/BusMap.tsx` — imperative Leaflet map: draws each route leg as a
-  colored polyline (dashed for walking transfers), with distinct markers for
-  the trip's origin, destination, and any transfer points, road-following
-  geometry from OSRM when available, a historical traffic-congestion overlay
-  (colored by `congestion_level` from `/congestion`), and a legend.
-- `components/RoutesPanel.tsx` — renders the found route's legs (ride vs.
-  walking transfer) as a readable list alongside the map.
-- `components/CongestionPanel.tsx` — toggle for the congestion overlay, with
-  day-of-week/hour-bucket pickers (defaults to "now" in Nepal time) that call
-  `/congestion`.
-- `types/route.ts` — mirrors `backend/app/schemas.py`. Keep in sync if the
-  backend's response shapes change.
+```
+app/            layout, global styles, and page.tsx (composes the hooks
+                  and components below into the actual search UI)
+components/
+  route/          route-result rendering once a search succeeds
+                    - RouteTimeline.tsx -- leg-by-leg breakdown (ride vs.
+                      walking transfer), colored per LEG_COLORS
+  search/          origin/destination input UI
+                    - SearchForm.tsx -- inputs, swap button, "Use my
+                      location" button (backed by /stops/nearby)
+                    - StopAutocomplete.tsx -- the <datalist>-driven
+                      autocomplete dropdown
+  BusMap.tsx      imperative Leaflet map: colored polylines per route leg
+                    (dashed for walking transfers), distinct origin/
+                    destination/transfer markers, road-following geometry
+                    from OSRM when available, the historical congestion
+                    overlay, and a legend
+  CongestionPanel.tsx   toggle + day-of-week/hour-bucket pickers for the
+                          congestion overlay (defaults to "now" in Nepal
+                          time), calls /congestion
+  RoutesPanel.tsx  route list/browse view, separate from a single
+                    origin->destination search result
+hooks/          one hook per concern, holding the state + fetch logic
+                  that used to live inline in page.tsx
+                    - useStops.ts -- loads and paginates the full stop
+                      list for autocomplete
+                    - useGeolocation.ts -- "Use my location" flow:
+                      browser geolocation -> nearest stop via
+                      /stops/nearby -> labeled via lib/stopLabel.ts
+                    - useRouteSearch.ts -- the /route-finder search flow
+                    - useRouteBrowser.ts -- the routes-list browsing flow
+                    - useCongestion.ts -- /congestion fetching for the
+                      overlay
+lib/
+  api.ts          central fetch client -- all backend calls go through
+                    here rather than each component calling fetch()
+                    directly
+  constants.ts    shared values that must stay identical across
+                    components, e.g. LEG_COLORS (BusMap.tsx and
+                    RouteTimeline.tsx both import from here rather than
+                    each defining their own copy)
+  stopLabel.ts    stop_name isn't guaranteed unique across the valley
+                    (e.g. duplicate "Chowk"/"Bus Park" names); this
+                    builds a disambiguated label (name + district/
+                    stop_id when a name collides) used consistently by
+                    SearchForm's matching, StopAutocomplete's dropdown,
+                    and useGeolocation's auto-fill -- so a stop picked
+                    any of those three ways always resolves back to the
+                    same physical stop.
+types/route.ts  mirrors backend/app/schemas.py. Keep in sync if the
+                  backend's response shapes change.
+```
 
 ## Notes
 

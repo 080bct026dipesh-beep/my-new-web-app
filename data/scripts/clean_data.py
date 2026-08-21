@@ -18,10 +18,10 @@ This reproduces the logic described in the original report.md:
 Usage:
     python scripts/clean_data.py \
         --raw-dir data/raw \
-        --out-dir data/processed \
-        --config scripts/config.yaml   # optional, see config.example.yaml
+        --out-dir data/processed
 
-Requires: pandas, pyyaml (only if using --config). See requirements.txt.
+Requires: pandas, scipy, pyyaml (for the dedup override files -- not
+optional, unlike the old --config flag this replaces). See requirements.txt.
 """
 
 from __future__ import annotations

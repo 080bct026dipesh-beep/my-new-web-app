@@ -32,15 +32,18 @@ sudo apt install postgresql-16 postgresql-16-postgis-3
 
 ## Files
 
+`schema.sql` and `import.sql` live one level up, in `data/` (not in this
+folder alongside the CSVs) -- see `../schema.sql` / `../import.sql`.
+
 | File | Contents |
 |---|---|
-| `schema.sql` | Table definitions, indexes, triggers, constraints. Run first. |
-| `import.sql` | `\copy` statements for all 6 CSVs + sanity checks. Run second. |
+| `../schema.sql` | Table definitions, indexes, triggers, constraints. Run first. |
+| `../import.sql` | `\copy` statements for all 6 CSVs + sanity checks. Run second. |
 | `operators_clean.csv` | 29 rows — bus/microbus/tempo operators |
-| `stops_clean.csv` | 302 rows — physical stops (lat/lng, amenities) |
-| `routes_clean.csv` | 88 rows — routes (distance, timing, operator link) |
-| `route_stops_clean.csv` | 1662 rows — ordered route ↔ stop mapping |
-| `route_operators_clean.csv` | 86 rows — route ↔ operator (M:N, one primary each) |
+| `stops_clean.csv` | 313 rows — physical stops (lat/lng, amenities) |
+| `routes_clean.csv` | 93 rows — routes (distance, timing, operator link) |
+| `route_stops_clean.csv` | 1,615 rows — ordered route ↔ stop mapping |
+| `route_operators_clean.csv` | 91 rows — route ↔ operator (M:N, one primary each) |
 | `fare_rules_clean.csv` | 5 rows — distance-banded fare lookup |
 | `report.md` / `report_v4.md` | Full audit trail — read these before trusting a number |
 
@@ -48,11 +51,11 @@ sudo apt install postgresql-16 postgresql-16-postgis-3
 
 ```bash
 createdb ktm_bus
-psql -d ktm_bus -f schema.sql
+psql -d ktm_bus -f ../schema.sql
 
-# Edit import.sql first: replace /path/to/csv/ with the absolute path to
+# Edit ../import.sql first: replace /path/to/csv/ with the absolute path to
 # this folder (the CSVs listed above), then:
-psql -d ktm_bus -f import.sql
+psql -d ktm_bus -f ../import.sql
 ```
 
 The last query in `import.sql` is a sanity-check block — every row should

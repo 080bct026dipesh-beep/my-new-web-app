@@ -11,11 +11,11 @@ data/
 ├── processed/    Cleaned, validated CSVs ready for DB import
 │                   (see processed/README.md)
 │
-└── scripts/      Data-cleaning and validation pipeline
-                    - clean_data.py    — raw/ → processed/
-                    - validate_clean.py — post-cleaning integrity checks
-                    - test_clean_data.py — unit tests
-                    - requirements.txt
+└── scripts/      Data-cleaning and validation pipeline — see
+                    data/scripts/README.md for the full file list
+                    (clean_data.py, validate_clean.py, merge_stops.py,
+                    fix_stops_aliases.py, verify_stop_coordinates.py,
+                    dedup override YAML files, tests, requirements.txt)
 ```
 
 ## Pipeline order
@@ -40,8 +40,7 @@ data/
 ```bash
    python scripts/clean_data.py \
        --raw-dir data/raw \
-       --out-dir data/processed \
-       --config scripts/config.yaml   # optional
+       --out-dir data/processed
 ```
 
 2. **`scripts/validate_clean.py`** — integrity checks on `processed/*.csv`,
@@ -82,8 +81,8 @@ data/
 | `routes`           | 93        |
 | `stops`             | 313       |
 | `operators`         | 29        |
-| `route_stops`       | 1,680     |
-| `route_operators`   | 86        |
+| `route_stops`       | 1,615     |
+| `route_operators`   | 91        |
 | `fare_rules`        | 5         |
 
 All of the above are confirmed loaded successfully into a live
@@ -110,7 +109,6 @@ the `EXCLUDE USING gist` constraint) and correctly computed as
 
 **Field verification status** — not re-assessed this round.
   <!-- TODO: replace with current Tier 1/2/3 breakdown -->
-  Field verification status — not re-assessed this round.
 
 **Unresolved operator matches** — none currently. All routes have a
 resolved `operator_id` as of the latest cleaned dataset.
