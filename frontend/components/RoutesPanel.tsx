@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { RouteStopEntry, RouteSummary } from "@/types/route";
 
 function EyeIcon({ open }: { open: boolean }) {
@@ -62,11 +62,20 @@ export default function RoutesPanel({
   // the parent's fetch only fires once this is committed via the search
   // button or Enter. Synced from the prop so an external reset (e.g. the
   // parent clearing searchQuery elsewhere) is reflected here too.
+  //
+  // This resets draftQuery when searchQuery changes using React's
+  // recommended "adjust state during render" pattern rather than an
+  // effect (https://react.dev/learn/you-might-not-need-an-effect) --
+  // setState inside an effect body causes an extra cascading render on
+  // every parent-driven change; comparing against a tracked previous
+  // value during render lets React bail out and re-render immediately
+  // without ever committing the stale draft.
   const [draftQuery, setDraftQuery] = useState(searchQuery);
-
-  useEffect(() => {
+  const [prevSearchQuery, setPrevSearchQuery] = useState(searchQuery);
+  if (searchQuery !== prevSearchQuery) {
+    setPrevSearchQuery(searchQuery);
     setDraftQuery(searchQuery);
-  }, [searchQuery]);
+  }
 
   function commitSearch() {
     onSearchChange(draftQuery);

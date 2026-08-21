@@ -7,6 +7,7 @@ from .route_operator import RouteOperator
 from .fare_rule import FareRule
 from .admin_user import AdminUser
 from .segment_congestion_stat import SegmentCongestionStat
+from .graph_meta import GraphMeta
 
 __all__ = [
     "Base",
@@ -18,4 +19,5 @@ __all__ = [
     "FareRule",
     "AdminUser",
     "SegmentCongestionStat",
+    "GraphMeta",
 ]

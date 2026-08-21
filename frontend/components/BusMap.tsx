@@ -3,11 +3,11 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import { CongestionSegment, LatLng, RouteSearchResult, RouteStopEntry, Stop, StopPickTarget, WalkingRoute } from "@/types/route";
+import { LEG_COLORS } from "@/lib/constants";
 
 const VALLEY_CENTER: [number, number] = [27.7041, 85.32];
 
 // Kept in sync with the legend rendered in app/page.tsx.
-const LEG_COLORS = ["#3DDC97", "#F2A93B", "#5DA9E9", "#E06C75"];
 
 // Walking-to-nearest-stop path gets its own color, distinct from both the
 // route-leg palette above and the grey used for in-route transfer walks.
@@ -27,6 +27,21 @@ const CONGESTION_COLORS: Record<string, string> = {
 // route is toggled visible in RoutesPanel) gets its own color too, distinct
 // from every other layer this map draws.
 const BROWSE_ROUTE_COLOR = "#A78BFA";
+
+// Stop/route names come from admin data entry (or ultimately OSM/CSV
+// imports) and get interpolated into raw HTML strings below for Leaflet
+// popups/tooltips/divIcons. Leaflet treats string content as HTML, not
+// text, so anything containing `<`/`>`/`&` etc. would otherwise render
+// (and execute, for something like an <img onerror>) as markup. Escape
+// every such value at the point of interpolation.
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
 function dotIcon(color: string, size: number): L.DivIcon {
   return L.divIcon({
@@ -141,7 +156,7 @@ export default function BusMap({
         fillColor: "#9CA3AF",
         fillOpacity: 0.85,
       });
-      dot.bindTooltip(stop.stop_name, { direction: "top", offset: [0, -4] });
+      dot.bindTooltip(escapeHtml(stop.stop_name), { direction: "top", offset: [0, -4] });
       dot.on("click", () => {
         const target = pickTargetRef.current;
         if (target) onStopPickRef.current?.(stop);
@@ -202,8 +217,8 @@ export default function BusMap({
           ? "Moderate congestion"
           : "Heavy congestion";
       line.bindPopup(
-        `<strong>${from.stop_name} → ${to.stop_name}</strong>${
-          seg.route_id ? `<br/>${seg.route_id}` : ""
+        `<strong>${escapeHtml(from.stop_name)} → ${escapeHtml(to.stop_name)}</strong>${
+          seg.route_id ? `<br/>${escapeHtml(seg.route_id)}` : ""
         }<br/>${label} (${seg.congestion_ratio.toFixed(1)}x free-flow)` +
           `<br/>~${minutes} min typical, ${freeFlowMinutes} min free-flow` +
           (seg.is_seeded
@@ -227,8 +242,6 @@ export default function BusMap({
   useEffect(() => {
     const map = mapRef.current;
     if (!map || browseRouteStops.length === 0) return;
-
-    console.log("[BusMap] browseRouteStops received:", browseRouteStops);
 
     // Coerce + validate -- some API responses send lat/lng as strings, and
     // a single bad/missing coordinate would otherwise throw inside this
@@ -272,7 +285,7 @@ export default function BusMap({
           iconAnchor: [10, 10],
         }),
       });
-      marker.bindTooltip(`${entry.sequence_no}. ${entry.stop.stop_name}`, {
+      marker.bindTooltip(`${entry.sequence_no}. ${escapeHtml(entry.stop.stop_name)}`, {
         direction: "top",
         offset: [0, -8],
       });
@@ -320,7 +333,7 @@ export default function BusMap({
       const distanceKm = (walkingRoute.distance_m / 1000).toFixed(1);
       const minutes = Math.round(walkingRoute.duration_s / 60);
       line.bindPopup(
-        `<strong>Walk to ${nearestStop?.stop_name ?? "nearest stop"}</strong><br/>${distanceKm} km · ~${minutes} min`
+        `<strong>Walk to ${escapeHtml(nearestStop?.stop_name ?? "nearest stop")}</strong><br/>${distanceKm} km · ~${minutes} min`
       );
       layer.addLayer(line);
     } else if (nearestStop) {
@@ -333,7 +346,7 @@ export default function BusMap({
         ],
         { color: USER_WALK_COLOR, weight: 3, dashArray: "2 6", opacity: 0.7 }
       );
-      line.bindPopup(`Approx. path to ${nearestStop.stop_name} (straight line)`);
+      line.bindPopup(`Approx. path to ${escapeHtml(nearestStop.stop_name)} (straight line)`);
       layer.addLayer(line);
     }
 
@@ -375,7 +388,7 @@ export default function BusMap({
           icon: fromIcon,
         });
         fromMarker.bindPopup(
-          `<strong>${leg.board_stop.stop_name}</strong><br/>${
+          `<strong>${escapeHtml(leg.board_stop.stop_name)}</strong><br/>${
             isFirstLeg ? "Origin" : "Transfer point"
           }`
         );
@@ -385,7 +398,7 @@ export default function BusMap({
           icon: toIcon,
         });
         toMarker.bindPopup(
-          `<strong>${leg.alight_stop.stop_name}</strong><br/>${
+          `<strong>${escapeHtml(leg.alight_stop.stop_name)}</strong><br/>${
             isLastLeg ? "Destination" : "Transfer point"
           }`
         );
@@ -401,7 +414,7 @@ export default function BusMap({
             fillOpacity: 1,
             weight: 2,
           });
-          dot.bindPopup(stop.stop_name);
+          dot.bindPopup(escapeHtml(stop.stop_name));
           routeLayer.addLayer(dot);
         });
 
@@ -428,7 +441,7 @@ export default function BusMap({
           ? `${(leg.road_geometry.distance_m / 1000).toFixed(1)} km`
           : null;
         polyline.bindPopup(
-          `<strong>${isWalk ? "Walk" : leg.route_name}</strong>${
+          `<strong>${isWalk ? "Walk" : escapeHtml(leg.route_name)}</strong>${
             kmLabel ? `<br/>${kmLabel}` : ""
           }`
         );
@@ -458,7 +471,7 @@ export default function BusMap({
                   <span style="display:inline-block;width:14px;height:0;border-top:3px ${
                     row.dashed ? "dashed" : "solid"
                   } ${row.color};"></span>
-                  <span>${row.label}</span>
+                  <span>${escapeHtml(row.label)}</span>
                 </div>`
             )
             .join("");

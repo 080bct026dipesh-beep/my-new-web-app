@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Stop, StopPickTarget } from "@/types/route";
+import { buildStopLabelIndex } from "@/lib/stopLabel";
 
 interface SearchFormProps {
   stops: Stop[];
@@ -41,12 +42,13 @@ export default function SearchForm({
 }: SearchFormProps) {
   const [fieldError, setFieldError] = useState<FieldError>(null);
 
-  function resolveStop(typedName: string): Stop | null {
-    return (
-      stops.find(
-        (s) => s.stop_name.trim().toLowerCase() === typedName.trim().toLowerCase()
-      ) ?? null
-    );
+  // See lib/stopLabel.ts -- must stay identical to how page.tsx labels a
+  // picked Stop (map click, geolocation, "use my location"), or typed
+  // text and programmatically-set text would resolve differently.
+  const { labelToStop, labels } = useMemo(() => buildStopLabelIndex(stops), [stops]);
+
+  function resolveStop(typedLabel: string): Stop | null {
+    return labelToStop.get(typedLabel.trim().toLowerCase()) ?? null;
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -187,8 +189,8 @@ export default function SearchForm({
       {/* Fine for small stop counts. If the full stop list is large,
           swap this for a debounced /stops?search= call instead. */}
       <datalist id="stop-options">
-        {stops.map((s) => (
-          <option key={s.stop_id} value={s.stop_name} />
+        {labels.map(({ stop_id, label }) => (
+          <option key={stop_id} value={label} />
         ))}
       </datalist>
 

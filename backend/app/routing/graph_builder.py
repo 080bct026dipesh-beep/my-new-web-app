@@ -15,11 +15,12 @@ import math
 import networkx as nx
 from sqlalchemy.orm import Session
 
-from app.db.queries import get_active_routes
+from app.db.queries import get_active_routes, get_graph_version
 from app.routing.constants import EARTH_RADIUS, INTERCHANGE_DISTANCE, TRANSFER_PENALTY
 
 
 _graph_cache: nx.DiGraph | None = None
+_cached_version: int | None = None
 
 
 def haversine_distance_m(
@@ -240,14 +241,43 @@ def get_cached_graph(
     session: Session,
     refresh: bool = False,
 ) -> nx.DiGraph:
-    global _graph_cache
+    """Rebuilds only when needed: either explicitly asked to (refresh=True,
+    used by /admin/graph/reload as a manual escape hatch), or when the DB's
+    graph_meta.version has moved past what this process last built from.
 
-    if _graph_cache is None or refresh:
+    The version check is what makes cache invalidation work across
+    multiple worker processes/replicas -- refresh=True alone only ever
+    fixed the *current* process, silently leaving every other worker on
+    stale data. See app/models/graph_meta.py for the full rationale.
+
+    session may be None in unit tests that monkeypatch get_active_routes
+    to avoid touching a real DB (see tests/test_routing.py) -- version
+    tracking is simply skipped in that case, falling back to the
+    original refresh-flag-only behavior those tests already assume.
+    """
+    global _graph_cache, _cached_version
+
+    current_version = None
+    if session is not None:
+        try:
+            current_version = get_graph_version(session)
+        except Exception:
+            # Defensive: never let a version-check failure take down
+            # route-finding entirely. Falls back to refresh-flag-only
+            # behavior for this call; the next successful call recovers
+            # normal version tracking.
+            current_version = None
+
+    version_is_stale = current_version is not None and current_version != _cached_version
+
+    if _graph_cache is None or refresh or version_is_stale:
         _graph_cache = build_graph(session)
+        _cached_version = current_version
 
     return _graph_cache
 
 
 def invalidate_graph_cache() -> None:
-    global _graph_cache
+    global _graph_cache, _cached_version
     _graph_cache = None
+    _cached_version = None

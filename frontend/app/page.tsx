@@ -15,6 +15,8 @@ import {
   StopPickTarget,
   WalkingRoute,
 } from "@/types/route";
+import { buildStopLabel } from "@/lib/stopLabel";
+import { LEG_COLORS } from "@/lib/constants";
 
 // Leaflet touches `window`, so the map must load client-side only.
 const BusMap = dynamic(() => import("@/components/BusMap"), {
@@ -76,7 +78,11 @@ export default function Home() {
       // Offer it as the origin, but only if the user hasn't already
       // typed/picked something themselves. Functional update reads the
       // latest originText without needing it in this callback's deps.
-      setOriginText((prev) => prev || stop.stop_name);
+      // Must use the same disambiguated label SearchForm's datalist and
+      // resolveStop() use (lib/stopLabel.ts) -- setting bare stop_name
+      // here would silently fail to resolve for any stop whose name
+      // isn't unique across the valley.
+      setOriginText((prev) => prev || buildStopLabel(stop, stops));
 
       try {
         const walkParams = new URLSearchParams({
@@ -101,7 +107,7 @@ export default function Home() {
     } catch {
       setLocateError("Couldn't find a nearby stop. Try again.");
     }
-  }, []);
+  }, [stops]);
 
   function handleUseMyLocation() {
     if (!navigator.geolocation) {
@@ -141,10 +147,13 @@ export default function Home() {
   }, [locateNearestStop]);
 
   function handleStopPick(stop: Stop) {
+    // Same disambiguation as above -- a bare stop_name would break
+    // resolveStop() in SearchForm for any name that isn't unique.
+    const label = buildStopLabel(stop, stops);
     if (pickTarget === "origin") {
-      setOriginText(stop.stop_name);
+      setOriginText(label);
     } else if (pickTarget === "destination") {
-      setDestinationText(stop.stop_name);
+      setDestinationText(label);
     }
     setPickTarget(null); // one pick and done, same as most map apps
   }
@@ -303,20 +312,35 @@ export default function Home() {
   useEffect(() => {
     async function loadStops() {
       try {
-        const all: Stop[] = [];
-        let offset = 0;
         const pageSize = 100; // stays under MAX_PAGE_SIZE regardless of its exact value
 
-        while (true) {
-          const res = await fetch(`${API_BASE}/stops?limit=${pageSize}&offset=${offset}`);
-          if (!res.ok) {
-            setStopsError(true);
-            break;
-          }
-          const data: { total: number; items: Stop[] } = await res.json();
-          all.push(...data.items);
-          offset += pageSize;
-          if (offset >= data.total || data.items.length === 0) break;
+        // Fetch page 1 first to learn `total`, then fire every remaining
+        // page in parallel instead of one round-trip at a time -- with
+        // ~330 stops at pageSize=100 that was 4 sequential requests
+        // before the autocomplete list was ready.
+        const firstRes = await fetch(`${API_BASE}/stops?limit=${pageSize}&offset=0`);
+        if (!firstRes.ok) {
+          setStopsError(true);
+          return;
+        }
+        const first: { total: number; items: Stop[] } = await firstRes.json();
+        const all: Stop[] = [...first.items];
+
+        const remainingOffsets: number[] = [];
+        for (let offset = pageSize; offset < first.total; offset += pageSize) {
+          remainingOffsets.push(offset);
+        }
+
+        if (remainingOffsets.length > 0) {
+          const pages = await Promise.all(
+            remainingOffsets.map(async (offset) => {
+              const res = await fetch(`${API_BASE}/stops?limit=${pageSize}&offset=${offset}`);
+              if (!res.ok) throw new Error(`stops page at offset ${offset} failed`);
+              const data: { total: number; items: Stop[] } = await res.json();
+              return data.items;
+            })
+          );
+          for (const items of pages) all.push(...items);
         }
 
         setStops(all);
@@ -503,7 +527,3 @@ export default function Home() {
     </main>
   );
 }
-
-// Kept in sync with LEG_COLORS in components/BusMap.tsx so the legend in
-// the sidebar matches the polylines drawn on the map.
-const LEG_COLORS = ["#3DDC97", "#F2A93B", "#5DA9E9", "#E06C75"];

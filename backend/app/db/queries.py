@@ -8,13 +8,14 @@ Session so callers control transaction/connection lifecycle.
 
 from typing import List, Optional, Sequence
 
-from geoalchemy2.functions import ST_Distance, ST_DWithin, ST_GeogFromText
-from sqlalchemy import case, func, select, text
+from geoalchemy2 import Geography
+from geoalchemy2.functions import ST_Distance, ST_DWithin, ST_MakePoint, ST_SetSRID
+from sqlalchemy import case, cast, func, select, text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session, selectinload
 
 
-from ..models import FareRule, Operator, Route, RouteOperator, RouteStop, Stop, SegmentCongestionStat
+from ..models import FareRule, GraphMeta, Operator, Route, RouteOperator, RouteStop, Stop, SegmentCongestionStat
 
 
 def nearest_stops(
@@ -25,7 +26,12 @@ def nearest_stops(
     limit: int = 10,
 ) -> Sequence[Stop]:
     """Stops within radius_m metres of (lat, lng), nearest first."""
-    point = ST_GeogFromText(f"SRID=4326;POINT({lng} {lat})")
+    # Bind lat/lng as real query parameters (ST_MakePoint/ST_SetSRID) rather
+    # than formatting them into a WKT string for ST_GeogFromText. The old
+    # form was only safe because FastAPI's Query(..., ge=-90, le=90)
+    # coerces these to real floats before they ever reach this function --
+    # this version is safe regardless of caller.
+    point = cast(ST_SetSRID(ST_MakePoint(lng, lat), 4326), Geography)
     stmt = (
         select(Stop)
         .where(ST_DWithin(Stop.geom, point, radius_m))
@@ -293,3 +299,24 @@ def get_congestion_stats(
         .where(T.day_of_week == day_of_week, T.hour_bucket == hour_bucket)
     )
     return session.execute(stmt).all()
+
+def get_graph_version(session: Session) -> int:
+    """Current graph version. Row is seeded by migration; never missing
+    in a properly-migrated DB, but fall back to 1 defensively rather than
+    raising, since this is called on the hot path of every route search."""
+    row = session.get(GraphMeta, 1)
+    return row.version if row is not None else 1
+
+
+def bump_graph_version(session: Session) -> int:
+    """Call at the end of any admin write that changes graph shape:
+    add_route_stop, update_route_status, create_route/create_stop (the
+    latter two are harmless no-ops for the graph until linked via
+    add_route_stop, but bumping anyway is cheap and one less thing to
+    reason about). Does its own commit -- call after your main commit
+    so a failed version bump never rolls back the actual write."""
+    session.execute(
+        text("UPDATE graph_meta SET version = version + 1 WHERE id = 1")
+    )
+    session.commit()
+    return get_graph_version(session)

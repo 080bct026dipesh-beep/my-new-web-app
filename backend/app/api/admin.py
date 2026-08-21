@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.security import require_admin_key
 from app.db.id_generator import next_route_id, next_stop_id
+from app.db.queries import bump_graph_version
 from app.db.session import get_db
 from app.routing.graph_builder import get_cached_graph
 from app.models import Route as RouteORM
@@ -95,6 +96,13 @@ def add_route_stop(route_id: str, payload: RouteStopCreate, db: Session = Depend
             detail=f"Route {route_id} already has a stop at sequence_no {payload.sequence_no}.",
         ) from exc
 
+    # This changes graph shape (a new ride node/edge) -- previously nothing
+    # invalidated the cache here at all, so this write was silently
+    # invisible to /route-finder until someone remembered to call
+    # /admin/graph/reload by hand. bump_graph_version() makes every worker
+    # process notice on its next request instead of relying on that.
+    bump_graph_version(db)
+
     return {"route_id": route_id, "stop_id": payload.stop_id, "sequence_no": payload.sequence_no}
 
 @router.patch("/routes/{route_id}/status", response_model=RouteOut)
@@ -107,8 +115,10 @@ def update_route_status(route_id: str, payload: RouteStatusUpdate, db: Session =
     db.commit()
     db.refresh(row)
 
-    # Auto-invalidate so the change is live immediately -- no separate
-    # /admin/rebuild-graph call needed, matching /graph/reload's behavior.
+    # Bump the shared DB version (every worker notices on its next
+    # request) *and* refresh this process's own cache immediately, so
+    # whichever admin made this call sees it reflected right away too.
+    bump_graph_version(db)
     get_cached_graph(db, refresh=True)
 
     return RouteOut.model_validate(row)
