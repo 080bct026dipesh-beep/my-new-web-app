@@ -109,10 +109,19 @@ def find_route(
     background_tasks: BackgroundTasks,
     origin: str = Query(..., description="Origin stop_id, e.g. S0198"),
     destination: str = Query(..., description="Destination stop_id, e.g. S0021"),
+    avoid_congestion: bool = Query(
+        False,
+        description=(
+            "When true, the transfer-search fallback (used only if no direct "
+            "route exists) weights ride segments by current historical "
+            "congestion instead of raw distance alone. Direct routes are "
+            "unaffected -- a direct route always wins either way."
+        ),
+    ),
     db: Session = Depends(get_db),
 ):
     try:
-        result = find_shortest_path(db, origin, destination)
+        result = find_shortest_path(db, origin, destination, avoid_congestion=avoid_congestion)
     except NoRouteFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
 

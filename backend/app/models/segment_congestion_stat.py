@@ -64,6 +64,14 @@ class SegmentCongestionStat(Base):
     avg_distance_m = Column(Float, nullable=False)
     sample_count = Column(Integer, nullable=False, server_default=text("0"))
 
+    # The OSRM duration recorded once at seed time -- a genuine
+    # free-driving estimate, anchored independent of avg_duration_s so a
+    # segment that's congested in every bucket still has a real baseline
+    # to compare against. Nullable: rows from before this column existed
+    # fall back to the old min(avg_duration_s)-across-buckets estimate,
+    # see queries.get_congestion_stats.
+    free_flow_duration_s = Column(Float, nullable=True)
+
     # True until the first organic sample overwrites it -- lets
     # record_congestion_sample distinguish "one synthetic guess" from
     # "one real observation" when deciding whether to average or replace.

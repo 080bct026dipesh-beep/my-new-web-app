@@ -167,6 +167,16 @@ def count_routes(session: Session, status: str = "active", q: Optional[str] = No
 # the only two entry points that ever touch it.
 
 
+# Weight given to each new real sample in the exponential moving average
+# (see record_congestion_sample). Higher = the average tracks recent
+# conditions faster but is noisier; lower = smoother but slower to react
+# to a real change (new road, monsoon season, etc). 0.2 means one sample
+# moves the average a fifth of the way from where it was to the new
+# reading -- roughly a 5-sample "effective memory", tunable here only,
+# every consumer just reads avg_duration_s off the row.
+CONGESTION_EMA_ALPHA = 0.2
+
+
 def record_congestion_sample(
     session: Session,
     *,
@@ -178,14 +188,20 @@ def record_congestion_sample(
     duration_s: float,
     distance_m: float,
 ) -> None:
-    """Upsert one real (organic) OSRM observation into the running average
-    for this segment/time-bucket.
+    """Upsert one real (organic) OSRM observation into this segment/time-
+    bucket's running average.
+
+    Blends via an exponential moving average (see CONGESTION_EMA_ALPHA)
+    rather than an unweighted lifetime mean -- a segment with hundreds of
+    old samples still moves noticeably when recent conditions actually
+    change, instead of the average being permanently diluted toward its
+    long-run history.
 
     If the existing row is still just the synthetic seed written by
     scripts/seed_congestion_stats.py (is_seeded and sample_count <= 1),
     this sample REPLACES it outright rather than blending in -- so one
-    guessed baseline doesn't permanently bias the historical average
-    once real traffic data starts arriving.
+    guessed baseline doesn't bias the average at all once real traffic
+    data starts arriving.
     """
     table = SegmentCongestionStat.__table__
     stmt = pg_insert(table).values(
@@ -201,6 +217,7 @@ def record_congestion_sample(
     )
     excluded = stmt.excluded
     replace_seed = table.c.is_seeded & (table.c.sample_count <= 1)
+    alpha = CONGESTION_EMA_ALPHA
 
     stmt = stmt.on_conflict_do_update(
         constraint="uq_segment_congestion_key",
@@ -208,15 +225,13 @@ def record_congestion_sample(
             "avg_duration_s": case(
                 (replace_seed, excluded.avg_duration_s),
                 else_=(
-                    (table.c.avg_duration_s * table.c.sample_count + excluded.avg_duration_s)
-                    / (table.c.sample_count + 1)
+                    table.c.avg_duration_s * (1 - alpha) + excluded.avg_duration_s * alpha
                 ),
             ),
             "avg_distance_m": case(
                 (replace_seed, excluded.avg_distance_m),
                 else_=(
-                    (table.c.avg_distance_m * table.c.sample_count + excluded.avg_distance_m)
-                    / (table.c.sample_count + 1)
+                    table.c.avg_distance_m * (1 - alpha) + excluded.avg_distance_m * alpha
                 ),
             ),
             "sample_count": case(
@@ -245,6 +260,11 @@ def seed_congestion_baseline(
     accumulates. Used by scripts/seed_congestion_stats.py. A no-op (does
     nothing, doesn't overwrite) for any bucket that already has organic
     data, so re-running the seed script is always safe.
+
+    Also anchors free_flow_duration_s to this same OSRM duration -- at
+    seed time this segment has zero recorded congestion by construction,
+    so it's a genuine free-driving estimate, independent of whatever
+    avg_duration_s drifts to later via real samples.
     """
     table = SegmentCongestionStat.__table__
     rows = [
@@ -258,6 +278,7 @@ def seed_congestion_baseline(
             "avg_distance_m": distance_m,
             "sample_count": 1,
             "is_seeded": True,
+            "free_flow_duration_s": duration_s,
         }
         for dow in range(7)
         for hour in (0, 3, 6, 9, 12, 15, 18, 21)
@@ -272,13 +293,20 @@ def get_congestion_stats(
     session: Session, day_of_week: int, hour_bucket: int
 ) -> Sequence:
     """Every segment with data for this (day_of_week, hour_bucket), each
-    row paired with that segment's own free-flow baseline -- the minimum
-    avg_duration_s across all of its buckets -- so callers can turn it
-    into a congestion ratio without a second round-trip. See
+    row paired with that segment's free-flow baseline, so callers can
+    turn it into a congestion ratio without a second round-trip. See
     app/api/congestion.py for how the ratio becomes free_flow/moderate/heavy.
+
+    Prefers the segment's own stored free_flow_duration_s (anchored once
+    at seed time to a genuine free-driving OSRM estimate -- see
+    seed_congestion_baseline). Falls back to min(avg_duration_s) across
+    the segment's own buckets only for rows written before that column
+    existed and never re-seeded since -- a worse anchor (it can compress
+    toward 1.0 if a segment is never truly free-flowing), kept only so
+    old data still resolves to *something* instead of erroring.
     """
     T = SegmentCongestionStat
-    baseline = (
+    fallback_baseline = (
         select(
             T.route_id.label("route_id"),
             T.from_stop_id.label("from_stop_id"),
@@ -289,16 +317,38 @@ def get_congestion_stats(
         .subquery()
     )
     stmt = (
-        select(T, baseline.c.free_flow_duration_s)
+        select(T, func.coalesce(T.free_flow_duration_s, fallback_baseline.c.free_flow_duration_s))
         .join(
-            baseline,
-            (T.route_id == baseline.c.route_id)
-            & (T.from_stop_id == baseline.c.from_stop_id)
-            & (T.to_stop_id == baseline.c.to_stop_id),
+            fallback_baseline,
+            (T.route_id == fallback_baseline.c.route_id)
+            & (T.from_stop_id == fallback_baseline.c.from_stop_id)
+            & (T.to_stop_id == fallback_baseline.c.to_stop_id),
         )
         .where(T.day_of_week == day_of_week, T.hour_bucket == hour_bucket)
     )
     return session.execute(stmt).all()
+
+
+def get_congestion_ratios(
+    session: Session, day_of_week: int, hour_bucket: int
+) -> dict[tuple[str, str, str], float]:
+    """(route_id, from_stop_id, to_stop_id) -> congestion_ratio for every
+    segment with data at this (day_of_week, hour_bucket). Thin wrapper
+    around get_congestion_stats for callers (routing/pathfinder.py) that
+    just need the ratio to weight graph edges, not the full ORM row --
+    used by find_shortest_path(..., avoid_congestion=True).
+    """
+    ratios: dict[tuple[str, str, str], float] = {}
+    for stat, free_flow_duration_s in get_congestion_stats(
+        session, day_of_week=day_of_week, hour_bucket=hour_bucket
+    ):
+        if not free_flow_duration_s or free_flow_duration_s <= 0:
+            continue
+        ratios[(stat.route_id, stat.from_stop_id, stat.to_stop_id)] = (
+            stat.avg_duration_s / free_flow_duration_s
+        )
+    return ratios
+
 
 def get_graph_version(session: Session) -> int:
     """Current graph version. Row is seeded by migration; never missing

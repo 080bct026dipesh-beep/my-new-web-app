@@ -17,8 +17,10 @@ from typing import List, Optional
 import networkx as nx
 from sqlalchemy.orm import Session
 
-from app.db.queries import get_active_routes
+from app.db.queries import get_active_routes, get_congestion_ratios
 from app.routing import graph_builder as gb
+from app.routing.constants import CONGESTION_LAMBDA
+from app.routing.time_buckets import day_and_bucket_for, now_in_nepal
 
 
 class NoRouteFoundError(Exception):
@@ -278,19 +280,62 @@ def _physical_stop_id(node) -> str:
     return node[0]
 
 
+def _congestion_weight_fn(congestion_lookup: dict[tuple, float]):
+    """Build a per-request edge-weight function for nx.shortest_path that
+    inflates "ride" edges by their current congestion_ratio, leaving
+    "board"/"alight"/"walk" edges untouched.
+
+    Deliberately NOT baked into the cached graph itself (see
+    graph_builder.get_cached_graph): congestion varies by time-of-day and
+    the graph is shared/reused across concurrent requests, so mutating
+    its static "weight" attribute would leak one request's time bucket
+    into another's. A callable weight function keeps this entirely
+    request-scoped -- the graph itself is never touched.
+
+    congestion_lookup: (route_id, from_stop_id, to_stop_id) -> ratio, as
+    returned by queries.get_congestion_ratios. A ratio at or below 1
+    (free-flowing, or no data) leaves the edge's weight unchanged.
+    """
+
+    def weight(u, v, edge_data: dict) -> float:
+        base = edge_data.get("weight", edge_data.get("distance_m", 0))
+        if edge_data.get("kind") != "ride":
+            return base
+        ratio = congestion_lookup.get(
+            (edge_data.get("route_id"), _physical_stop_id(u), _physical_stop_id(v))
+        )
+        if not ratio or ratio <= 1:
+            return base
+        return base * (1 + CONGESTION_LAMBDA * (ratio - 1))
+
+    return weight
+
+
 def _find_with_dijkstra(
     graph: nx.DiGraph,
     origin_stop_id: str,
     destination_stop_id: str,
+    congestion_lookup: Optional[dict[tuple, float]] = None,
 ) -> RouteFinderResult:
-    """Fallback search used only when no direct route exists."""
+    """Fallback search used only when no direct route exists.
+
+    When congestion_lookup is given (see find_shortest_path's
+    avoid_congestion param), ride edges are weighted by current
+    congestion instead of raw distance, so Dijkstra is biased away from
+    segments recorded as congested right now -- see
+    _congestion_weight_fn for how that weighting is computed.
+    """
+
+    weight_arg = (
+        _congestion_weight_fn(congestion_lookup) if congestion_lookup else "weight"
+    )
 
     try:
         path = nx.shortest_path(
             graph,
             origin_stop_id,
             destination_stop_id,
-            weight="weight",
+            weight=weight_arg,
         )
     except nx.NetworkXNoPath as exc:
         raise NoRouteFoundError(
@@ -360,7 +405,18 @@ def find_shortest_path(
     session: Session,
     origin_stop_id: str,
     destination_stop_id: str,
+    avoid_congestion: bool = False,
 ) -> RouteFinderResult:
+    """
+    avoid_congestion: when True and no direct route exists, the Dijkstra
+    transfer-search fallback weights "ride" edges by current congestion
+    (see _find_with_dijkstra / _congestion_weight_fn) instead of raw
+    distance alone. Direct routes are unaffected either way -- a direct
+    route always wins regardless of congestion, per STEP 2 below;
+    congestion only ever influences *which transfer path* is chosen when
+    there's a real choice to make. Defaults to False so existing callers
+    keep today's distance-only behavior unless they opt in.
+    """
 
     graph = gb.get_cached_graph(session)
 
@@ -404,8 +460,16 @@ def find_shortest_path(
     # ------------------------------------------------------------
     # STEP 3: NO DIRECT ROUTE -> DIJKSTRA
     # ------------------------------------------------------------
+    congestion_lookup = None
+    if avoid_congestion:
+        day_of_week, hour_bucket = day_and_bucket_for(now_in_nepal())
+        congestion_lookup = get_congestion_ratios(
+            session, day_of_week=day_of_week, hour_bucket=hour_bucket
+        )
+
     return _find_with_dijkstra(
         graph,
         origin_stop_id,
         destination_stop_id,
+        congestion_lookup=congestion_lookup,
     )
