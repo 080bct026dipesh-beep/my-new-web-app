@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
 import SearchForm from "@/components/search/SearchForm";
 import CongestionPanel from "@/components/CongestionPanel";
 import RoutesPanel from "@/components/RoutesPanel";
 import RouteResultPanel from "@/components/route/RouteResultPanel";
 import { Stop, StopPickTarget } from "@/types/route";
 import { buildStopLabel } from "@/lib/stopLabel";
+import { getStop } from "@/lib/api";
 import { useStops } from "@/hooks/useStops";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useRouteSearch } from "@/hooks/useRouteSearch";
@@ -25,6 +27,18 @@ const BusMap = dynamic(() => import("@/components/BusMap"), {
 });
 
 export default function Home() {
+  return (
+    // useSearchParams() below opts this page out of static prerendering
+    // unless wrapped in Suspense -- the fallback never actually shows in
+    // practice since this is a fully client-rendered page, but Next.js
+    // requires the boundary to exist.
+    <Suspense fallback={null}>
+      <HomeInner />
+    </Suspense>
+  );
+}
+
+function HomeInner() {
   const { stops, loading: stopsLoading, error: stopsError } = useStops();
 
   // Origin/destination text lives here (not inside SearchForm) so both the
@@ -46,6 +60,42 @@ export default function Home() {
   const congestion = useCongestion();
   const routeBrowser = useRouteBrowser();
 
+  // One-time deep-link handling: /stops/[id] links here with
+  // ?origin=<stop_id> or ?destination=<stop_id> (its "Set as From/To"
+  // actions), and /routes/[id] links here with ?route=<route_id> (its
+  // "View on map" action). Applied once on mount via a ref guard --
+  // afterwards the URL params are stale and shouldn't fight with the
+  // user's own edits.
+  const searchParams = useSearchParams();
+  const appliedDeepLinkRef = useRef(false);
+  useEffect(() => {
+    if (appliedDeepLinkRef.current) return;
+    const originId = searchParams.get("origin");
+    const destinationId = searchParams.get("destination");
+    const routeId = searchParams.get("route");
+    if (!originId && !destinationId && !routeId) return;
+    appliedDeepLinkRef.current = true;
+
+    if (originId) {
+      getStop(originId)
+        .then((stop) => setOriginText(buildStopLabel(stop, stops)))
+        .catch(() => {
+          /* bad/stale id in the URL -- leave the field blank rather than erroring */
+        });
+    }
+    if (destinationId) {
+      getStop(destinationId)
+        .then((stop) => setDestinationText(buildStopLabel(stop, stops)))
+        .catch(() => {
+          /* bad/stale id in the URL -- leave the field blank rather than erroring */
+        });
+    }
+    if (routeId) {
+      routeBrowser.showRouteById(routeId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   function handleStopPick(stop: Stop) {
     // Same disambiguation as the geolocation flow -- a bare stop_name
     // would break SearchForm's resolveStop() for any name that isn't
@@ -60,7 +110,7 @@ export default function Home() {
   }
 
   return (
-    <main className="flex h-screen w-screen flex-col md:flex-row">
+    <main className="flex h-full w-full flex-col md:flex-row">
       <aside className="flex w-full flex-col gap-4 overflow-y-auto border-b border-route-line p-4 md:h-full md:max-w-sm md:border-b-0 md:border-r">
         <div>
           <h1 className="text-lg font-semibold">🚌 KTM Bus</h1>

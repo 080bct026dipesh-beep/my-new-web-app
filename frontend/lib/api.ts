@@ -155,6 +155,10 @@ export function getNearbyStops(
   return request<Stop[]>(`/stops/nearby${qs(params)}`, options);
 }
 
+export function getStop(stopId: string, options?: RequestOptions): Promise<Stop> {
+  return request<Stop>(`/stops/${encodeURIComponent(stopId)}`, options);
+}
+
 // ---------------------------------------------------------------------------
 // Routes
 // ---------------------------------------------------------------------------

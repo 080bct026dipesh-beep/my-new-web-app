@@ -1,11 +1,12 @@
 """
 api/stops.py
 
-GET /stops         — paginated stop listing
-GET /stops/nearby   — nearest stops to a lat/lng, within a radius
+GET /stops           — paginated stop listing
+GET /stops/nearby     — nearest stops to a lat/lng, within a radius
+GET /stops/{stop_id}  — a single stop by ID
 """
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -41,3 +42,14 @@ def list_stops(
     items = queries.list_stops(db, district=district, limit=limit, offset=offset)
     total = queries.count_stops(db)
     return StopListOut(total=total, limit=limit, offset=offset, items=items)
+
+
+@router.get("/stops/{stop_id}", response_model=StopOut)
+def read_stop(stop_id: str, db: Session = Depends(get_db)):
+    """Registered after /stops and /stops/nearby -- FastAPI matches those
+    static path segments first, so 'nearby' can never be mis-parsed as a
+    stop_id by this dynamic route."""
+    stop = queries.get_stop(db, stop_id)
+    if stop is None:
+        raise HTTPException(status_code=404, detail=f"Stop '{stop_id}' not found")
+    return stop

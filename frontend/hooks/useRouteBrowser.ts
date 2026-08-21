@@ -16,6 +16,10 @@ interface UseRouteBrowserResult {
   visibleRouteStops: RouteStopEntry[];
   visibleRouteStopsLoading: boolean;
   toggleVisible: (route: RouteSummary) => void;
+  /** Show a specific route's stops by ID without requiring it to be in
+   * the currently loaded/paged list -- used for deep links like
+   * /routes/[routeId]'s "View on map" action. */
+  showRouteById: (routeId: string) => Promise<void>;
   loadMore: () => void;
   hasMore: boolean;
 }
@@ -114,6 +118,30 @@ export function useRouteBrowser(): UseRouteBrowserResult {
     }
   }
 
+  async function showRouteById(routeId: string) {
+    if (visibleRouteId === routeId) return;
+
+    setVisibleRouteId(routeId);
+
+    const cached = routeStopsCache[routeId];
+    if (cached) {
+      setVisibleRouteStops(cached);
+      return;
+    }
+
+    setVisibleRouteStopsLoading(true);
+    setVisibleRouteStops([]);
+    try {
+      const data = await getRouteStops(routeId);
+      setVisibleRouteStops(data);
+      setRouteStopsCache((prev) => ({ ...prev, [routeId]: data }));
+    } catch {
+      setVisibleRouteId(null);
+    } finally {
+      setVisibleRouteStopsLoading(false);
+    }
+  }
+
   return {
     routes,
     total,
@@ -125,6 +153,7 @@ export function useRouteBrowser(): UseRouteBrowserResult {
     visibleRouteStops,
     visibleRouteStopsLoading,
     toggleVisible,
+    showRouteById,
     loadMore,
     hasMore: routes.length < total,
   };
