@@ -159,6 +159,10 @@ export function getStop(stopId: string, options?: RequestOptions): Promise<Stop>
   return request<Stop>(`/stops/${encodeURIComponent(stopId)}`, options);
 }
 
+export function getStopRoutes(stopId: string, options?: RequestOptions): Promise<RouteOut[]> {
+  return request<RouteOut[]>(`/stops/${encodeURIComponent(stopId)}/routes`, options);
+}
+
 // ---------------------------------------------------------------------------
 // Routes
 // ---------------------------------------------------------------------------
@@ -192,7 +196,7 @@ export function getRouteStops(
  * (network/timeout/5xx) still throws.
  */
 export async function findRoute(
-  params: { origin: string; destination: string },
+  params: { origin: string; destination: string; include_alternatives?: boolean },
   options?: RequestOptions
 ): Promise<{ found: true; result: RouteFinderResult } | { found: false }> {
   const controller = new AbortController();

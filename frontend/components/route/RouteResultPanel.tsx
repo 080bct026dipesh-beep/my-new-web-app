@@ -1,4 +1,7 @@
-import { RouteSearchResult } from "@/types/route";
+"use client";
+
+import { useState } from "react";
+import { FareOut, RouteAlternative, RouteLeg, RouteSearchResult } from "@/types/route";
 import RouteTimeline from "./RouteTimeline";
 
 interface RouteResultPanelProps {
@@ -6,6 +9,12 @@ interface RouteResultPanelProps {
   loading: boolean;
   error: string | null;
 }
+
+const ALTERNATIVE_LABELS: Record<RouteAlternative["label"], string> = {
+  alternate_direct_route: "Alternate bus",
+  shortest_distance: "Shortest distance",
+  fastest_estimated: "Fastest (est.)",
+};
 
 function formatDuration(totalSeconds: number): string {
   const minutes = Math.round(totalSeconds / 60);
@@ -15,7 +24,26 @@ function formatDuration(totalSeconds: number): string {
   return remaining === 0 ? `${hours} hr` : `${hours} hr ${remaining} min`;
 }
 
+function formatFare(fare: FareOut): string {
+  const range =
+    fare.fare_npr_min === fare.fare_npr_max
+      ? `NPR ${fare.fare_npr_min}`
+      : `NPR ${fare.fare_npr_min}–${fare.fare_npr_max}`;
+  return fare.student_discount_pct ? `${range} (${fare.student_discount_pct}% off for students)` : range;
+}
+
 export default function RouteResultPanel({ result, loading, error }: RouteResultPanelProps) {
+  // -1 = the primary/recommended result; otherwise an index into
+  // result.alternatives. Reset to -1 whenever a new search result comes
+  // in, computed directly during render (no effect needed) by keying off
+  // the result reference itself -- each search produces a fresh object.
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [lastResultForSelection, setLastResultForSelection] = useState(result);
+  if (lastResultForSelection !== result) {
+    setLastResultForSelection(result);
+    if (selectedIndex !== -1) setSelectedIndex(-1);
+  }
+
   if (loading) {
     return (
       <div aria-live="polite" className="flex flex-col gap-2 rounded-lg border border-route-line bg-white p-4">
@@ -56,39 +84,86 @@ export default function RouteResultPanel({ result, loading, error }: RouteResult
   }
 
   // result.found === true from here on.
-  const legs = result.legs;
+  const isPrimary = selectedIndex === -1;
+  const active: { legs: RouteLeg[]; total_cost: number; transfer_count: number } = isPrimary
+    ? result
+    : result.alternatives[selectedIndex];
+
+  const legs = active.legs;
   const rideLegs = legs.filter((leg) => leg.route_id !== "TRANSFER");
   const walkLegs = legs.filter((leg) => leg.route_id === "TRANSFER");
 
-  const allLegsHaveGeometry = legs.every((leg) => leg.road_geometry);
+  // Alternatives never carry road_geometry (OSRM is only called for the
+  // primary result, to avoid tripling external calls per search), so
+  // duration/walking-time stats only apply when viewing the primary.
+  const allLegsHaveGeometry = isPrimary && legs.every((leg) => leg.road_geometry);
   const totalDurationS = allLegsHaveGeometry
     ? legs.reduce((sum, leg) => sum + (leg.road_geometry?.duration_s ?? 0), 0)
     : null;
   const walkDurationS = walkLegs.reduce((sum, leg) => sum + (leg.road_geometry?.duration_s ?? 0), 0);
-  const hasWalkDuration = walkLegs.length > 0 && walkLegs.every((leg) => leg.road_geometry);
+  const hasWalkDuration = isPrimary && walkLegs.length > 0 && walkLegs.every((leg) => leg.road_geometry);
+
+  const activeAlt = isPrimary ? null : result.alternatives[selectedIndex];
 
   return (
     <div aria-live="polite" className="flex flex-col gap-3 rounded-lg border border-route-line bg-white p-4">
+      {result.alternatives.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          <button
+            type="button"
+            onClick={() => setSelectedIndex(-1)}
+            aria-pressed={isPrimary}
+            className={`rounded-full border px-2.5 py-1 text-xs ${
+              isPrimary
+                ? "border-accent-purple bg-accent-purple/10 font-medium text-accent-purple"
+                : "border-route-line bg-white text-ink-secondary hover:border-accent-purple hover:text-accent-purple"
+            }`}
+          >
+            Recommended
+          </button>
+          {result.alternatives.map((alt, i) => (
+            <button
+              key={`${alt.label}-${i}`}
+              type="button"
+              onClick={() => setSelectedIndex(i)}
+              aria-pressed={selectedIndex === i}
+              className={`rounded-full border px-2.5 py-1 text-xs ${
+                selectedIndex === i
+                  ? "border-accent-purple bg-accent-purple/10 font-medium text-accent-purple"
+                  : "border-route-line bg-white text-ink-secondary hover:border-accent-purple hover:text-accent-purple"
+              }`}
+            >
+              {ALTERNATIVE_LABELS[alt.label]}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div>
         <p className="text-xs font-semibold uppercase tracking-wide text-accent-purple">
           Route result
         </p>
         <p className="mt-1 text-sm font-medium text-ink">
-          {result.transfer_count === 0
+          {active.transfer_count === 0
             ? "Direct route"
-            : `${result.transfer_count} transfer${result.transfer_count > 1 ? "s" : ""}`}
+            : `${active.transfer_count} transfer${active.transfer_count > 1 ? "s" : ""}`}
         </p>
         <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 font-mono text-xs text-ink-secondary">
           {totalDurationS !== null && <span>{formatDuration(totalDurationS)}</span>}
-          <span>{(result.total_cost / 1000).toFixed(1)} km</span>
+          <span>{(active.total_cost / 1000).toFixed(1)} km</span>
           <span>
             {rideLegs.length} bus{rideLegs.length === 1 ? "" : "es"}
           </span>
           {hasWalkDuration && walkDurationS > 0 && (
             <span>{Math.max(1, Math.round(walkDurationS / 60))} min walking</span>
           )}
-          <span>fare unavailable</span>
+          <span>{result.fare ? formatFare(result.fare) : "fare unavailable"}</span>
         </div>
+        {activeAlt?.label === "fastest_estimated" && (
+          <p className="mt-1 text-xs text-ink-secondary">
+            Estimated from assumed travel speeds, not a live ETA.
+          </p>
+        )}
       </div>
 
       <div className="border-t border-route-line pt-3">

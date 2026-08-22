@@ -32,7 +32,11 @@ export function useRouteSearch(): UseRouteSearchResult {
     setResult(null);
 
     try {
-      const outcome = await findRoute({ origin: originId, destination: destinationId });
+      const outcome = await findRoute({
+        origin: originId,
+        destination: destinationId,
+        include_alternatives: true,
+      });
       if (requestIdRef.current !== requestId) return;
 
       if (!outcome.found) {
