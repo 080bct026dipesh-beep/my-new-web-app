@@ -84,10 +84,12 @@ export default function RoutesPanel({
   const isDirty = draftQuery !== searchQuery;
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg bg-route-panel p-4">
+    <div className="flex flex-col gap-3 rounded-lg border border-route-line bg-white p-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium">Routes</p>
-        <p className="text-xs text-neutral-500">{total} total</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-accent-green">
+          Browse routes
+        </p>
+        <p className="font-mono text-xs text-ink-secondary">{total} total</p>
       </div>
 
       <form
@@ -100,34 +102,34 @@ export default function RoutesPanel({
         <input
           value={draftQuery}
           onChange={(e) => setDraftQuery(e.target.value)}
-          placeholder="Search routes by name…"
-          className="min-w-0 flex-1 rounded-md border border-route-line bg-route-bg px-3 py-2 text-sm outline-none focus:border-route-accent"
+          placeholder="Search routes…"
+          className="min-w-0 flex-1 rounded-md border border-route-line bg-white px-3 py-2 text-sm text-ink outline-none focus:border-accent-green"
         />
         <button
           type="submit"
           aria-label="Search routes"
           title="Search"
-          className={`flex-shrink-0 rounded-md border border-route-line p-2 text-neutral-400 hover:border-route-accent hover:text-route-accent ${
-            isDirty ? "border-route-accent text-route-accent" : ""
+          className={`flex-shrink-0 rounded-md border border-route-line p-2 text-ink-secondary hover:border-accent-green hover:text-accent-green ${
+            isDirty ? "border-accent-green text-accent-green" : ""
           }`}
         >
           <SearchIcon />
         </button>
       </form>
 
-      <div className="flex max-h-80 flex-col gap-1 overflow-y-auto">
+      <div className="flex max-h-80 flex-col divide-y divide-route-line overflow-y-auto">
         {routesLoading && routes.length === 0 && (
-          <p className="py-2 text-xs text-neutral-500">Loading routes…</p>
+          <p className="py-2 text-xs text-ink-secondary">Loading routes…</p>
         )}
         {!routesLoading && routes.length === 0 && (
-          <p className="py-2 text-xs text-neutral-500">No routes match &quot;{searchQuery}&quot;.</p>
+          <p className="py-2 text-xs text-ink-secondary">No routes match &quot;{searchQuery}&quot;.</p>
         )}
 
         {routes.map((route) => {
           const isVisible = visibleRouteId === route.route_id;
           return (
-            <div key={route.route_id} className="rounded-md">
-              <div className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-route-bg">
+            <div key={route.route_id}>
+              <div className="flex items-center gap-2 px-1 py-1.5 hover:bg-surface">
                 <button
                   type="button"
                   onClick={() => onToggleVisible(route)}
@@ -136,15 +138,15 @@ export default function RoutesPanel({
                   title={isVisible ? "Hide route" : "Show route + stops in order"}
                   className={`flex-shrink-0 rounded-full p-1.5 ${
                     isVisible
-                      ? "bg-route-accent text-route-bg"
-                      : "text-neutral-400 hover:text-route-accent"
+                      ? "bg-accent-green text-white"
+                      : "text-ink-secondary hover:text-accent-green"
                   }`}
                 >
                   <EyeIcon open={isVisible} />
                 </button>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm">{route.route_name}</p>
-                  <p className="truncate text-xs text-neutral-500">
+                  <p className="truncate text-sm text-ink">{route.route_name}</p>
+                  <p className="truncate font-mono text-xs text-ink-secondary">
                     {route.vehicle_type} · {route.total_stops} stops
                     {route.operator ? ` · ${route.operator.name}` : ""}
                   </p>
@@ -152,17 +154,17 @@ export default function RoutesPanel({
               </div>
 
               {isVisible && (
-                <div className="ml-9 mr-2 mb-2 max-h-56 overflow-y-auto rounded-md border border-route-line bg-route-bg p-2">
+                <div className="ml-9 mr-1 mb-2 max-h-56 overflow-y-auto rounded-md border border-route-line bg-surface p-2">
                   {visibleRouteStopsLoading ? (
-                    <p className="text-xs text-neutral-500">Loading stops…</p>
+                    <p className="text-xs text-ink-secondary">Loading stops…</p>
                   ) : (
                     <ol className="flex flex-col gap-1">
                       {visibleRouteStops.map((entry) => (
                         <li key={entry.sequence_no} className="flex items-center gap-2 text-xs">
-                          <span className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-route-accent/20 text-[10px] font-medium text-route-accent">
+                          <span className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-accent-green/15 text-[10px] font-medium text-accent-green">
                             {entry.sequence_no}
                           </span>
-                          <span className="truncate text-neutral-200">{entry.stop.stop_name}</span>
+                          <span className="truncate text-ink">{entry.stop.stop_name}</span>
                         </li>
                       ))}
                     </ol>
@@ -179,7 +181,7 @@ export default function RoutesPanel({
           type="button"
           onClick={onLoadMore}
           disabled={loadingMore}
-          className="rounded-md border border-route-line py-1.5 text-xs text-neutral-400 hover:border-route-accent hover:text-route-accent disabled:opacity-50"
+          className="rounded-md border border-route-line py-1.5 text-xs text-ink-secondary hover:border-accent-green hover:text-accent-green disabled:opacity-50"
         >
           {loadingMore ? "Loading…" : "Load more routes"}
         </button>

@@ -16,6 +16,8 @@ interface StopAutocompleteProps {
   placeholder?: string;
   /** Extra buttons rendered next to the field label, e.g. "Use my location". */
   headerActions?: React.ReactNode;
+  /** Tailwind bg-* class for the small field indicator dot (e.g. origin/destination). */
+  dotColor?: string;
 }
 
 const MAX_RESULTS = 8;
@@ -37,6 +39,7 @@ export default function StopAutocomplete({
   invalid,
   placeholder,
   headerActions,
+  dotColor,
 }: StopAutocompleteProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
@@ -114,7 +117,11 @@ export default function StopAutocomplete({
   return (
     <div ref={containerRef} className="relative flex flex-col gap-1">
       <div className="flex items-center justify-between">
-        <label htmlFor={id} className="text-xs uppercase tracking-wide text-neutral-400">
+        <label
+          htmlFor={id}
+          className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-ink-secondary"
+        >
+          {dotColor && <span className={`h-1.5 w-1.5 rounded-full ${dotColor}`} aria-hidden />}
           {label}
         </label>
         {headerActions}
@@ -140,8 +147,8 @@ export default function StopAutocomplete({
           placeholder={stopsLoading ? "Loading stops…" : placeholder}
           autoComplete="off"
           aria-invalid={invalid}
-          className={`w-full rounded-md border bg-route-bg px-3 py-2 pr-8 text-sm outline-none focus:border-route-accent ${
-            invalid ? "border-red-700" : "border-route-line"
+          className={`w-full rounded-md border bg-white px-3 py-2 pr-8 text-sm text-ink outline-none focus:border-accent-blue ${
+            invalid ? "border-accent-pink" : "border-route-line"
           }`}
         />
         {value && (
@@ -152,7 +159,7 @@ export default function StopAutocomplete({
               setIsOpen(false);
             }}
             aria-label={`Clear ${label.toLowerCase()}`}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300"
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-ink-secondary hover:text-ink"
           >
             ×
           </button>
@@ -162,7 +169,7 @@ export default function StopAutocomplete({
           <ul
             id={listboxId}
             role="listbox"
-            className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-md border border-route-line bg-route-panel shadow-lg"
+            className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-md border border-route-line bg-white shadow-sm"
           >
             {results.map((match, i) => (
               <li
@@ -178,17 +185,17 @@ export default function StopAutocomplete({
                 }}
                 onMouseEnter={() => setHighlightedIndex(i)}
                 className={`cursor-pointer px-3 py-2 text-sm ${
-                  i === highlightedIndex ? "bg-route-accent/15 text-route-accent" : "text-neutral-200"
+                  i === highlightedIndex ? "bg-accent-blue/10 text-accent-blue" : "text-ink"
                 }`}
               >
                 <p className="font-medium">📍 {match.stop.stop_name}</p>
                 {match.stop.district && (
-                  <p className="text-xs text-neutral-400">{match.stop.district}</p>
+                  <p className="text-xs text-ink-secondary">{match.stop.district}</p>
                 )}
               </li>
             ))}
             {showEmptyState && (
-              <li className="px-3 py-3 text-sm text-neutral-500">
+              <li className="px-3 py-3 text-sm text-ink-secondary">
                 No stops match &quot;{value.trim()}&quot;.
               </li>
             )}

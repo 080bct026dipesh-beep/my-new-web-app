@@ -11,7 +11,7 @@ const VALLEY_CENTER: [number, number] = [27.7041, 85.32];
 
 // Walking-to-nearest-stop path gets its own color, distinct from both the
 // route-leg palette above and the grey used for in-route transfer walks.
-const USER_WALK_COLOR = "#5DD8E0";
+const USER_WALK_COLOR = "#0D9488";
 
 // Standard traffic-light palette for the congestion overlay -- kept
 // separate from LEG_COLORS/USER_WALK_COLOR so it reads unambiguously as
@@ -26,7 +26,7 @@ const CONGESTION_COLORS: Record<string, string> = {
 // Route-browser overlay (numbered stops + connecting line for whichever
 // route is toggled visible in RoutesPanel) gets its own color too, distinct
 // from every other layer this map draws.
-const BROWSE_ROUTE_COLOR = "#A78BFA";
+const BROWSE_ROUTE_COLOR = "#7C3AED";
 
 // Stop/route names come from admin data entry (or ultimately OSM/CSV
 // imports) and get interpolated into raw HTML strings below for Leaflet
@@ -46,7 +46,7 @@ function escapeHtml(value: string): string {
 function dotIcon(color: string, size: number): L.DivIcon {
   return L.divIcon({
     className: "",
-    html: `<span style="display:block;width:${size}px;height:${size}px;border-radius:9999px;background:${color};border:2px solid #0F1418;box-shadow:0 0 0 1px rgba(255,255,255,0.4);"></span>`,
+    html: `<span style="display:block;width:${size}px;height:${size}px;border-radius:9999px;background:${color};border:2px solid #ffffff;box-shadow:0 0 0 1px rgba(0,0,0,0.25);"></span>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
   });
@@ -54,17 +54,19 @@ function dotIcon(color: string, size: number): L.DivIcon {
 
 // Origin/destination get bigger, high-contrast markers so the start and end
 // of a route are unambiguous at a glance; transfer points sit in between.
-const originIcon = dotIcon("#3DDC97", 18);
-const destinationIcon = dotIcon("#E06C75", 18);
-const transferIcon = dotIcon("#e8ecef", 14);
+// Colors follow the app-wide semantic mapping: origin = blue, destination =
+// green, transfer = purple.
+const originIcon = dotIcon("#2563EB", 18);
+const destinationIcon = dotIcon("#16A34A", 18);
+const transferIcon = dotIcon("#7C3AED", 14);
 
 // Pulsing blue dot for "you are here", the same visual language every map
 // app uses so it doesn't need a legend entry of its own.
 const userLocationIcon = L.divIcon({
   className: "",
   html: `<span style="position:relative;display:block;width:16px;height:16px;">
-      <span style="position:absolute;inset:-8px;border-radius:9999px;background:rgba(93,169,233,0.35);"></span>
-      <span style="position:absolute;inset:0;border-radius:9999px;background:#5DA9E9;border:2px solid #ffffff;box-shadow:0 0 0 1px rgba(0,0,0,0.3);"></span>
+      <span style="position:absolute;inset:-8px;border-radius:9999px;background:rgba(37,99,235,0.25);"></span>
+      <span style="position:absolute;inset:0;border-radius:9999px;background:#2563EB;border:2px solid #ffffff;box-shadow:0 0 0 1px rgba(0,0,0,0.25);"></span>
     </span>`,
   iconSize: [16, 16],
   iconAnchor: [8, 8],
@@ -162,7 +164,7 @@ export default function BusMap({
         if (target) onStopPickRef.current?.(stop);
       });
       dot.on("mouseover", () => {
-        if (pickTargetRef.current) dot.setStyle({ radius: 6, fillColor: "#5DA9E9" });
+        if (pickTargetRef.current) dot.setStyle({ radius: 6, fillColor: "#2563EB" });
       });
       dot.on("mouseout", () => {
         dot.setStyle({ radius: 4, fillColor: "#9CA3AF" });
@@ -280,7 +282,7 @@ export default function BusMap({
       const marker = L.marker([lat, lng], {
         icon: L.divIcon({
           className: "",
-          html: `<span style="display:flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:9999px;background:${BROWSE_ROUTE_COLOR};color:#0F1418;font-size:11px;font-weight:600;border:2px solid #0F1418;">${entry.sequence_no}</span>`,
+          html: `<span style="display:flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:9999px;background:${BROWSE_ROUTE_COLOR};color:#ffffff;font-size:11px;font-weight:600;border:2px solid #ffffff;box-shadow:0 0 0 1px rgba(0,0,0,0.25);">${entry.sequence_no}</span>`,
           iconSize: [20, 20],
           iconAnchor: [10, 10],
         }),
@@ -457,13 +459,14 @@ export default function BusMap({
       const LegendControl = L.Control.extend({
         onAdd: () => {
           const div = L.DomUtil.create("div");
-          div.style.background = "#161D23";
-          div.style.border = "1px solid #2A343B";
+          div.style.background = "#ffffff";
+          div.style.border = "1px solid #E4E4DF";
           div.style.borderRadius = "8px";
           div.style.padding = "8px 10px";
           div.style.fontSize = "12px";
-          div.style.color = "#e8ecef";
+          div.style.color = "#171717";
           div.style.lineHeight = "1.6";
+          div.style.boxShadow = "0 1px 3px rgba(0,0,0,0.08)";
           div.innerHTML = legendRows
             .map(
               (row) =>

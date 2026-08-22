@@ -4,4 +4,4 @@
 // nothing enforced that, so a future palette change in one place could
 // silently desync from the other. Import from here instead of
 // redefining.
-export const LEG_COLORS = ["#3DDC97", "#F2A93B", "#5DA9E9", "#E06C75"];
+export const LEG_COLORS = ["#2563EB", "#0D9488", "#EA580C", "#DB2777"];

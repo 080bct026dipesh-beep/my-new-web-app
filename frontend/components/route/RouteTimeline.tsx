@@ -38,14 +38,16 @@ export default function RouteTimeline({ legs }: RouteTimelineProps) {
             {!isLast && (
               <span
                 aria-hidden
-                className="absolute left-[11px] top-6 h-[calc(100%-1.25rem)] w-px bg-route-line"
+                className={`absolute left-[11px] top-6 h-[calc(100%-1.25rem)] w-px ${
+                  isWalk ? "border-l border-dashed border-route-line bg-transparent" : "bg-route-line"
+                }`}
               />
             )}
             <span
               className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs"
               style={{
-                backgroundColor: isWalk ? "#374151" : LEG_COLORS[i % LEG_COLORS.length],
-                color: isWalk ? "#D1D5DB" : "#0F1418",
+                backgroundColor: isWalk ? "#EEEEE8" : LEG_COLORS[i % LEG_COLORS.length],
+                color: isWalk ? "#666666" : "#FFFFFF",
               }}
               aria-hidden
             >
@@ -54,18 +56,18 @@ export default function RouteTimeline({ legs }: RouteTimelineProps) {
             <div className="flex-1 pt-0.5">
               {isWalk ? (
                 <>
-                  <p className="text-sm font-medium">Walk</p>
-                  <p className="text-xs text-neutral-400">
+                  <p className="text-sm font-medium text-accent-purple">Walk</p>
+                  <p className="font-mono text-xs text-ink-secondary">
                     {[distance, duration].filter(Boolean).join(" · ") || "Transfer on foot"}
                   </p>
                 </>
               ) : (
                 <>
-                  <p className="text-sm font-medium">{leg.route_name}</p>
-                  <p className="text-xs text-neutral-400">
+                  <p className="text-sm font-medium text-ink">{leg.route_name}</p>
+                  <p className="text-xs text-ink-secondary">
                     {leg.board_stop.stop_name} → {leg.alight_stop.stop_name}
                   </p>
-                  <p className="text-xs text-neutral-500">
+                  <p className="font-mono text-xs text-ink-secondary">
                     {physicalStops} stop{physicalStops === 1 ? "" : "s"}
                     {duration && <> · ~{duration}</>}
                   </p>

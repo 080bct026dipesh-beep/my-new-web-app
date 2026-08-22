@@ -92,9 +92,12 @@ export default function SearchForm({
   const destinationInvalid = fieldError === "destination" || fieldError === "both";
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3 rounded-lg bg-route-panel p-4">
+    <form
+      onSubmit={handleSubmit}
+      className="flex flex-col gap-3 rounded-lg border border-route-line bg-white p-4"
+    >
       {pickTarget && (
-        <p className="rounded-md border border-route-accent/40 bg-route-accent/10 px-3 py-2 text-xs text-route-accent">
+        <p className="rounded-md border border-accent-blue/30 bg-accent-blue/5 px-3 py-2 text-xs text-accent-blue">
           Tap a stop on the map to set your {pickTarget === "origin" ? "origin" : "destination"}.
         </p>
       )}
@@ -102,6 +105,7 @@ export default function SearchForm({
       <StopAutocomplete
         id="origin"
         label="From"
+        dotColor="bg-accent-blue"
         stops={stops}
         stopsLoading={stopsLoading}
         value={originText}
@@ -114,14 +118,14 @@ export default function SearchForm({
           setFieldError(null);
         }}
         invalid={originInvalid}
-        placeholder="Origin stop"
+        placeholder="Search starting stop…"
         headerActions={
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={onUseMyLocation}
               disabled={locating}
-              className="text-xs text-route-accent hover:underline disabled:opacity-50"
+              className="text-xs text-accent-blue hover:underline disabled:opacity-50"
             >
               {locating ? "Locating…" : "📍 Use my location"}
             </button>
@@ -130,7 +134,7 @@ export default function SearchForm({
               onClick={() => togglePick("origin")}
               aria-pressed={pickTarget === "origin"}
               className={`text-xs hover:underline ${
-                pickTarget === "origin" ? "font-semibold text-route-accent" : "text-neutral-400"
+                pickTarget === "origin" ? "font-semibold text-accent-blue" : "text-ink-secondary"
               }`}
             >
               {pickTarget === "origin" ? "Picking…" : "Pick on map"}
@@ -145,7 +149,7 @@ export default function SearchForm({
           onClick={handleSwap}
           aria-label="Swap origin and destination"
           title="Swap origin and destination"
-          className="rounded-full border border-route-line bg-route-bg px-2 py-1 text-xs text-neutral-400 hover:border-route-accent hover:text-route-accent"
+          className="rounded-full border border-route-line bg-white px-2 py-1 text-xs text-ink-secondary hover:border-accent-blue hover:text-accent-blue"
         >
           ↕ Swap
         </button>
@@ -154,6 +158,7 @@ export default function SearchForm({
       <StopAutocomplete
         id="destination"
         label="To"
+        dotColor="bg-accent-green"
         stops={stops}
         stopsLoading={stopsLoading}
         value={destinationText}
@@ -166,14 +171,14 @@ export default function SearchForm({
           setFieldError(null);
         }}
         invalid={destinationInvalid}
-        placeholder="Destination stop"
+        placeholder="Search destination…"
         headerActions={
           <button
             type="button"
             onClick={() => togglePick("destination")}
             aria-pressed={pickTarget === "destination"}
             className={`text-xs hover:underline ${
-              pickTarget === "destination" ? "font-semibold text-route-accent" : "text-neutral-400"
+              pickTarget === "destination" ? "font-semibold text-accent-green" : "text-ink-secondary"
             }`}
           >
             {pickTarget === "destination" ? "Picking…" : "Pick on map"}
@@ -182,14 +187,14 @@ export default function SearchForm({
       />
 
       {fieldError && (
-        <p className="text-xs text-red-400" role="alert">
+        <p className="text-xs text-accent-pink" role="alert">
           {fieldError === "both" && originText.trim() && originText === destinationText
             ? "Origin and destination can't be the same stop."
             : "Pick a valid stop from the suggestions for both fields."}
         </p>
       )}
       {locateError && (
-        <p className="text-xs text-red-400" role="alert">
+        <p className="text-xs text-accent-pink" role="alert">
           {locateError}
         </p>
       )}
@@ -197,7 +202,7 @@ export default function SearchForm({
       <button
         type="submit"
         disabled={loading}
-        className="mt-1 rounded-md bg-route-accent py-2 text-sm font-medium text-route-bg disabled:opacity-50"
+        className="mt-1 rounded-md bg-accent-blue py-2 text-sm font-medium tracking-wide text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
       >
         {loading ? "Searching…" : "Find route"}
       </button>

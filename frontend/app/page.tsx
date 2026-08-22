@@ -20,7 +20,7 @@ import { useRouteBrowser } from "@/hooks/useRouteBrowser";
 const BusMap = dynamic(() => import("@/components/BusMap"), {
   ssr: false,
   loading: () => (
-    <div className="flex h-full w-full items-center justify-center text-sm text-neutral-500">
+    <div className="flex h-full w-full items-center justify-center text-sm text-ink-secondary">
       Loading map…
     </div>
   ),
@@ -111,10 +111,13 @@ function HomeInner() {
 
   return (
     <main className="flex h-full w-full flex-col md:flex-row">
-      <aside className="flex w-full flex-col gap-4 overflow-y-auto border-b border-route-line p-4 md:h-full md:max-w-sm md:border-b-0 md:border-r">
+      <aside className="flex w-full flex-col gap-5 overflow-y-auto border-b border-route-line bg-surface p-4 md:h-full md:max-w-sm md:border-b-0 md:border-r">
         <div>
-          <h1 className="text-lg font-semibold">🚌 KTM Bus</h1>
-          <p className="text-sm text-neutral-400">
+          <h1 className="text-xl font-semibold leading-tight tracking-tight">
+            <span className="text-accent-blue">Plan</span>{" "}
+            <span className="text-accent-purple">your journey</span>
+          </h1>
+          <p className="mt-1 text-sm text-ink-secondary">
             Kathmandu Valley public transit navigator — direct or single-transfer routes.
           </p>
         </div>
@@ -163,13 +166,13 @@ function HomeInner() {
         />
 
         {stopsError && (
-          <p className="rounded-md border border-amber-900 bg-amber-950/40 px-3 py-2 text-sm text-amber-300">
+          <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
             Couldn&apos;t load the stop list from the server. You can still search if you know
             exact stop names, but suggestions won&apos;t be available.
             <button
               type="button"
               onClick={() => window.location.reload()}
-              className="ml-2 font-medium text-amber-200 underline"
+              className="ml-2 font-medium text-amber-800 underline"
             >
               Retry
             </button>

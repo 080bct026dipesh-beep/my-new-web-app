@@ -19,11 +19,13 @@ export default function NavBar() {
   const pathname = usePathname();
 
   return (
-    <header className="flex h-12 shrink-0 items-center justify-between border-b border-route-line bg-route-panel px-4">
-      <Link href="/" className="flex items-center gap-1.5 text-sm font-semibold">
-        🚌 <span>KTM Bus</span>
+    <header className="flex h-12 shrink-0 items-center justify-between border-b border-route-line bg-surface px-4">
+      <Link href="/" className="flex items-center gap-1.5 text-sm font-semibold tracking-tight">
+        <span aria-hidden>🚌</span>
+        <span className="text-ink">KTM</span>
+        <span className="text-accent-blue">TRANSIT</span>
       </Link>
-      <nav className="flex items-center gap-4 text-sm">
+      <nav className="flex items-center gap-5 text-sm">
         {LINKS.map((link) => {
           const isActive =
             link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
@@ -32,17 +34,21 @@ export default function NavBar() {
               key={link.href}
               href={link.href}
               aria-current={isActive ? "page" : undefined}
-              className={
+              className={`border-b-2 pb-[3px] transition-colors ${
                 isActive
-                  ? "font-medium text-route-accent"
-                  : "text-neutral-400 hover:text-neutral-200"
-              }
+                  ? "border-accent-blue font-medium text-ink"
+                  : "border-transparent text-ink-secondary hover:text-ink"
+              }`}
             >
               {link.label}
             </Link>
           );
         })}
       </nav>
+      <span className="hidden items-center gap-1.5 text-xs text-ink-secondary sm:flex">
+        <span className="h-1.5 w-1.5 rounded-full bg-accent-green" aria-hidden />
+        Kathmandu
+      </span>
     </header>
   );
 }

@@ -37,20 +37,22 @@ export default function CongestionPanel({
   const isCustomTime = dayOfWeek !== null || hourBucket !== null;
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg bg-route-panel p-4">
+    <div className="flex flex-col gap-3 rounded-lg border border-route-line bg-white p-4">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium">Traffic congestion</p>
-          <p className="text-xs text-neutral-400">Historical averages by time of day</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-accent-orange">
+            Traffic conditions
+          </p>
+          <p className="mt-0.5 text-xs text-ink-secondary">Historical traffic pattern</p>
         </div>
         <button
           type="button"
           onClick={onToggle}
           aria-pressed={enabled}
-          className={`rounded-full px-3 py-1 text-xs font-medium ${
+          className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
             enabled
-              ? "bg-route-accent text-route-bg"
-              : "border border-route-line text-neutral-400 hover:border-route-accent hover:text-route-accent"
+              ? "bg-accent-orange text-white"
+              : "border border-route-line text-ink-secondary hover:border-accent-orange hover:text-accent-orange"
           }`}
         >
           {enabled ? "On" : "Off"}
@@ -63,7 +65,7 @@ export default function CongestionPanel({
             <select
               value={dayOfWeek ?? "now"}
               onChange={(e) => onDayChange(e.target.value === "now" ? null : Number(e.target.value))}
-              className="rounded-md border border-route-line bg-route-bg px-2 py-1 text-neutral-200"
+              className="rounded-md border border-route-line bg-white px-2 py-1 text-ink"
             >
               <option value="now">Today</option>
               {DAY_LABELS.map((label, i) => (
@@ -75,7 +77,7 @@ export default function CongestionPanel({
             <select
               value={hourBucket ?? "now"}
               onChange={(e) => onHourChange(e.target.value === "now" ? null : Number(e.target.value))}
-              className="rounded-md border border-route-line bg-route-bg px-2 py-1 text-neutral-200"
+              className="rounded-md border border-route-line bg-white px-2 py-1 text-ink"
             >
               <option value="now">Now</option>
               {HOUR_BUCKETS.map((h) => (
@@ -91,17 +93,17 @@ export default function CongestionPanel({
                   onDayChange(null);
                   onHourChange(null);
                 }}
-                className="text-route-accent hover:underline"
+                className="text-accent-orange hover:underline"
               >
                 Reset to now
               </button>
             )}
           </div>
 
-          <div className="flex items-center gap-4 text-xs text-neutral-400">
+          <div className="flex items-center gap-4 text-xs text-ink-secondary">
             <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: "#22C55E" }} />
-              Free-flow
+              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: "#16A34A" }} />
+              Low
             </span>
             <span className="flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full" style={{ backgroundColor: "#F59E0B" }} />
@@ -113,7 +115,7 @@ export default function CongestionPanel({
             </span>
           </div>
 
-          <p className="text-xs text-neutral-500">
+          <p className="font-mono text-xs text-ink-secondary">
             {loading
               ? "Loading…"
               : segmentCount === 0
