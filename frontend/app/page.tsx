@@ -5,7 +5,6 @@ import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import SearchForm from "@/components/search/SearchForm";
 import CongestionPanel from "@/components/CongestionPanel";
-import RoutesPanel from "@/components/RoutesPanel";
 import RouteResultPanel from "@/components/route/RouteResultPanel";
 import { Stop, StopPickTarget } from "@/types/route";
 import { buildStopLabel } from "@/lib/stopLabel";
@@ -58,6 +57,10 @@ function HomeInner() {
   const { result, loading, error, search } = useRouteSearch();
 
   const congestion = useCongestion();
+  // Used only for the ?route= deep link from /routes/[routeId]'s "View on
+  // map" action (see the effect below) and to feed browseRouteStops to
+  // BusMap -- the browsing UI itself (search/paginate/toggle-visible)
+  // lives on the dedicated /routes page now, not duplicated here.
   const routeBrowser = useRouteBrowser();
 
   // One-time deep-link handling: /stops/[id] links here with
@@ -148,21 +151,6 @@ function HomeInner() {
           loading={congestion.loading}
           segmentCount={congestion.segments.length}
           hasSeededOnly={congestion.hasSeededOnly}
-        />
-
-        <RoutesPanel
-          routes={routeBrowser.routes}
-          routesLoading={routeBrowser.loading}
-          total={routeBrowser.total}
-          searchQuery={routeBrowser.searchQuery}
-          onSearchChange={routeBrowser.setSearchQuery}
-          visibleRouteId={routeBrowser.visibleRouteId}
-          visibleRouteStops={routeBrowser.visibleRouteStops}
-          visibleRouteStopsLoading={routeBrowser.visibleRouteStopsLoading}
-          onToggleVisible={routeBrowser.toggleVisible}
-          hasMore={routeBrowser.hasMore}
-          onLoadMore={routeBrowser.loadMore}
-          loadingMore={routeBrowser.loadingMore}
         />
 
         {stopsError && (

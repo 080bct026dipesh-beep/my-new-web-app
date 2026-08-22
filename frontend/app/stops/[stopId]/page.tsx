@@ -3,14 +3,16 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ApiError, getStop } from "@/lib/api";
-import { Stop } from "@/types/route";
+import { ApiError, getStop, getStopRoutes } from "@/lib/api";
+import { RouteOut, Stop } from "@/types/route";
 
 export default function StopDetailPage() {
   const params = useParams<{ stopId: string }>();
   const stopId = decodeURIComponent(params.stopId);
 
   const [stop, setStop] = useState<Stop | null>(null);
+  const [routes, setRoutes] = useState<RouteOut[]>([]);
+  const [routesLoading, setRoutesLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +39,21 @@ export default function StopDetailPage() {
       }
     }
 
+    async function loadRoutes() {
+      setRoutesLoading(true);
+      try {
+        const data = await getStopRoutes(stopId);
+        if (!cancelled) setRoutes(data);
+      } catch {
+        // Supplementary to the stop's own info -- fail silently, the
+        // section below just shows nothing rather than an error banner.
+      } finally {
+        if (!cancelled) setRoutesLoading(false);
+      }
+    }
+
     load();
+    loadRoutes();
     return () => {
       cancelled = true;
     };
@@ -129,18 +145,41 @@ export default function StopDetailPage() {
         </Link>
       </div>
 
-      <p className="text-xs text-ink-secondary">
-        Routes serving this stop aren&apos;t listed here yet -- search a specific origin and
-        destination on the{" "}
-        <Link href="/" className="text-accent-blue hover:underline">
-          search page
-        </Link>{" "}
-        to find a route through it, or browse the{" "}
-        <Link href="/routes" className="text-accent-green hover:underline">
-          full route list
-        </Link>
-        .
-      </p>
+      <div>
+        <h2 className="mb-2 text-sm font-medium text-ink">Routes serving this stop</h2>
+        {routesLoading && (
+          <div className="flex flex-col gap-1.5">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-10 animate-pulse rounded-lg border border-route-line bg-surface" />
+            ))}
+          </div>
+        )}
+        {!routesLoading && routes.length === 0 && (
+          <p className="text-sm text-ink-secondary">
+            No routes currently list this stop. Search a specific origin and destination on the{" "}
+            <Link href="/" className="text-accent-blue hover:underline">
+              search page
+            </Link>{" "}
+            -- the route finder can still connect through here via a nearby transfer.
+          </p>
+        )}
+        <ul className="flex flex-col gap-1.5">
+          {routes.map((route) => (
+            <li key={route.route_id}>
+              <Link
+                href={`/routes/${encodeURIComponent(route.route_id)}`}
+                className="flex items-center justify-between gap-3 rounded-lg border border-route-line bg-white px-3 py-2 hover:border-accent-blue"
+              >
+                <p className="text-sm font-medium text-ink">
+                  {route.short_name ? `${route.short_name} — ` : ""}
+                  {route.route_name}
+                </p>
+                <span className="shrink-0 font-mono text-xs text-ink-secondary">{route.vehicle_type}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }

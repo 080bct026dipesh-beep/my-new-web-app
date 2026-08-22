@@ -33,12 +33,30 @@ export interface RouteLeg {
   road_geometry?: RoadGeometry | null;
 }
 
+export interface FareOut {
+  fare_id: string;
+  min_distance_km: number;
+  max_distance_km: number;
+  fare_npr_min: number;
+  fare_npr_max: number;
+  student_discount_pct: number | null;
+}
+
+export interface RouteAlternative {
+  label: "alternate_direct_route" | "shortest_distance" | "fastest_estimated";
+  total_cost: number;
+  transfer_count: number;
+  legs: RouteLeg[];
+}
+
 export interface RouteFinderResult {
   origin_stop_id: string;
   destination_stop_id: string;
   total_cost: number;
   transfer_count: number;
   legs: RouteLeg[];
+  fare: FareOut | null;
+  alternatives: RouteAlternative[];
 }
 
 // Frontend-only wrapper: the backend signals "not found" via HTTP 404,
