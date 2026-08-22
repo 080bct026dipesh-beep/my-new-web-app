@@ -1893,3 +1893,101 @@ R-NY-07,S0108,9,Thapagaun
 R-NY-07,TBD-CHOOSE,10,New Baneshwor
 R-NY-07,TBD-CHOOSE,11,Tinkune
 R-NY-07,S0107,12,Koteshwor
+R-GAP-02,S0010,1,Thankot
+R-GAP-02,S0270,2,Tribhuwan Park
+R-GAP-02,S0119,3,Thankot Checkpost
+R-GAP-02,S0386,4,Chandragiri Danda Road Junction
+R-GAP-02,S0387,5,Dahachok Chowk
+R-GAP-02,S0388,6,Dahachok
+R-GAP-03,S0130,1,Kalanki
+R-GAP-03,S0275,2,Dui Adda (Dhunga Adda)
+R-GAP-03,S0389,3,Balambu Chowk
+R-GAP-03,S0390,4,Balambu
+R-GAP-04,S0130,1,Kalanki
+R-GAP-04,S0221,2,Naya Bazar
+R-GAP-04,S0358,3,Kirtipur Mod
+R-GAP-04,S0084,4,Panga Dobato
+R-GAP-04,S0391,5,Machhegaun Chowk
+R-GAP-04,S0392,6,Machhegaun
+R-GAP-05,S0013,1,Ratna Park
+R-GAP-05,S0198,2,Purano Bus Park
+R-GAP-05,S0086,3,Tourism Board Stop
+R-GAP-05,S0067,4,Shahid Gate
+R-GAP-05,S0076,5,Sundhara Stop
+R-GAP-05,S0056,6,Tripureshwor
+R-GAP-05,S0276,7,Tek (Teku)
+R-GAP-05,S0023,8,Kalimati
+R-GAP-05,S0230,9,Balkhu
+R-GAP-05,S0233,10,Balkhu Stop
+R-GAP-05,S0225,11,Kumari Club
+R-GAP-05,S0043,12,TU Gate
+R-GAP-05,S0049,13,Naya Bato
+R-GAP-05,S0073,14,Chobhar Gate
+R-GAP-05,S0173,15,Dakshinkali
+R-GAP-05,S0393,16,Pharping Chowk
+R-GAP-05,S0394,17,Pharping Danda
+R-GAP-05,S0395,18,Pharping
+R-GAP-06,S0113,1,Balaju
+R-GAP-06,S0212,2,Banasthali
+R-GAP-06,S0228,3,Dhungedhara
+R-GAP-06,S0162,4,Thulo Bharang Stop
+R-GAP-06,S0396,5,Ramkot Road Junction
+R-GAP-06,S0397,6,Nagarjun Gate (Fulbari)
+R-GAP-06,S0398,7,Nagarjun
+R-GAP-07,S0130,1,Kalanki
+R-GAP-07,S0246,2,Bafal
+R-GAP-07,S0090,3,Sitapaila Stop
+R-GAP-07,S0211,4,Swayambhu Parikarma
+R-GAP-07,S0353,5,Sano Bharyang
+R-GAP-07,S0399,6,Ichangu Road
+R-GAP-07,S0400,7,Ichangu Narayan
+R-GAP-08,S0113,1,Balaju
+R-GAP-08,S0212,2,Banasthali
+R-GAP-08,S0228,3,Dhungedhara
+R-GAP-08,S0162,4,Thulo Bharang Stop
+R-GAP-08,S0401,5,Manamaiju Chowk
+R-GAP-08,S0402,6,Manamaiju
+R-GAP-09,S0130,1,Kalanki
+R-GAP-09,S0246,2,Bafal
+R-GAP-09,S0090,3,Sitapaila Stop
+R-GAP-09,S0211,4,Swayambhu Parikarma
+R-GAP-09,S0353,5,Sano Bharyang
+R-GAP-09,S0403,6,Halchowk
+R-GAP-10,S0130,1,Kalanki
+R-GAP-10,S0263,2,Ravi Bhavan
+R-GAP-10,S0271,3,Soalteemode West
+R-GAP-10,S0023,4,Kalimati
+R-GAP-10,S0404,5,Dallu Awas
+R-GAP-10,S0405,6,Dallu
+R-GAP-12,S0113,1,Balaju
+R-GAP-12,S0174,2,Naya Bus Park
+R-GAP-12,S0169,3,Gongabu Chowk
+R-GAP-12,S0231,4,Golfutar stop
+R-GAP-12,S0408,5,Baniyatar Road
+R-GAP-12,S0409,6,Tarkeshwor Chowk
+R-GAP-12,S0410,7,Tarkeshwor
+R-GAP-13,S0044,1,Narayan Gopal Chowk
+R-GAP-13,S0238,2,Gangalal Hospital (Shahid Gangalal National Heart Centre)
+R-GAP-13,S0260,3,Neuro Hospital Bansbari (Upendra Devkota Memorial NINAS)
+R-GAP-13,S0231,4,Golfutar stop
+R-GAP-13,S0268,5,Nepal Telecom (Budhanilkantha)
+R-GAP-13,S0411,6,Tokha Bazar
+R-GAP-13,S0412,7,Tokha
+R-GAP-14,S0065,1,Basundhara
+R-GAP-14,S0187,2,Samakhusi Stop
+R-GAP-14,S0413,3,Narayanthan Chowk
+R-GAP-14,S0414,4,Narayanthan
+R-GAP-15,S0337,1,Maharajgunj Chowk
+R-GAP-15,S0124,2,Teaching Hospital stop
+R-GAP-15,S0354,3,Chappal Karkhana
+R-GAP-15,S0415,4,Ranibari Forest Gate
+R-GAP-15,S0416,5,Ranibari
+R-GAP-16,S0135,1,Jorpati
+R-GAP-16,S0125,2,Attarkhel
+R-GAP-16,S0417,3,Mulpani Chowk
+R-GAP-16,S0418,4,Mulpani
+R-GAP-17,S0135,1,Jorpati
+R-GAP-17,S0125,2,Attarkhel
+R-GAP-17,S0344,3,Narayantar
+R-GAP-17,S0419,4,Chunikhel Chowk
+R-GAP-17,S0420,5,Chunikhel
