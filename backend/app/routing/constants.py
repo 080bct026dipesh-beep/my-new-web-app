@@ -12,3 +12,15 @@ TRANSFER_PENALTY: int = 3000
 # few known-congested corridors (Koteshwor, Kalanki, Thapathali) before
 # trusting it in production.
 CONGESTION_LAMBDA: float = 0.75
+
+# Used ONLY to rank the "fastest_estimated" route-finder alternative --
+# rough constant assumptions, not measured or real-time data. No per-edge
+# duration exists in the graph itself (OSRM duration is computed after a
+# path is already chosen, per full leg polyline -- see
+# api/routing.py:_attach_road_geometry), so this is the only way to rank
+# by estimated time before that point. Kathmandu Valley in-city bus
+# speeds are commonly cited in the 10-15 km/h range during regular
+# traffic; walking pace is the standard ~4.7 km/h.
+BUS_AVG_SPEED_MPS: float = 3.3  # ~12 km/h
+WALK_SPEED_MPS: float = 1.3  # ~4.7 km/h
+BOARD_WAIT_S: float = 180.0  # assumed average wait for a bus to arrive

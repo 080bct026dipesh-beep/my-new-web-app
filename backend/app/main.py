@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
-from app.api import admin, admin_auth, congestion, routes, routing, stops
+from app.api import admin, admin_auth, congestion, fare, routes, routing, stops
 from app.core.config import get_settings
 from app.core.rate_limit import limiter
 from app.core.security import require_admin_key
@@ -75,6 +75,7 @@ def rebuild_graph():
 app.include_router(stops.router)
 app.include_router(routes.router)
 app.include_router(routing.router)
+app.include_router(fare.router)
 app.include_router(congestion.router)
 app.include_router(admin.router)
 app.include_router(admin_auth.router)

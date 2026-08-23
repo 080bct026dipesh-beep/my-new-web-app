@@ -1,9 +1,10 @@
 """
 api/stops.py
 
-GET /stops           — paginated stop listing
-GET /stops/nearby     — nearest stops to a lat/lng, within a radius
-GET /stops/{stop_id}  — a single stop by ID
+GET /stops                  — paginated stop listing
+GET /stops/nearby            — nearest stops to a lat/lng, within a radius
+GET /stops/{stop_id}         — a single stop by ID
+GET /stops/{stop_id}/routes  — routes that pass through a stop
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -12,7 +13,7 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.db import queries
 from app.db.session import get_db
-from app.schemas import StopListOut, StopOut
+from app.schemas import RouteOut, StopListOut, StopOut
 
 router = APIRouter(tags=["stops"])
 settings = get_settings()
@@ -53,3 +54,13 @@ def read_stop(stop_id: str, db: Session = Depends(get_db)):
     if stop is None:
         raise HTTPException(status_code=404, detail=f"Stop '{stop_id}' not found")
     return stop
+
+
+@router.get("/stops/{stop_id}/routes", response_model=list[RouteOut])
+def read_stop_routes(stop_id: str, db: Session = Depends(get_db)):
+    """Every route that passes through this stop. 404s if the stop itself
+    doesn't exist (distinct from a real stop with zero routes serving
+    it, which returns an empty list)."""
+    if queries.get_stop(db, stop_id) is None:
+        raise HTTPException(status_code=404, detail=f"Stop '{stop_id}' not found")
+    return queries.list_routes_by_stop(db, stop_id)

@@ -68,6 +68,17 @@ class RouteListOut(BaseModel):
     items: list[RouteOut]
 
 
+class FareOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    fare_id: str
+    min_distance_km: float
+    max_distance_km: float
+    fare_npr_min: float
+    fare_npr_max: float
+    student_discount_pct: Optional[float] = None
+
+
 class RouteLeg(BaseModel):
     """One uninterrupted ride on a single route, part of a route-finder result."""
     route_id: str
@@ -82,12 +93,43 @@ class RouteLeg(BaseModel):
     road_geometry: Optional[dict] = None
 
 
+class RouteAlternative(BaseModel):
+    """A secondary option alongside the primary route-finder result.
+    Deliberately flat (no nested `alternatives` of its own, no `fare` --
+    callers show fare/details for the primary result and let the person
+    switch to an alternative if they prefer it) and skips road_geometry
+    to avoid tripling OSRM calls per search; see 'fastest_estimated'
+    below for what that means for its accuracy.
+
+    label meanings:
+      - "alternate_direct_route": a different real bus route that also
+        connects these two stops directly, second-shortest by distance.
+        Exact, not estimated.
+      - "shortest_distance": minimum total distance, ignoring the small
+        per-transfer weighting the primary/recommended result applies.
+        Only appears when no direct route exists.
+      - "fastest_estimated": minimum estimated travel time, using fixed
+        assumed speeds per edge kind (~12 km/h riding, ~4.7 km/h
+        walking, since no per-edge duration data exists pre-search --
+        OSRM duration is only computed after a path is already chosen).
+        This is a labeled approximation, not a live ETA. Only appears
+        when no direct route exists.
+    """
+
+    label: Literal["alternate_direct_route", "shortest_distance", "fastest_estimated"]
+    total_cost: float
+    transfer_count: int
+    legs: list[RouteLeg]
+
+
 class RouteFinderResult(BaseModel):
     origin_stop_id: str
     destination_stop_id: str
     total_cost: float
     transfer_count: int
     legs: list[RouteLeg]
+    fare: Optional[FareOut] = None
+    alternatives: list[RouteAlternative] = []
 
 
 # ---------------------------------------------------------------------------

@@ -6,8 +6,8 @@ from app.routing.graph_builder import haversine_distance_m
 from app.routing.time_buckets import day_and_bucket_for, now_in_nepal
 from app.db.session import get_db, SessionLocal
 from app.db import queries
-from app.routing.pathfinder import find_shortest_path, NoRouteFoundError
-from app.schemas import RouteFinderResult, RouteLeg, StopOut
+from app.routing.pathfinder import find_shortest_path, NoRouteFoundError, PathSegment, RouteAlternative as PFRouteAlternative
+from app.schemas import FareOut, RouteAlternative, RouteFinderResult, RouteLeg, StopOut
 
 router = APIRouter(tags=["route-finder"])
 
@@ -86,6 +86,59 @@ def _record_leg_congestion(legs: list[RouteLeg]) -> None:
         db.close()
 
 
+def _build_legs(
+    db: Session,
+    segments: list[PathSegment],
+    route_names: dict[str, str],
+) -> list[RouteLeg]:
+    """Shared segment -> leg consolidation, used for both the primary
+    result and each alternative. route_names is a pre-fetched route_id ->
+    route_name lookup (see queries.get_route_names) -- passed in rather
+    than queried per-call so a request with alternatives does one lookup
+    total instead of one per result."""
+
+    legs: list[RouteLeg] = []
+    for seg in segments:
+        seg_route_id = seg.route_id or "TRANSFER"
+        to_stop = StopOut.model_validate(queries.get_stop(db, seg.to_stop_id))
+        if legs and legs[-1].route_id == seg_route_id:
+            legs[-1].alight_stop = to_stop
+            legs[-1].num_ride_segments += 1
+            legs[-1].stops.append(to_stop)
+        else:
+            from_stop = StopOut.model_validate(queries.get_stop(db, seg.from_stop_id))
+            legs.append(
+                RouteLeg(
+                    route_id=seg_route_id,
+                    route_name=(
+                        "Transfer (walk)"
+                        if seg.is_transfer
+                        else route_names.get(seg.route_id, seg.route_id)
+                    ),
+                    board_stop=from_stop,
+                    alight_stop=to_stop,
+                    num_ride_segments=1,
+                    stops=[from_stop, to_stop],
+                )
+            )
+    return legs
+
+
+def _all_route_ids(
+    primary_segments: list[PathSegment],
+    alternatives: list[PFRouteAlternative],
+) -> list[str]:
+    ids: set[str] = set()
+    for seg in primary_segments:
+        if seg.route_id:
+            ids.add(seg.route_id)
+    for alt in alternatives:
+        for seg in alt.segments:
+            if seg.route_id:
+                ids.add(seg.route_id)
+    return list(ids)
+
+
 @router.get("/walking-route")
 def walking_route(
     from_lat: float = Query(..., ge=-90, le=90),
@@ -118,37 +171,51 @@ def find_route(
             "unaffected -- a direct route always wins either way."
         ),
     ),
+    include_alternatives: bool = Query(
+        False,
+        description=(
+            "When true, up to 2 additional options are returned in "
+            "`alternatives` alongside the primary result -- see "
+            "RouteAlternative's docstring in app/schemas.py for what each "
+            "label means. Alternatives skip OSRM road_geometry (to avoid "
+            "multiplying external API calls per search), so their "
+            "distance/transfer numbers are exact but they carry no "
+            "duration or polyline."
+        ),
+    ),
     db: Session = Depends(get_db),
 ):
     try:
-        result = find_shortest_path(db, origin, destination, avoid_congestion=avoid_congestion)
+        result = find_shortest_path(
+            db,
+            origin,
+            destination,
+            avoid_congestion=avoid_congestion,
+            include_alternatives=include_alternatives,
+        )
     except NoRouteFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
 
-    legs: list[RouteLeg] = []
-    for seg in result.segments:
-        seg_route_id = seg.route_id or "TRANSFER"
-        to_stop = StopOut.model_validate(queries.get_stop(db, seg.to_stop_id))
-        if legs and legs[-1].route_id == seg_route_id:
-            legs[-1].alight_stop = to_stop
-            legs[-1].num_ride_segments += 1
-            legs[-1].stops.append(to_stop)
-        else:
-            from_stop = StopOut.model_validate(queries.get_stop(db, seg.from_stop_id))
-            legs.append(
-                RouteLeg(
-                    route_id=seg_route_id,
-                    route_name="Transfer (walk)" if seg.is_transfer else seg.route_id,
-                    board_stop=from_stop,
-                    alight_stop=to_stop,
-                    num_ride_segments=1,
-                    stops=[from_stop, to_stop],
-                )
-            )
+    route_names = queries.get_route_names(
+        db, _all_route_ids(result.segments, result.alternatives)
+    )
 
+    legs = _build_legs(db, result.segments, route_names)
     _attach_road_geometry(legs)
-
     background_tasks.add_task(_record_leg_congestion, legs)
+
+    alternatives: list[RouteAlternative] = [
+        RouteAlternative(
+            label=alt.label,
+            total_cost=alt.total_distance_m,
+            transfer_count=alt.transfer_count,
+            legs=_build_legs(db, alt.segments, route_names),
+        )
+        for alt in result.alternatives
+    ]
+
+    fare_rule = queries.fare_for_distance(db, result.total_distance_m / 1000)
+    fare = FareOut.model_validate(fare_rule) if fare_rule is not None else None
 
     return RouteFinderResult(
         origin_stop_id=origin,
@@ -156,4 +223,6 @@ def find_route(
         total_cost=result.total_distance_m,
         transfer_count=result.transfer_count,
         legs=legs,
+        fare=fare,
+        alternatives=alternatives,
     )

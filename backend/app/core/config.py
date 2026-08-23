@@ -7,8 +7,16 @@ read from here, never hardcoded in models/queries/api files.
 """
 
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Resolved relative to this file (backend/app/core/config.py), not the
+# process's current working directory -- a bare "env_file=.env" only
+# resolves when pytest/uvicorn happen to be launched from backend/, and
+# fails collection with "Field required" for admin_api_key/jwt_secret_key
+# when launched from the repo root instead.
+_ENV_FILE = Path(__file__).resolve().parent.parent.parent / ".env"
 
 
 class Settings(BaseSettings):
@@ -43,7 +51,7 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=_ENV_FILE, extra="ignore")
 
 
 @lru_cache

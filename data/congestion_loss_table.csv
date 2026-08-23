@@ -1,0 +1,108 @@
+SN,ID,Name,Annual Loss Time (hour.veh),Rank,Score
+1,E01,Chandragiri,347335,34,2.5
+2,E02,Soalteemod,637266,18,5
+3,E03,Kalimati-1,773210,13,5
+4,E04,Kalimati-2,135773,62,0
+5,E05,Teku,1142582,3,10
+6,E06,Maitighar,1121752,5,7.5
+7,E07,Babar Mahal DOR Chowk,169872,55,0
+8,E08,Naya Baneshwor,1013036,7,7.5
+9,E09,Civil Hospital Mid Block,166357,56,0
+10,E10,Tinkune1,180961,54,0
+11,E11,Jadibuti,1078776,6,7.5
+12,E12,Manohara,302629,38,2.5
+13,E13,Lokanthali,276299,42,2.5
+14,E14,Kaushaltar,206130,49,2.5
+15,E15,Gathaghar,228486,48,2.5
+16,E16,Sanothimi,182905,53,0
+17,E17,Thimi,413676,31,2.5
+18,E18,Thimi Bypass,117806,65,0
+19,E19,Shyamadham,67255,73,0
+20,E20,Sallaghar West,58170,76,0
+21,E21,Sallaghari Tinkune,30717,84,0
+22,E22,Sallaghari East,24641,85,0
+23,E23,Ghalate Tol,17520,86,0
+24,E24,Pandu Bazaar,37175,82,0
+25,E25,Suryabinayak,93354,69,0
+26,N01,Galfutar,123860,64,0
+27,N02,Teaching/Kanti Hospital,290430,39,2.5
+28,N03,Shital Niwas,110139,67,0
+29,N04,Lainchaur North/Lazimpat,288038,40,2.5
+30,N05,Lainchaur,419943,30,5
+31,N06,Keshar Mahal,920871,9,7.5
+32,N07,Jamal,249092,45,2.5
+33,N08,Bhotahiti,164478,57,0
+34,N09,Bir Hospital,231989,47,2.5
+35,N10,New Road,375521,33,2.5
+36,N11,Sundhara,939723,8,7.5
+37,N12,Tripureshwor,3110274,1,10
+38,N13,Thapathali,637819,17,5
+39,N14,Kupandole,582382,21,5
+40,N15,Chakupat,607132,19,5
+41,N16,Mantri Qtr/Harihar Bhawan,716964,15,5
+42,N17,Pulchok1,194844,51,0
+43,N18,Pulchok2,804004,12,5
+44,N19,Pulchok3,462301,28,5
+45,N20,Jawalakhel,517607,24,5
+46,N21,Ekantakuna1,269777,43,2.5
+47,R01,Kalanki,714104,16,5
+48,R02,Balkhu1,81270,71,0
+49,R03,Balkhu2,317954,37,2.5
+50,R04,Ekantakuna2,455206,29,5
+51,R05,Chapagau Dobato,276630,41,2.5
+52,R06,Satdobato,835110,11,5
+53,R07,Gwarko,1136024,4,7.5
+54,R08,Koteshwor,1718800,2,10
+55,R09,Tinkune2,534345,23,5
+56,R10,Tinkune3,143278,59,0
+57,R11,Sinamangal,189650,52,0
+58,R12,Airport,335611,35,2.5
+59,R13,Gaushala,767130,14,5
+60,R14,Mitrapark,495160,26,5
+61,R15,Guheshwori,240330,46,2.5
+62,R16,Chabahil,539824,22,5
+63,U01,Sorakhutte North,43889,81,0
+64,U02,Sorakhutte,17314,88,0
+65,U03,Galkopakha Chowk,266913,44,2.5
+66,U04,Royal Palace South Gate,327300,36,2.5
+67,U05,Mahendra Statue/Tindhara,128912,63,0
+68,U06,Trichandara/Kamaladi,57875,77,0
+69,U07,Ratnapark,115930,66,0
+70,U08,Exhibition Road,143270,60,0
+71,U09,Bhadrakali,145158,58,0
+72,U10,Tukucha Chowk,17363,87,0
+73,U11,Nagpokhari,62821,74,0
+74,U12,Jaya Nepal,201065,50,2.5
+75,U13,Hattisar,32882,83,0
+76,U14,Hattisar/Kamal Pokhari,46010,80,0
+77,U15,Kathmandu Plaza,142898,61,0
+78,U16,Kamaladi,380136,32,2.5
+79,U17,Dilli Bazar/Putali Sadak,468697,27,5
+80,U18,Padmodaya1,91179,70,0
+81,U19,Padmodaya2/Anamnagar North,108233,68,0
+82,U20,Singha Durbar,603093,20,5
+83,U21,Gairidhara,0,91,0
+84,U22,Naxal,0,91,0
+85,U23,Narayanchaur,14858,90,0
+86,U24,Baluwatar1,0,91,0
+87,U25,Baluwatar2,0,91,0
+88,U26,Naxal Bhatbhateni,0,91,0
+89,U27,Tangal,0,91,0
+90,U28,Police HQ,0,91,0
+91,U29,Naxal Bhagwati,0,91,0
+92,U30,Kamal Pokhari,61718,75,0
+93,U31,Charkhal,16827,89,0
+94,U32,Kalikasthan,0,91,0
+95,U33,Anamnagar,0,91,0
+96,U34,Sano Gaucharan,0,91,0
+97,U35,Gyaneshwor,53555,78,0
+98,U36,Maitidevi1,49172,79,0
+99,U37,Maitidevi2,72676,72,0
+100,U38,Siphal,0,91,0
+101,U39,Purano Baneshwor,847462,10,7.5
+102,U40,Jorpati,506293,25,5
+103,U41,Sanepa,0,91,0
+104,U42,Summit Hotel,0,91,0
+105,U43,Jhamshikehl Chowk,0,91,0
+106,U44,Jhamshikhel,0,91,0
+107,U45,Dhobighat,0,91,0

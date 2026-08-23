@@ -58,6 +58,17 @@ def get_route(session: Session, route_id: str) -> Optional[Route]:
     return session.execute(stmt).scalar_one_or_none()
 
 
+def get_route_names(session: Session, route_ids: list[str]) -> dict[str, str]:
+    """Single-column, single-query lookup of route_id -> route_name for a
+    batch of IDs -- used to label route-finder legs without the overhead
+    of get_route's full eager-loaded fetch (route_stops/operators aren't
+    needed just to display a leg's route name)."""
+    if not route_ids:
+        return {}
+    stmt = select(Route.route_id, Route.route_name).where(Route.route_id.in_(route_ids))
+    return dict(session.execute(stmt).all())
+
+
 def get_route_stops(session: Session, route_id: str) -> Sequence[RouteStop]:
     """Stops on a route, in sequence_no order, each with its Stop eager-loaded."""
     stmt = (

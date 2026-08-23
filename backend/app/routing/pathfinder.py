@@ -11,15 +11,21 @@ Loop routes are handled correctly even when the same physical stop occurs
 multiple times in the same route.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Optional
 
 import networkx as nx
 from sqlalchemy.orm import Session
 
-from app.db.queries import get_active_routes, get_congestion_ratios
+from app.db.queries import get_congestion_ratios
 from app.routing import graph_builder as gb
-from app.routing.constants import CONGESTION_LAMBDA
+from app.routing import congestion_zones
+from app.routing.constants import (
+    BOARD_WAIT_S,
+    BUS_AVG_SPEED_MPS,
+    CONGESTION_LAMBDA,
+    WALK_SPEED_MPS,
+)
 from app.routing.time_buckets import day_and_bucket_for, now_in_nepal
 
 
@@ -37,11 +43,25 @@ class PathSegment:
 
 
 @dataclass(frozen=True)
+class RouteAlternative:
+    """A secondary option alongside the primary RouteFinderResult -- see
+    schemas.RouteAlternative (the API-facing counterpart this maps onto)
+    for what each label means."""
+
+    label: str
+    segments: List[PathSegment]
+    total_distance_m: float
+    transfer_count: int
+    stop_sequence: List[str]
+
+
+@dataclass(frozen=True)
 class RouteFinderResult:
     segments: List[PathSegment]
     total_distance_m: float
     transfer_count: int
     stop_sequence: List[str]
+    alternatives: List[RouteAlternative] = field(default_factory=list)
 
 
 def _build_direct_route_result(
@@ -233,22 +253,26 @@ def _sequence_distance(
     return total
 
 
-def _find_direct_route(
+def _find_direct_route_candidates(
     session: Session,
     graph: nx.DiGraph,
     origin_stop_id: str,
     destination_stop_id: str,
-) -> Optional[RouteFinderResult]:
-    """
-    Find a route containing both stops.
+) -> list[RouteFinderResult]:
+    """Every active route that connects these two stops directly,
+    sorted shortest-first. Reused by both the primary result path and by
+    the alternatives feature, which needs the full candidate list
+    instead of only ever seeing the winner.
 
-    If multiple direct routes exist, return the shortest direct one.
-    Dijkstra is never used when a direct route is available.
-    """
+    Calls gb.get_active_routes (not a separately-imported name) so this
+    goes through the exact same binding graph_builder.build_graph uses --
+    tests that monkeypatch gb.get_active_routes to stub out the DB cover
+    this call too, instead of silently hitting the real DB through a
+    second, independent import."""
 
-    direct_results: list[RouteFinderResult] = []
+    candidates: list[RouteFinderResult] = []
 
-    for route in get_active_routes(session):
+    for route in gb.get_active_routes(session):
         result = _build_direct_route_result(
             graph,
             route,
@@ -257,15 +281,10 @@ def _find_direct_route(
         )
 
         if result is not None:
-            direct_results.append(result)
+            candidates.append(result)
 
-    if not direct_results:
-        return None
-
-    return min(
-        direct_results,
-        key=lambda result: result.total_distance_m,
-    )
+    candidates.sort(key=lambda result: result.total_distance_m)
+    return candidates
 
 
 def _physical_stop_id(node) -> str:
@@ -280,94 +299,117 @@ def _physical_stop_id(node) -> str:
     return node[0]
 
 
-def _congestion_weight_fn(congestion_lookup: dict[tuple, float]):
-    """Build a per-request edge-weight function for nx.shortest_path that
-    inflates "ride" edges by their current congestion_ratio, leaving
-    "board"/"alight"/"walk" edges untouched.
+def _ride_congestion_ratio(
+    graph: nx.DiGraph,
+    zones: list,
+    congestion_lookup: dict[tuple, float],
+    u,
+    v,
+    edge_data: dict,
+) -> float:
+    """Shared ratio-blending logic used by both _congestion_weight_fn
+    (distance) and _duration_weight_fn (time), so a congestion-aware
+    "fastest_estimated" alternative sees exactly the same organic/zone
+    signal, combined the same way (max, not additive), as the primary
+    avoid_congestion search does. Returns 1.0 (free-flow / no-op) for
+    anything that isn't a "ride" edge.
+    """
+    if edge_data.get("kind") != "ride":
+        return 1.0
+    organic_ratio = congestion_lookup.get(
+        (edge_data.get("route_id"), _physical_stop_id(u), _physical_stop_id(v)),
+        1.0,
+    )
+    zone_ratio = 1.0
+    if zones:
+        u_data = graph.nodes[u]
+        v_data = graph.nodes[v]
+        zone_ratio = congestion_zones.ratio_for_segment(
+            u_data["lat"], u_data["lng"], v_data["lat"], v_data["lng"], zones=zones
+        )
+    return max(organic_ratio, zone_ratio)
 
+
+def _congestion_weight_fn(graph: nx.DiGraph, congestion_lookup: dict[tuple, float]):
+    """Build a per-request edge-weight function for nx.shortest_path that
+    inflates "ride" edges by the current congestion ratio, leaving
+    "board"/"alight"/"walk" edges untouched. See _ride_congestion_ratio
+    for how the organic and geographic-zone signals are blended.
     Deliberately NOT baked into the cached graph itself (see
     graph_builder.get_cached_graph): congestion varies by time-of-day and
     the graph is shared/reused across concurrent requests, so mutating
     its static "weight" attribute would leak one request's time bucket
     into another's. A callable weight function keeps this entirely
     request-scoped -- the graph itself is never touched.
-
-    congestion_lookup: (route_id, from_stop_id, to_stop_id) -> ratio, as
-    returned by queries.get_congestion_ratios. A ratio at or below 1
-    (free-flowing, or no data) leaves the edge's weight unchanged.
     """
-
+    zones = congestion_zones.load_zones()
     def weight(u, v, edge_data: dict) -> float:
         base = edge_data.get("weight", edge_data.get("distance_m", 0))
         if edge_data.get("kind") != "ride":
             return base
-        ratio = congestion_lookup.get(
-            (edge_data.get("route_id"), _physical_stop_id(u), _physical_stop_id(v))
-        )
-        if not ratio or ratio <= 1:
+        ratio = _ride_congestion_ratio(graph, zones, congestion_lookup, u, v, edge_data)
+        if ratio <= 1:
             return base
         return base * (1 + CONGESTION_LAMBDA * (ratio - 1))
-
     return weight
+def _duration_weight_fn(graph: nx.DiGraph = None, congestion_lookup: dict[tuple, float] = None):
+    """Edge-weight function estimating travel TIME instead of distance,
+    for ranking the "fastest_estimated" alternative -- see the
+    BUS_AVG_SPEED_MPS/WALK_SPEED_MPS/BOARD_WAIT_S constants for the
+    (labeled-as-approximate) assumptions this relies on. Same
+    request-scoped-callable pattern as _congestion_weight_fn, for the
+    same reason: never mutate the shared cached graph.
 
-
-def _find_with_dijkstra(
-    graph: nx.DiGraph,
-    origin_stop_id: str,
-    destination_stop_id: str,
-    congestion_lookup: Optional[dict[tuple, float]] = None,
-) -> RouteFinderResult:
-    """Fallback search used only when no direct route exists.
-
-    When congestion_lookup is given (see find_shortest_path's
-    avoid_congestion param), ride edges are weighted by current
-    congestion instead of raw distance, so Dijkstra is biased away from
-    segments recorded as congested right now -- see
-    _congestion_weight_fn for how that weighting is computed.
+    graph/congestion_lookup are optional and both default to None,
+    reproducing the exact original congestion-blind behavior for any
+    existing caller that doesn't opt in. When both are given, a
+    congested ride edge's estimated duration is scaled by the same
+    organic/zone ratio _congestion_weight_fn applies to distance (see
+    _ride_congestion_ratio) -- this is what makes "fastest_estimated"
+    avoid the same segments avoid_congestion's primary search avoids,
+    instead of routing straight through them.
     """
-
-    weight_arg = (
-        _congestion_weight_fn(congestion_lookup) if congestion_lookup else "weight"
-    )
-
-    try:
-        path = nx.shortest_path(
-            graph,
-            origin_stop_id,
-            destination_stop_id,
-            weight=weight_arg,
-        )
-    except nx.NetworkXNoPath as exc:
-        raise NoRouteFoundError(
-            f"No route found between '{origin_stop_id}' "
-            f"and '{destination_stop_id}'"
-        ) from exc
+    zones = congestion_zones.load_zones() if congestion_lookup is not None else []
+    def weight(u, v, edge_data: dict) -> float:
+        kind = edge_data.get("kind")
+        if kind == "ride":
+            duration = edge_data.get("distance_m", 0) / BUS_AVG_SPEED_MPS
+            if congestion_lookup is not None:
+                ratio = _ride_congestion_ratio(graph, zones, congestion_lookup, u, v, edge_data)
+                if ratio > 1:
+                    duration *= (1 + CONGESTION_LAMBDA * (ratio - 1))
+            return duration
+        if kind == "walk":
+            return edge_data.get("distance_m", 0) / WALK_SPEED_MPS
+        if kind == "board":
+            return BOARD_WAIT_S
+        return 0.0  # alight -- instantaneous
+    return weight
+def _path_to_result(graph: nx.DiGraph, path: list) -> RouteFinderResult:
+    """Shared conversion from a raw NetworkX path (a list of graph nodes)
+    into a RouteFinderResult, regardless of which weight function chose
+    that path. total_distance_m always sums real distance_m (not
+    whatever weight ranked the path), so alternatives remain comparable
+    to the primary result on the same axis even when they were found by
+    minimizing something else (time, congestion-adjusted cost, etc)."""
 
     stop_sequence: list[str] = []
-
     for node in path:
         physical_id = _physical_stop_id(node)
-
-        if (
-            not stop_sequence
-            or stop_sequence[-1] != physical_id
-        ):
+        if not stop_sequence or stop_sequence[-1] != physical_id:
             stop_sequence.append(physical_id)
 
     segments: list[PathSegment] = []
-
     board_count = 0
     total_distance_m = 0.0
 
     for u, v in zip(path, path[1:]):
         edge = graph[u][v]
         kind = edge["kind"]
-
         total_distance_m += edge["distance_m"]
 
         if kind == "board":
             board_count += 1
-
         elif kind == "ride":
             segments.append(
                 PathSegment(
@@ -378,7 +420,6 @@ def _find_with_dijkstra(
                     weight=edge["distance_m"],
                 )
             )
-
         elif kind == "walk":
             segments.append(
                 PathSegment(
@@ -393,12 +434,125 @@ def _find_with_dijkstra(
     return RouteFinderResult(
         segments=segments,
         total_distance_m=total_distance_m,
-        transfer_count=max(
-            board_count - 1,
-            0,
-        ),
+        transfer_count=max(board_count - 1, 0),
         stop_sequence=stop_sequence,
     )
+
+
+def _find_with_dijkstra(
+    graph: nx.DiGraph,
+    origin_stop_id: str,
+    destination_stop_id: str,
+    weight="weight",
+) -> RouteFinderResult:
+    """Fallback search used only when no direct route exists.
+
+    `weight` is passed straight through to nx.shortest_path: the default
+    "weight" string uses each edge's static weight attribute (distance +
+    a fixed per-board transfer penalty -- see graph_builder.build_graph);
+    pass a callable (e.g. _congestion_weight_fn(...) or
+    _duration_weight_fn()) or the "distance_m" string to rank by
+    something else instead, as find_shortest_path's alternatives do.
+    """
+
+    try:
+        path = nx.shortest_path(
+            graph,
+            origin_stop_id,
+            destination_stop_id,
+            weight=weight,
+        )
+    except nx.NetworkXNoPath as exc:
+        raise NoRouteFoundError(
+            f"No route found between '{origin_stop_id}' "
+            f"and '{destination_stop_id}'"
+        ) from exc
+
+    return _path_to_result(graph, path)
+
+
+def _alternatives_from_direct_candidates(
+    candidates: list[RouteFinderResult],
+    max_count: int = 2,
+) -> list[RouteAlternative]:
+    """candidates[0] is always the primary result (see the STEP 1/STEP 2
+    handling in find_shortest_path); this turns candidates[1:] into up
+    to max_count alternatives, one per distinct real route_id (skipping
+    a second candidate on the same route_id -- e.g. a loop route
+    matching twice -- since that's not a meaningfully different option
+    for a rider)."""
+
+    seen_route_ids = {candidates[0].segments[0].route_id} if candidates[0].segments else set()
+    alternatives: list[RouteAlternative] = []
+
+    for candidate in candidates[1:]:
+        if not candidate.segments:
+            continue
+        route_id = candidate.segments[0].route_id
+        if route_id in seen_route_ids:
+            continue
+        seen_route_ids.add(route_id)
+        alternatives.append(
+            RouteAlternative(
+                label="alternate_direct_route",
+                segments=candidate.segments,
+                total_distance_m=candidate.total_distance_m,
+                transfer_count=candidate.transfer_count,
+                stop_sequence=candidate.stop_sequence,
+            )
+        )
+        if len(alternatives) >= max_count:
+            break
+
+    return alternatives
+
+
+def _alternatives_from_dijkstra(
+    graph: nx.DiGraph,
+    origin_stop_id: str,
+    destination_stop_id: str,
+    primary: RouteFinderResult,
+    congestion_lookup: dict[tuple, float] = None,
+) -> list[RouteAlternative]:
+    """Up to 2 alternatives to the primary (weight-ranked, i.e. distance
+    plus a transfer penalty -- see graph_builder.build_graph) transfer
+    path: one ranked by pure distance, one by estimated travel time. Each
+    is skipped if it resolves to the exact same stop sequence as the
+    primary or an alternative already added -- a "different weighting
+    that happens to produce the same path" isn't a real alternative to
+    show someone."""
+
+    seen_sequences = {tuple(primary.stop_sequence)}
+    alternatives: list[RouteAlternative] = []
+
+    for label, weight in (
+        ("shortest_distance", "distance_m"),
+        ("fastest_estimated", _duration_weight_fn(graph, congestion_lookup)),
+    ):
+        try:
+            path = nx.shortest_path(
+                graph, origin_stop_id, destination_stop_id, weight=weight
+            )
+        except nx.NetworkXNoPath:
+            continue
+
+        candidate = _path_to_result(graph, path)
+        sequence = tuple(candidate.stop_sequence)
+        if sequence in seen_sequences:
+            continue
+        seen_sequences.add(sequence)
+
+        alternatives.append(
+            RouteAlternative(
+                label=label,
+                segments=candidate.segments,
+                total_distance_m=candidate.total_distance_m,
+                transfer_count=candidate.transfer_count,
+                stop_sequence=candidate.stop_sequence,
+            )
+        )
+
+    return alternatives
 
 
 def find_shortest_path(
@@ -406,6 +560,7 @@ def find_shortest_path(
     origin_stop_id: str,
     destination_stop_id: str,
     avoid_congestion: bool = False,
+    include_alternatives: bool = False,
 ) -> RouteFinderResult:
     """
     avoid_congestion: when True and no direct route exists, the Dijkstra
@@ -416,6 +571,13 @@ def find_shortest_path(
     congestion only ever influences *which transfer path* is chosen when
     there's a real choice to make. Defaults to False so existing callers
     keep today's distance-only behavior unless they opt in.
+
+    include_alternatives: when True, populates the returned result's
+    `.alternatives` with up to 2 additional options -- see
+    RouteAlternative's docstring for what each label means and how
+    they're computed. Defaults to False so existing callers get exactly
+    today's response shape (an empty list) unless they opt in; computing
+    alternatives is extra Dijkstra work this skips when unused.
     """
 
     graph = gb.get_cached_graph(session)
@@ -444,7 +606,7 @@ def find_shortest_path(
     # ------------------------------------------------------------
     # STEP 1: DIRECT ROUTE
     # ------------------------------------------------------------
-    direct_result = _find_direct_route(
+    direct_candidates = _find_direct_route_candidates(
         session,
         graph,
         origin_stop_id,
@@ -454,8 +616,17 @@ def find_shortest_path(
     # ------------------------------------------------------------
     # STEP 2: DIRECT ROUTE ALWAYS WINS
     # ------------------------------------------------------------
-    if direct_result is not None:
-        return direct_result
+    if direct_candidates:
+        primary = direct_candidates[0]
+        if include_alternatives:
+            primary = RouteFinderResult(
+                segments=primary.segments,
+                total_distance_m=primary.total_distance_m,
+                transfer_count=primary.transfer_count,
+                stop_sequence=primary.stop_sequence,
+                alternatives=_alternatives_from_direct_candidates(direct_candidates),
+            )
+        return primary
 
     # ------------------------------------------------------------
     # STEP 3: NO DIRECT ROUTE -> DIJKSTRA
@@ -467,9 +638,28 @@ def find_shortest_path(
             session, day_of_week=day_of_week, hour_bucket=hour_bucket
         )
 
-    return _find_with_dijkstra(
+    weight_arg = (
+        _congestion_weight_fn(graph, congestion_lookup)
+        if congestion_lookup is not None
+        else "weight"
+    )
+    primary = _find_with_dijkstra(
         graph,
         origin_stop_id,
         destination_stop_id,
-        congestion_lookup=congestion_lookup,
+        weight=weight_arg,
     )
+
+    if include_alternatives:
+        primary = RouteFinderResult(
+            segments=primary.segments,
+            total_distance_m=primary.total_distance_m,
+            transfer_count=primary.transfer_count,
+            stop_sequence=primary.stop_sequence,
+            alternatives=_alternatives_from_dijkstra(
+                graph, origin_stop_id, destination_stop_id, primary,
+                congestion_lookup=congestion_lookup,
+            ),
+        )
+
+    return primary

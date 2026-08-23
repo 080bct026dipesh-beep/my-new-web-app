@@ -77,14 +77,17 @@ def test_haversine_known_distance():
 
 
 def test_route_edges_are_bidirectional_when_flagged(two_route_network):
-    """v2 note: 'riding' is an edge between RIDE nodes (stop_id, route_id),
-    not between the bare physical stop_id nodes -- see graph_builder.py's
-    module docstring for why (v1's flat model let Dijkstra switch routes
-    at a shared stop for free). Physical stop_id nodes only connect to
-    each other via board/alight/walk edges."""
+    """v2 note: 'riding' is an edge between RIDE nodes
+    (stop_id, route_id, sequence_no) -- not between the bare physical
+    stop_id nodes, and not just (stop_id, route_id) either. sequence_no
+    is part of the node identity so that loop routes (same physical stop
+    appearing twice on one route) get distinct occurrences -- see
+    graph_builder.py's module docstring and _ride_node(). Physical
+    stop_id nodes only connect to each other via board/alight/walk
+    edges."""
     graph = gb.build_graph(session=None)
-    node_s1 = ("S1", "R_A")
-    node_s2 = ("S2", "R_A")
+    node_s1 = ("S1", "R_A", 1)
+    node_s2 = ("S2", "R_A", 2)
     assert graph.has_edge(node_s1, node_s2)
     assert graph.has_edge(node_s2, node_s1)  # is_bidirectional=True on Route A
     assert graph[node_s1][node_s2]["route_id"] == "R_A"
@@ -101,8 +104,8 @@ def test_route_edges_one_directional_when_not_bidirectional(monkeypatch):
     monkeypatch.setattr(gb, "get_active_routes", lambda session: [route])
 
     graph = gb.build_graph(session=None)
-    node_s1 = ("S1", "R_ONE_WAY")
-    node_s2 = ("S2", "R_ONE_WAY")
+    node_s1 = ("S1", "R_ONE_WAY", 1)
+    node_s2 = ("S2", "R_ONE_WAY", 2)
     assert graph.has_edge(node_s1, node_s2)
     assert not graph.has_edge(node_s2, node_s1)
 
@@ -113,7 +116,9 @@ def test_transfer_edge_created_between_close_stops_on_different_routes(two_route
     module docstring on why: it needs to apply to same-stop route
     switches too, which have no walk edge at all). So the walk edge here
     should carry only the real walking distance, and the penalty should
-    show up separately on the board edge into route B at S5."""
+    show up separately on the board edge into route B at S5. The board
+    edge's target is the 3-tuple ride node (stop_id, route_id,
+    sequence_no) -- S5 is the 2nd stop on Route B, so sequence_no=2."""
     from app.routing.constants import TRANSFER_PENALTY
 
     graph = gb.build_graph(session=None)
@@ -124,7 +129,7 @@ def test_transfer_edge_created_between_close_stops_on_different_routes(two_route
     assert walk_edge["kind"] == "walk"
     assert walk_edge["weight"] < TRANSFER_PENALTY  # pure walking distance, ~6m here
 
-    board_edge = graph["S5"][("S5", "R_B")]
+    board_edge = graph["S5"][("S5", "R_B", 2)]
     assert board_edge["kind"] == "board"
     assert board_edge["weight"] == TRANSFER_PENALTY
 
@@ -152,7 +157,7 @@ def test_walk_edge_still_created_between_close_stops_on_the_same_route(monkeypat
     graph = gb.build_graph(session=None)
 
     # the real ride edge (between ride nodes) is unaffected -- not a transfer
-    ride_edge = graph[("S1", "R_A")][("S2", "R_A")]
+    ride_edge = graph[("S1", "R_A", 1)][("S2", "R_A", 2)]
     assert ride_edge["is_transfer"] is False
 
     # ...but a redundant walk edge between the physical stops exists too
