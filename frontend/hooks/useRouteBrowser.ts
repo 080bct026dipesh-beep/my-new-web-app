@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { RouteStopEntry, RouteSummary } from "@/types/route";
-import { getRouteStops, getRoutes } from "@/lib/api";
+import { RouteGeometry, RouteStopEntry, RouteSummary } from "@/types/route";
+import { getRouteGeometry, getRouteStops, getRoutes } from "@/lib/api";
 
 const PAGE_SIZE = 50;
 const SEARCH_DEBOUNCE_MS = 300;
@@ -15,6 +15,12 @@ interface UseRouteBrowserResult {
   visibleRouteId: string | null;
   visibleRouteStops: RouteStopEntry[];
   visibleRouteStopsLoading: boolean;
+  /** Road-following OSRM geometry for the visible route, for drawing it
+   * along actual roads on the map. Null while loading/unavailable -- the
+   * map falls back to straight lines between stops in that case, same as
+   * it always has. */
+  visibleRouteGeometry: RouteGeometry | null;
+  visibleRouteGeometryLoading: boolean;
   toggleVisible: (route: RouteSummary) => void;
   /** Show a specific route's stops by ID without requiring it to be in
    * the currently loaded/paged list -- used for deep links like
@@ -41,6 +47,37 @@ export function useRouteBrowser(): UseRouteBrowserResult {
   const [visibleRouteStops, setVisibleRouteStops] = useState<RouteStopEntry[]>([]);
   const [visibleRouteStopsLoading, setVisibleRouteStopsLoading] = useState(false);
   const [routeStopsCache, setRouteStopsCache] = useState<Record<string, RouteStopEntry[]>>({});
+
+  const [visibleRouteGeometry, setVisibleRouteGeometry] = useState<RouteGeometry | null>(null);
+  const [visibleRouteGeometryLoading, setVisibleRouteGeometryLoading] = useState(false);
+  const [routeGeometryCache, setRouteGeometryCache] = useState<Record<string, RouteGeometry | null>>(
+    {}
+  );
+
+  // Fetched alongside stops but kept as its own request -- a route with no
+  // usable OSRM geometry (OSRM down, route has <2 stops) should still show
+  // its stops; the map layer just falls back to straight lines for that
+  // one route rather than the whole panel erroring out.
+  async function loadGeometry(routeId: string) {
+    const cached = routeGeometryCache[routeId];
+    if (cached !== undefined) {
+      setVisibleRouteGeometry(cached);
+      return;
+    }
+
+    setVisibleRouteGeometryLoading(true);
+    setVisibleRouteGeometry(null);
+    try {
+      const data = await getRouteGeometry(routeId);
+      setVisibleRouteGeometry(data);
+      setRouteGeometryCache((prev) => ({ ...prev, [routeId]: data }));
+    } catch {
+      setVisibleRouteGeometry(null);
+      setRouteGeometryCache((prev) => ({ ...prev, [routeId]: null }));
+    } finally {
+      setVisibleRouteGeometryLoading(false);
+    }
+  }
 
   // Debounced search -- re-fetch page 1 whenever the query settles,
   // rather than on every keystroke.
@@ -94,10 +131,12 @@ export function useRouteBrowser(): UseRouteBrowserResult {
     if (visibleRouteId === route.route_id) {
       setVisibleRouteId(null);
       setVisibleRouteStops([]);
+      setVisibleRouteGeometry(null);
       return;
     }
 
     setVisibleRouteId(route.route_id);
+    loadGeometry(route.route_id);
 
     const cached = routeStopsCache[route.route_id];
     if (cached) {
@@ -122,6 +161,7 @@ export function useRouteBrowser(): UseRouteBrowserResult {
     if (visibleRouteId === routeId) return;
 
     setVisibleRouteId(routeId);
+    loadGeometry(routeId);
 
     const cached = routeStopsCache[routeId];
     if (cached) {
@@ -152,6 +192,8 @@ export function useRouteBrowser(): UseRouteBrowserResult {
     visibleRouteId,
     visibleRouteStops,
     visibleRouteStopsLoading,
+    visibleRouteGeometry,
+    visibleRouteGeometryLoading,
     toggleVisible,
     showRouteById,
     loadMore,

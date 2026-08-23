@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { FareOut, RouteAlternative, RouteLeg, RouteSearchResult } from "@/types/route";
 import RouteTimeline from "./RouteTimeline";
 
@@ -8,6 +7,11 @@ interface RouteResultPanelProps {
   result: RouteSearchResult | null;
   loading: boolean;
   error: string | null;
+  /** -1 = the primary/recommended result; otherwise an index into
+   * result.alternatives. Controlled by the parent so the same selection
+   * also drives what the map draws (see app/page.tsx). */
+  selectedIndex: number;
+  onSelectedIndexChange: (index: number) => void;
 }
 
 const ALTERNATIVE_LABELS: Record<RouteAlternative["label"], string> = {
@@ -32,18 +36,13 @@ function formatFare(fare: FareOut): string {
   return fare.student_discount_pct ? `${range} (${fare.student_discount_pct}% off for students)` : range;
 }
 
-export default function RouteResultPanel({ result, loading, error }: RouteResultPanelProps) {
-  // -1 = the primary/recommended result; otherwise an index into
-  // result.alternatives. Reset to -1 whenever a new search result comes
-  // in, computed directly during render (no effect needed) by keying off
-  // the result reference itself -- each search produces a fresh object.
-  const [selectedIndex, setSelectedIndex] = useState(-1);
-  const [lastResultForSelection, setLastResultForSelection] = useState(result);
-  if (lastResultForSelection !== result) {
-    setLastResultForSelection(result);
-    if (selectedIndex !== -1) setSelectedIndex(-1);
-  }
-
+export default function RouteResultPanel({
+  result,
+  loading,
+  error,
+  selectedIndex,
+  onSelectedIndexChange,
+}: RouteResultPanelProps) {
   if (loading) {
     return (
       <div aria-live="polite" className="flex flex-col gap-2 rounded-lg border border-route-line bg-white p-4">
@@ -111,7 +110,7 @@ export default function RouteResultPanel({ result, loading, error }: RouteResult
         <div className="flex flex-wrap gap-1.5">
           <button
             type="button"
-            onClick={() => setSelectedIndex(-1)}
+            onClick={() => onSelectedIndexChange(-1)}
             aria-pressed={isPrimary}
             className={`rounded-full border px-2.5 py-1 text-xs ${
               isPrimary
@@ -125,7 +124,7 @@ export default function RouteResultPanel({ result, loading, error }: RouteResult
             <button
               key={`${alt.label}-${i}`}
               type="button"
-              onClick={() => setSelectedIndex(i)}
+              onClick={() => onSelectedIndexChange(i)}
               aria-pressed={selectedIndex === i}
               className={`rounded-full border px-2.5 py-1 text-xs ${
                 selectedIndex === i

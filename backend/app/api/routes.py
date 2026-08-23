@@ -4,7 +4,15 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.db import queries
-from app.schemas import RouteListOut, RouteOut, RouteStopOut
+from app.routing.osrm_client import get_route_geometry, OSRMError
+from app.schemas import RouteListOut, RouteOut, RouteStopOut, StopOut
+
+# Waypoint-thinning for OSRM requests is identical to what route-finder legs
+# already do (see app/api/routing.py's docstring on MIN_WAYPOINT_SPACING_M
+# for why: dense stops a few dozen metres apart can push OSRM into visible
+# zigzagging just to legally hit each one in order). Reused rather than
+# duplicated so the two endpoints can't drift out of sync.
+from app.api.routing import _thin_waypoints
 
 router = APIRouter(prefix="/routes", tags=["routes"])
 
@@ -38,3 +46,30 @@ def read_route_stops(route_id: str, db: Session = Depends(get_db)):
     if queries.get_route(db, route_id) is None:
         raise HTTPException(status_code=404, detail=f"Route '{route_id}' not found")
     return queries.get_route_stops(db, route_id)
+
+
+@router.get("/{route_id}/geometry")
+def read_route_geometry(route_id: str, db: Session = Depends(get_db)):
+    """Road-following geometry for a route's full stop sequence, via OSRM
+    driving directions through every stop in ride order (thinned the same
+    way route-finder legs are). Used by the frontend's "browse a route on
+    the map" overlay so it draws actual roads instead of straight lines
+    between consecutive stops. Same response shape as GET /walking-route --
+    a plain {geometry, distance_m, duration_s} dict, not a schema, since
+    it's a direct passthrough of OSRM's own result."""
+    if queries.get_route(db, route_id) is None:
+        raise HTTPException(status_code=404, detail=f"Route '{route_id}' not found")
+
+    route_stops = queries.get_route_stops(db, route_id)
+    if len(route_stops) < 2:
+        raise HTTPException(
+            status_code=422, detail=f"Route '{route_id}' has fewer than 2 stops"
+        )
+
+    stops = [StopOut.model_validate(rs.stop) for rs in route_stops]
+    coords = _thin_waypoints(stops)
+
+    try:
+        return get_route_geometry(coords)
+    except OSRMError as exc:
+        raise HTTPException(status_code=502, detail=f"Couldn't compute route geometry: {exc}")

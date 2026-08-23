@@ -78,6 +78,11 @@ export interface LatLng {
 // so call sites don't imply it came from a bus leg.
 export type WalkingRoute = RoadGeometry;
 
+// GET /routes/{route_id}/geometry response -- road-following OSRM geometry
+// through a route's full stop sequence. Same shape as RoadGeometry, kept
+// separate so call sites don't imply it came from a route-finder leg.
+export type RouteGeometry = RoadGeometry;
+
 // Mirrors CongestionLevel / CongestionSegmentOut / CongestionResponse in
 // backend/app/schemas.py.
 export type CongestionLevel = "free_flow" | "moderate" | "heavy" | "unknown";

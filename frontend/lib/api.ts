@@ -13,6 +13,7 @@
  *   GET /routes
  *   GET /routes/{route_id}
  *   GET /routes/{route_id}/stops
+ *   GET /routes/{route_id}/geometry
  *   GET /route-finder
  *   GET /walking-route
  *   GET /congestion
@@ -22,6 +23,7 @@
 import {
   CongestionResponse,
   RouteFinderResult,
+  RouteGeometry,
   RouteListResponse,
   RouteOut,
   RouteStopEntry,
@@ -183,6 +185,22 @@ export function getRouteStops(
   options?: RequestOptions
 ): Promise<RouteStopEntry[]> {
   return request<RouteStopEntry[]>(`/routes/${encodeURIComponent(routeId)}/stops`, options);
+}
+
+/**
+ * Road-following geometry through a route's full stop sequence (OSRM
+ * driving directions), for drawing the route-browser overlay along actual
+ * roads instead of straight lines between stops. Calls out to OSRM same as
+ * route-finder, so gets the longer timeout.
+ */
+export function getRouteGeometry(
+  routeId: string,
+  options?: RequestOptions
+): Promise<RouteGeometry> {
+  return request<RouteGeometry>(`/routes/${encodeURIComponent(routeId)}/geometry`, {
+    timeoutMs: ROUTING_TIMEOUT_MS,
+    ...options,
+  });
 }
 
 // ---------------------------------------------------------------------------

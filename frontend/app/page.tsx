@@ -56,6 +56,32 @@ function HomeInner() {
 
   const { result, loading, error, search } = useRouteSearch();
 
+  // Which result is currently shown: -1 = primary/recommended, otherwise an
+  // index into result.alternatives. Lives here (not inside
+  // RouteResultPanel) so the selection also drives what BusMap draws --
+  // previously the alternative buttons only changed the sidebar timeline,
+  // leaving the map stuck on the primary route. Reset to -1 whenever a new
+  // search result comes in, via React's "adjust state during render"
+  // pattern (https://react.dev/learn/you-might-not-need-an-effect) rather
+  // than an effect -- each search produces a fresh `result` reference, so
+  // comparing against a tracked previous value lets this bail out cleanly.
+  const [selectedAltIndex, setSelectedAltIndex] = useState(-1);
+  const [lastResultForSelection, setLastResultForSelection] = useState(result);
+  if (lastResultForSelection !== result) {
+    setLastResultForSelection(result);
+    if (selectedAltIndex !== -1) setSelectedAltIndex(-1);
+  }
+
+  // The result BusMap actually draws: the primary result as-is, or the
+  // primary result with its legs swapped for the selected alternative's
+  // (alternatives don't carry fare/origin/destination of their own -- only
+  // legs/total_cost/transfer_count differ -- so everything else about the
+  // result stays the same).
+  const mapResult =
+    result && result.found && selectedAltIndex !== -1
+      ? { ...result, ...result.alternatives[selectedAltIndex] }
+      : result;
+
   const congestion = useCongestion();
   // Used only for the ?route= deep link from /routes/[routeId]'s "View on
   // map" action (see the effect below) and to feed browseRouteStops to
@@ -167,13 +193,19 @@ function HomeInner() {
           </p>
         )}
 
-        <RouteResultPanel result={result} loading={loading} error={error} />
+        <RouteResultPanel
+          result={result}
+          loading={loading}
+          error={error}
+          selectedIndex={selectedAltIndex}
+          onSelectedIndexChange={setSelectedAltIndex}
+        />
       </aside>
 
       <div className="min-h-[50vh] flex-1 md:min-h-0">
         <BusMap
           key="bus-map"
-          result={result}
+          result={mapResult}
           allStops={stops}
           pickTarget={pickTarget}
           onStopPick={handleStopPick}
@@ -182,6 +214,7 @@ function HomeInner() {
           nearestStop={nearestStop}
           congestionSegments={congestion.enabled ? congestion.segments : []}
           browseRouteStops={routeBrowser.visibleRouteStops}
+          browseRouteGeometry={routeBrowser.visibleRouteGeometry}
         />
       </div>
     </main>

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import L from "leaflet";
-import { CongestionSegment, LatLng, RouteSearchResult, RouteStopEntry, Stop, StopPickTarget, WalkingRoute } from "@/types/route";
+import { CongestionSegment, LatLng, RouteGeometry, RouteSearchResult, RouteStopEntry, Stop, StopPickTarget, WalkingRoute } from "@/types/route";
 import { LEG_COLORS } from "@/lib/constants";
 
 const VALLEY_CENTER: [number, number] = [27.7041, 85.32];
@@ -94,6 +94,11 @@ interface BusMapProps {
    * button in RoutesPanel, drawn as numbered stops in ride order + a
    * connecting line. Independent of `result` and congestion. */
   browseRouteStops?: RouteStopEntry[];
+  /** Road-following OSRM geometry for browseRouteStops, when available --
+   * draws the connecting line along actual roads instead of straight
+   * segments between consecutive stops. Null/undefined falls back to the
+   * straight-line connector (OSRM unavailable, or still loading). */
+  browseRouteGeometry?: RouteGeometry | null;
 }
 
 export default function BusMap({
@@ -106,6 +111,7 @@ export default function BusMap({
   nearestStop,
   congestionSegments = [],
   browseRouteStops = [],
+  browseRouteGeometry = null,
 }: BusMapProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -276,7 +282,15 @@ export default function BusMap({
     const layer = L.layerGroup().addTo(map);
     const latLngs: [number, number][] = validEntries.map(({ lat, lng }) => [lat, lng]);
 
-    L.polyline(latLngs, { color: BROWSE_ROUTE_COLOR, weight: 4, opacity: 0.85 }).addTo(layer);
+    // Prefer the OSRM road-following polyline when available; fall back to
+    // straight segments between consecutive stops otherwise (OSRM down, or
+    // still loading). Bounds are still fit to the stop markers either way,
+    // so this doesn't affect zoom/pan behavior.
+    const roadPoints = browseRouteGeometry?.geometry.coordinates.map(
+      ([lng, lat]) => [lat, lng] as [number, number]
+    );
+    const linePoints = roadPoints ?? latLngs;
+    L.polyline(linePoints, { color: BROWSE_ROUTE_COLOR, weight: 4, opacity: 0.85 }).addTo(layer);
 
     validEntries.forEach(({ entry, lat, lng }) => {
       const marker = L.marker([lat, lng], {
@@ -300,7 +314,7 @@ export default function BusMap({
     return () => {
       layer.remove();
     };
-  }, [browseRouteStops]);
+  }, [browseRouteStops, browseRouteGeometry]);
 
   // Cursor feedback so it's obvious the map is in "pick a stop" mode.
   useEffect(() => {
