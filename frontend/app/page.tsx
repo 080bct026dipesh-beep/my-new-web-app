@@ -25,6 +25,27 @@ const BusMap = dynamic(() => import("@/components/BusMap"), {
   ),
 });
 
+function ChevronIcon({ direction }: { direction: "up" | "down" }) {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      style={{ transform: direction === "up" ? "rotate(180deg)" : undefined }}
+    >
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  );
+}
+
+// Persisted so a minimized panel stays minimized across reloads -- same
+// rationale as NavBar's minimize toggle (components/layout/NavBar.tsx),
+// which uses the same storage-key naming scheme.
+const SIDEBAR_STORAGE_KEY = "ktm-transit:search-panel-minimized";
+
 export default function Home() {
   return (
     // useSearchParams() below opts this page out of static prerendering
@@ -89,6 +110,39 @@ function HomeInner() {
   // lives on the dedicated /routes page now, not duplicated here.
   const routeBrowser = useRouteBrowser();
 
+  // Minimize/restore for the search sidebar -- lets someone collapse the
+  // whole From/To panel down to a thin strip to see the full map (most
+  // useful once a route is already found and they just want to look
+  // around it). Same deferred-read-from-localStorage pattern as NavBar's
+  // minimize toggle, to avoid a hydration mismatch (server has no
+  // localStorage) while still avoiding a synchronous setState call inside
+  // the effect body.
+  const [sidebarMinimized, setSidebarMinimized] = useState(false);
+  const [sidebarHydrated, setSidebarHydrated] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSidebarMinimized(window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "1");
+      setSidebarHydrated(true);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
+
+  function toggleSidebarMinimized() {
+    const next = !sidebarMinimized;
+    setSidebarMinimized(next);
+    try {
+      window.localStorage.setItem(SIDEBAR_STORAGE_KEY, next ? "1" : "0");
+    } catch {
+      // Storage unavailable (private browsing, quota) -- the toggle still
+      // works for this session, it just won't persist across reloads.
+    }
+  }
+
+  // Only collapse visually once hydrated -- otherwise a previously-
+  // minimized panel would flash open on every load before the effect
+  // above catches up.
+  const showMinimized = sidebarMinimized && sidebarHydrated;
+
   // One-time deep-link handling: /stops/[id] links here with
   // ?origin=<stop_id> or ?destination=<stop_id> (its "Set as From/To"
   // actions), and /routes/[id] links here with ?route=<route_id> (its
@@ -140,66 +194,87 @@ function HomeInner() {
 
   return (
     <main className="flex h-full w-full flex-col md:flex-row">
-      <aside className="flex w-full flex-col gap-5 overflow-y-auto border-b border-route-line bg-surface p-4 md:h-full md:max-w-sm md:border-b-0 md:border-r">
-        <div>
-          <h1 className="text-xl font-semibold leading-tight tracking-tight">
-            <span className="text-accent-blue">Plan</span>{" "}
-            <span className="text-accent-purple">your journey</span>
-          </h1>
-          <p className="mt-1 text-sm text-ink-secondary">
-            Kathmandu Valley public transit navigator — direct or single-transfer routes.
-          </p>
+      <aside
+        className={`flex w-full flex-col overflow-y-auto border-b border-route-line bg-surface transition-[max-width,padding] md:h-full md:border-b-0 md:border-r ${
+          showMinimized ? "gap-0 p-2 md:max-w-[52px]" : "gap-5 p-4 md:max-w-sm"
+        }`}
+      >
+        <div className="flex items-center justify-between gap-2">
+          {!showMinimized && (
+            <div>
+              <h1 className="text-xl font-semibold leading-tight tracking-tight">
+                <span className="text-accent-blue">Plan</span>{" "}
+                <span className="text-accent-purple">your journey</span>
+              </h1>
+              <p className="mt-1 text-sm text-ink-secondary">
+                Kathmandu Valley public transit navigator — direct or single-transfer routes.
+              </p>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={toggleSidebarMinimized}
+            aria-label={showMinimized ? "Restore search panel" : "Minimize search panel"}
+            title={showMinimized ? "Restore search panel" : "Minimize search panel"}
+            className="flex flex-shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-ink-secondary hover:text-ink"
+          >
+            <ChevronIcon direction={showMinimized ? "down" : "up"} />
+          </button>
         </div>
 
-        <SearchForm
-          stops={stops}
-          stopsLoading={stopsLoading}
-          onSearch={search}
-          loading={loading}
-          originText={originText}
-          destinationText={destinationText}
-          onOriginTextChange={setOriginText}
-          onDestinationTextChange={setDestinationText}
-          pickTarget={pickTarget}
-          onPickTargetChange={setPickTarget}
-          locating={locating}
-          locateError={locateError}
-          onUseMyLocation={useMyLocation}
-        />
+        {!showMinimized && (
+          <>
+            <SearchForm
+              stops={stops}
+              stopsLoading={stopsLoading}
+              onSearch={search}
+              loading={loading}
+              originText={originText}
+              destinationText={destinationText}
+              onOriginTextChange={setOriginText}
+              onDestinationTextChange={setDestinationText}
+              pickTarget={pickTarget}
+              onPickTargetChange={setPickTarget}
+              locating={locating}
+              locateError={locateError}
+              onUseMyLocation={useMyLocation}
+            />
 
-        <CongestionPanel
-          enabled={congestion.enabled}
-          onToggle={congestion.toggle}
-          dayOfWeek={congestion.dayOfWeek}
-          hourBucket={congestion.hourBucket}
-          onDayChange={congestion.setDayOfWeek}
-          onHourChange={congestion.setHourBucket}
-          loading={congestion.loading}
-          segmentCount={congestion.segments.length}
-          hasSeededOnly={congestion.hasSeededOnly}
-        />
+            <CongestionPanel
+              enabled={congestion.enabled}
+              onToggle={congestion.toggle}
+              dayOfWeek={congestion.dayOfWeek}
+              hourBucket={congestion.hourBucket}
+              onDayChange={congestion.setDayOfWeek}
+              onHourChange={congestion.setHourBucket}
+              loading={congestion.loading}
+              segmentCount={congestion.segments.length}
+              hasSeededOnly={congestion.hasSeededOnly}
+            />
 
-        {stopsError && (
-          <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
-            Couldn&apos;t load the stop list from the server. You can still search if you know
-            exact stop names, but suggestions won&apos;t be available.
-            <button
-              type="button"
-              onClick={() => window.location.reload()}
-              className="ml-2 font-medium text-amber-800 underline"
-            >
-              Retry
-            </button>
-          </p>
+            {stopsError && (
+              <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+                Couldn&apos;t load the stop list from the server. You can still search if you know
+                exact stop names, but suggestions won&apos;t be available.
+                <button
+                  type="button"
+                  onClick={() => window.location.reload()}
+                  className="ml-2 font-medium text-amber-800 underline"
+                >
+                  Retry
+                </button>
+              </p>
+            )}
+
+            <RouteResultPanel
+              result={result}
+              loading={loading}
+              error={error}
+              selectedIndex={selectedAltIndex}
+              onSelectedIndexChange={setSelectedAltIndex}
+            />
+          </>
         )}
-
-        <RouteResultPanel
-          result={result}
-          loading={loading}
-          error={error}
-          selectedIndex={selectedAltIndex}
-          onSelectedIndexChange={setSelectedAltIndex}
-        />
       </aside>
 
       <div className="min-h-[50vh] flex-1 md:min-h-0">
