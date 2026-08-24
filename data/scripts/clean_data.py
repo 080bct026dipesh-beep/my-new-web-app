@@ -486,7 +486,7 @@ def _drop_trailing_blank_columns(df: pd.DataFrame, source: Path) -> pd.DataFrame
         f"{source}: {len(bad_rows)} row(s) have real data spilling into stray "
         f"trailing column(s) {unnamed_cols}. This almost always means a text "
         f"field earlier in that row has an unquoted comma, shifting every "
-        f"column after it — fix_stops_aliases.py-style corruption, but not "
+        f"column after it — fix_compound_csv_fields.py-style corruption, but not "
         f"necessarily in 'aliases'. Inspect and fix the raw row(s) at the "
         f"source before re-running:\n" + "\n".join(lines) + more
     )

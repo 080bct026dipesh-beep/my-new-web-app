@@ -14,7 +14,7 @@ data/
 └── scripts/      Data-cleaning and validation pipeline — see
                     data/scripts/README.md for the full file list
                     (clean_data.py, validate_clean.py, merge_stops.py,
-                    fix_stops_aliases.py, verify_stop_coordinates.py,
+                    fix_compound_csv_fields.py, verify_stop_coordinates.py,
                     dedup override YAML files, tests, requirements.txt)
 ```
 

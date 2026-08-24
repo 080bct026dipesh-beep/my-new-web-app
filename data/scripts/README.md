@@ -117,13 +117,29 @@ Not part of the main `clean_data.py` → `validate_clean.py` pipeline above —
 one-off tools used during dataset QA:
 
 - **`merge_stops.py`** — applies confirmed stop-duplicate merges from
-  `stop_dedup_overrides.yaml` directly against the live database (repoints
-  `route_stops`/`routes` references, then deletes the now-orphaned `stops`
-  rows). Human-reviewed input required; not run automatically.
-- **`fix_stops_aliases.py`** — one-off fixer for rows in
-  `stops_production_v2.csv` where an unquoted comma inside `aliases` shifted
-  later columns; re-quotes the field using a Kathmandu-valley lat/lng
-  plausibility check.
+  `stop_dedup_overrides.yaml` directly against an already-imported live
+  database (repoints `route_stops`/`routes` references, then deletes the
+  now-orphaned `stops` rows). Human-reviewed input required; not run
+  automatically. **Note:** `clean_data.py`'s `dedup_stops()` now applies
+  the same `stop_dedup_overrides.yaml` merges at the CSV stage, before
+  the data ever reaches the DB — for the standard workflow (regenerate
+  CSVs, `import_data.py --truncate`), that supersedes this script. Kept
+  for the one case that's still useful: patching an already-imported DB
+  in place after confirming a new merge, without a full reimport.
+- **`fix_compound_csv_fields.py`** — one-off fixer for raw rows where an
+  unquoted comma inside a free-text field (`aliases` in
+  `stops_production_v2.csv`, `operator`/`notes`/etc. in
+  `routes_production_v2_fixed.csv`) shifted every column after it out of
+  alignment. Two profiles, `stops` and `routes` (`--profile` positional
+  arg), sharing one CLI: dry run by default, `--apply` to write, backup
+  taken first. As of the currently-committed raw CSVs both profiles
+  report 0 rows needing a fix — kept for the next raw-data refresh, in
+  case the corruption recurs. (Merged from two near-identical files,
+  `fix_stops_aliases.py` and `fix_routes_compound_fields.py`, whose own
+  docstrings already noted they were "the same idea" — verified
+  byte-identical output against both the original scripts before
+  deleting them, including the unfixed-row and trailing-column-padding
+  edge cases.)
 - **`verify_stop_coordinates.py`** — cross-checks stop coordinates against
   OpenStreetMap (Nominatim) by name/alias/zone-district context; read-only,
   writes a verification report CSV rather than modifying the input. Run
