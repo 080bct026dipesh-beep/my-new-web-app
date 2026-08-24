@@ -1,0 +1,625 @@
+From a9c618efc3453e8abd9e8d528639fa6441e37904 Mon Sep 17 00:00:00 2001
+From: a <a@a>
+Date: Mon, 24 Aug 2026 10:50:24 +0000
+Subject: [PATCH] merge fix_stops_aliases.py + fix_routes_compound_fields.py
+ into fix_compound_csv_fields.py
+
+Full audit of data/scripts/: everything else (clean_data.py,
+validate_clean.py, import_data.py, test_clean_data.py, requirements.txt,
+the 3 dedup/return-leg override YAMLs, verify_stop_coordinates.py) is
+required by the active pipeline or a distinct ongoing QA tool -- left
+untouched.
+
+fix_stops_aliases.py and fix_routes_compound_fields.py were the one
+genuine merge candidate: both are one-off fixers for the same class of
+bug (an unquoted comma in a raw CSV field shifting later columns), same
+brute-force-merge-and-validate strategy, and the routes one's own
+docstring already said 'same idea as fix_stops_aliases.py'. Dry-run
+against the current data/raw/*.csv confirms both are no-ops on today's
+data (0 rows need fixing) -- the corruption they target is already
+cleaned up upstream, kept only for the next raw-data refresh.
+
+Merged into fix_compound_csv_fields.py:  picks
+the column layout/validators, one shared CLI/harness (dry run by
+default, --apply to write, backup taken first -- previously
+inconsistent: the stops fixer wrote in place unconditionally with no
+backup or dry-run option, now both use the safer routes-fixer contract).
+
+Verified behavioral parity before deleting the originals: built
+synthetic corrupted rows for both profiles (extra unquoted comma in
+stops.aliases, in routes.operator) and diffed old-script-output vs
+new-script-output byte-for-byte -- identical, including the routes
+profile's trailing-column padding (n_pad) and the unfixed-row reporting
+path. One gap caught and fixed during that verification: the first
+merge draft dropped the n_pad padding, would have produced rows shorter
+than the header on write -- fixed and re-verified before finalizing.
+
+Also flagged (not changed, needs a human decision): merge_stops.py now
+duplicates clean_data.py's built-in dedup_stops()/remap_stop_ids() (same
+stop_dedup_overrides.yaml, applied against a live DB instead of at the
+CSV stage) -- documented in data/scripts/README.md as redundant for the
+standard workflow but kept for patching an already-imported DB without a
+full reimport.
+
+Noted, unrelated, not fixed: data/scripts/test_clean_data.py has 2
+pre-existing failures (dedup_routes() return-value unpacking mismatch)
+confirmed present at the original e76298e commit, before any of this
+streamlining work -- not introduced by this change, out of scope here.
+---
+ data/README.md                             |   2 +-
+ data/scripts/README.md                     |  30 ++-
+ data/scripts/clean_data.py                 |   2 +-
+ data/scripts/fix_compound_csv_fields.py    | 240 +++++++++++++++++++++
+ data/scripts/fix_routes_compound_fields.py | 163 --------------
+ data/scripts/fix_stops_aliases.py          |  75 -------
+ 6 files changed, 265 insertions(+), 247 deletions(-)
+ create mode 100644 data/scripts/fix_compound_csv_fields.py
+ delete mode 100644 data/scripts/fix_routes_compound_fields.py
+ delete mode 100644 data/scripts/fix_stops_aliases.py
+
+diff --git a/data/README.md b/data/README.md
+index 8d7e3ca..8fe79c5 100644
+--- a/data/README.md
++++ b/data/README.md
+@@ -14,7 +14,7 @@ data/
+ └── scripts/      Data-cleaning and validation pipeline — see
+                     data/scripts/README.md for the full file list
+                     (clean_data.py, validate_clean.py, merge_stops.py,
+-                    fix_stops_aliases.py, verify_stop_coordinates.py,
++                    fix_compound_csv_fields.py, verify_stop_coordinates.py,
+                     dedup override YAML files, tests, requirements.txt)
+ ```
+ 
+diff --git a/data/scripts/README.md b/data/scripts/README.md
+index 66b65aa..ee22478 100644
+--- a/data/scripts/README.md
++++ b/data/scripts/README.md
+@@ -117,13 +117,29 @@ Not part of the main `clean_data.py` → `validate_clean.py` pipeline above —
+ one-off tools used during dataset QA:
+ 
+ - **`merge_stops.py`** — applies confirmed stop-duplicate merges from
+-  `stop_dedup_overrides.yaml` directly against the live database (repoints
+-  `route_stops`/`routes` references, then deletes the now-orphaned `stops`
+-  rows). Human-reviewed input required; not run automatically.
+-- **`fix_stops_aliases.py`** — one-off fixer for rows in
+-  `stops_production_v2.csv` where an unquoted comma inside `aliases` shifted
+-  later columns; re-quotes the field using a Kathmandu-valley lat/lng
+-  plausibility check.
++  `stop_dedup_overrides.yaml` directly against an already-imported live
++  database (repoints `route_stops`/`routes` references, then deletes the
++  now-orphaned `stops` rows). Human-reviewed input required; not run
++  automatically. **Note:** `clean_data.py`'s `dedup_stops()` now applies
++  the same `stop_dedup_overrides.yaml` merges at the CSV stage, before
++  the data ever reaches the DB — for the standard workflow (regenerate
++  CSVs, `import_data.py --truncate`), that supersedes this script. Kept
++  for the one case that's still useful: patching an already-imported DB
++  in place after confirming a new merge, without a full reimport.
++- **`fix_compound_csv_fields.py`** — one-off fixer for raw rows where an
++  unquoted comma inside a free-text field (`aliases` in
++  `stops_production_v2.csv`, `operator`/`notes`/etc. in
++  `routes_production_v2_fixed.csv`) shifted every column after it out of
++  alignment. Two profiles, `stops` and `routes` (`--profile` positional
++  arg), sharing one CLI: dry run by default, `--apply` to write, backup
++  taken first. As of the currently-committed raw CSVs both profiles
++  report 0 rows needing a fix — kept for the next raw-data refresh, in
++  case the corruption recurs. (Merged from two near-identical files,
++  `fix_stops_aliases.py` and `fix_routes_compound_fields.py`, whose own
++  docstrings already noted they were "the same idea" — verified
++  byte-identical output against both the original scripts before
++  deleting them, including the unfixed-row and trailing-column-padding
++  edge cases.)
+ - **`verify_stop_coordinates.py`** — cross-checks stop coordinates against
+   OpenStreetMap (Nominatim) by name/alias/zone-district context; read-only,
+   writes a verification report CSV rather than modifying the input. Run
+diff --git a/data/scripts/clean_data.py b/data/scripts/clean_data.py
+index a0ee2d1..ed1619b 100644
+--- a/data/scripts/clean_data.py
++++ b/data/scripts/clean_data.py
+@@ -486,7 +486,7 @@ def _drop_trailing_blank_columns(df: pd.DataFrame, source: Path) -> pd.DataFrame
+         f"{source}: {len(bad_rows)} row(s) have real data spilling into stray "
+         f"trailing column(s) {unnamed_cols}. This almost always means a text "
+         f"field earlier in that row has an unquoted comma, shifting every "
+-        f"column after it — fix_stops_aliases.py-style corruption, but not "
++        f"column after it — fix_compound_csv_fields.py-style corruption, but not "
+         f"necessarily in 'aliases'. Inspect and fix the raw row(s) at the "
+         f"source before re-running:\n" + "\n".join(lines) + more
+     )
+diff --git a/data/scripts/fix_compound_csv_fields.py b/data/scripts/fix_compound_csv_fields.py
+new file mode 100644
+index 0000000..1bb2945
+--- /dev/null
++++ b/data/scripts/fix_compound_csv_fields.py
+@@ -0,0 +1,240 @@
++#!/usr/bin/env python3
++"""
++One-off fixer for raw CSV rows where an unquoted embedded comma in a
++free-text field shifted every column after it out of alignment.
++
++Merges data/scripts/fix_stops_aliases.py and
++data/scripts/fix_routes_compound_fields.py into one script. Both did the
++same job (brute-force merge extra comma-split tokens back into the field
++that produced them, keep only a candidate that validates) against two
++different files with two different column layouts, and -- worth noting --
++two different safety behaviors: the routes fixer defaulted to a dry run
++and backed up before writing, the stops fixer wrote in place
++unconditionally with no backup. This version uses the safer contract
++(dry run by default, --apply required to write, backup taken first) for
++both profiles.
++
++As of the current committed data/raw/*.csv, both profiles report 0 rows
++needing a fix -- the corruption they target has already been cleaned up
++upstream. Kept for the next raw-data refresh, in case it recurs.
++
++Usage:
++    python data/scripts/fix_compound_csv_fields.py stops data/raw/stops_production_v2.csv
++    python data/scripts/fix_compound_csv_fields.py routes data/raw/routes_production_v2_fixed.csv --apply
++"""
++import argparse
++import csv
++import re
++from itertools import combinations
++from pathlib import Path
++
++# ---------------------------------------------------------------- stops --
++# Strategy: if lat (index 3) doesn't parse as a float in the plausible
++# Kathmandu-valley range, progressively merge fields starting at `aliases`
++# (index 2) until lat/lng line up as valid floats again.
++
++STOPS_LAT_RANGE = (27.5, 27.9)
++STOPS_LNG_RANGE = (85.1, 85.6)
++
++
++def _stops_valid_lat(s):
++    try:
++        return STOPS_LAT_RANGE[0] < float(s) < STOPS_LAT_RANGE[1]
++    except ValueError:
++        return False
++
++
++def _stops_valid_lng(s):
++    try:
++        return STOPS_LNG_RANGE[0] < float(s) < STOPS_LNG_RANGE[1]
++    except ValueError:
++        return False
++
++
++def fix_stops_row(row):
++    """Returns (row_or_fix, changed) where changed is True/False/None
++    (None = row is broken and no merge fixed it)."""
++    if len(row) >= 5 and _stops_valid_lat(row[3]) and _stops_valid_lng(row[4]):
++        return row, False
++
++    for k in range(2, min(8, len(row) - 3)):
++        merged_alias = ", ".join(x for x in row[2:2 + k] if x != "")
++        candidate = row[0:2] + [merged_alias] + row[2 + k:]
++        if len(candidate) >= 5 and _stops_valid_lat(candidate[3]) and _stops_valid_lng(candidate[4]):
++            return candidate, True
++
++    if len(row) >= 5 and not (_stops_valid_lat(row[3]) and _stops_valid_lng(row[4])):
++        return row, None
++    return row, False
++
++
++# --------------------------------------------------------------- routes --
++# Strategy: for any row with more tokens than the real header expects,
++# brute-force search over which token(s) to merge back into the preceding
++# column, accepting only a candidate where every column matches its
++# expected shape (stop-id pattern, OP-code pattern, boolean, timestamp,
++# HH:MM:SS, numeric) everywhere in the row.
++
++ROUTES_HEADER = [
++    "route_id", "route_name", "short_name", "vehicle_type", "route_type",
++    "operator", "start_stop_id", "end_stop_id", "total_stops",
++    "approx_distance_km", "estimated_duration_min", "service_start_time",
++    "service_end_time", "frequency_min", "fare_type", "has_ac", "is_express",
++    "status", "notes", "created_at", "updated_at", "operator_id",
++    "return_leg_verified", "operator_id_raw", "is_multi_operator",
++    "haversine_distance_km", "max_consecutive_stop_jump_km",
++    "approx_distance_km_original", "distance_flagged_for_recompute",
++    "status_original", "status_corrected_for_return_leg",
++]
++N_ROUTES = len(ROUTES_HEADER)  # 31
++
++_STOP_ID = re.compile(r"^S\d+$")
++_OP_ID = re.compile(r"^OP\d+$")
++_BOOL = re.compile("True|False")
++_TIME_HMS = re.compile(r"^\d{2}:\d{2}:\d{2}$")
++_TIMESTAMP = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z?$")
++_NUMERIC = re.compile(r"^-?\d+(\.\d+)?$")
++_INTEGER = re.compile(r"^-?\d+$")
++
++
++def _blank_ok(pattern):
++    return lambda v: v == "" or bool(pattern.fullmatch(v))
++
++
++ROUTES_VALIDATORS = {
++    "start_stop_id": _blank_ok(_STOP_ID),
++    "end_stop_id": _blank_ok(_STOP_ID),
++    "total_stops": _blank_ok(_INTEGER),
++    "approx_distance_km": _blank_ok(_NUMERIC),
++    "estimated_duration_min": _blank_ok(_NUMERIC),
++    "service_start_time": _blank_ok(_TIME_HMS),
++    "service_end_time": _blank_ok(_TIME_HMS),
++    "frequency_min": _blank_ok(_INTEGER),
++    "has_ac": _blank_ok(_BOOL),
++    "is_express": _blank_ok(_BOOL),
++    "created_at": _blank_ok(_TIMESTAMP),
++    "updated_at": _blank_ok(_TIMESTAMP),
++    "operator_id": _blank_ok(_OP_ID),
++    "return_leg_verified": _blank_ok(_BOOL),
++    "operator_id_raw": _blank_ok(_OP_ID),
++    "is_multi_operator": _blank_ok(_BOOL),
++    "haversine_distance_km": _blank_ok(_NUMERIC),
++    "max_consecutive_stop_jump_km": _blank_ok(_NUMERIC),
++    "approx_distance_km_original": _blank_ok(_NUMERIC),
++    "distance_flagged_for_recompute": _blank_ok(_BOOL),
++    "status_corrected_for_return_leg": _blank_ok(_BOOL),
++}
++
++
++def _routes_validate(row):
++    if len(row) != N_ROUTES:
++        return False
++    return all(
++        (v := ROUTES_VALIDATORS.get(name)) is None or v(value)
++        for name, value in zip(ROUTES_HEADER, row)
++    )
++
++
++def fix_routes_row(row):
++    core = list(row)
++    while len(core) > N_ROUTES and core[-1] == "":
++        core.pop()
++
++    if len(core) == N_ROUTES:
++        return row, False
++
++    extra = len(core) - N_ROUTES
++    if extra > 0:
++        for combo in combinations(range(1, len(core)), extra):
++            merged = list(core)
++            for i in sorted(combo, reverse=True):
++                merged[i - 1] = merged[i - 1] + "," + merged[i]
++                del merged[i]
++            if len(merged) == N_ROUTES and _routes_validate(merged):
++                return merged, True
++
++    return row, None
++
++
++# ------------------------------------------------------------- profiles --
++
++PROFILES = {
++    "stops": {
++        "fix_row": fix_stops_row,
++        "default_path": "data/raw/stops_production_v2.csv",
++    },
++    "routes": {
++        "fix_row": fix_routes_row,
++        "default_path": "data/raw/routes_production_v2_fixed.csv",
++    },
++}
++
++
++# --------------------------------------------------------------- shared --
++
++def run(profile_name: str, path: Path, apply: bool) -> None:
++    fix_row = PROFILES[profile_name]["fix_row"]
++
++    with open(path, newline="", encoding="utf-8") as f:
++        reader = csv.reader(f)
++        header = next(reader)
++        rows = list(reader)
++
++    # routes_production_v2_fixed.csv (like the other raw exports) can carry
++    # trailing blank columns beyond the real schema (stray trailing commas
++    # from the original export) -- pad any fixed row back out to the
++    # header's actual width so row length still matches the header, same
++    # as the original fix_routes_compound_fields.py did. No-op for the
++    # stops profile (its header always matches the real column count).
++    n_pad = max(0, len(header) - len(ROUTES_HEADER)) if profile_name == "routes" else 0
++
++    fixed_count = 0
++    unfixed = []
++    out_rows = []
++    for lineno, row in enumerate(rows, start=2):
++        new_row, changed = fix_row(row)
++        if changed is None:
++            unfixed.append((lineno, row))
++        elif changed:
++            fixed_count += 1
++            padded = new_row + [""] * n_pad
++            print(f"Line {lineno}: FIXED")
++            print(f"  before: {row}")
++            print(f"  after:  {padded}")
++            new_row = padded
++        out_rows.append(new_row)
++
++    print(f"\n{fixed_count} row(s) auto-fixed, {len(unfixed)} row(s) need manual review.")
++    for lineno, row in unfixed:
++        print(f"  UNFIXED line {lineno}: {row}")
++
++    if not apply:
++        print("\nDry run only -- re-run with --apply to write these fixes.")
++        return
++
++    if not fixed_count:
++        print("\n--apply given but nothing was fixed; file left unchanged.")
++        return
++
++    backup = path.with_suffix(path.suffix + ".bak_compound")
++    path.rename(backup)
++    with open(path, "w", newline="", encoding="utf-8") as f:
++        writer = csv.writer(f, quoting=csv.QUOTE_MINIMAL)
++        writer.writerow(header)
++        writer.writerows(out_rows)
++    print(f"\nWrote fixes to {path} (backup saved at {backup})")
++
++
++def main() -> None:
++    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
++    parser.add_argument("profile", choices=sorted(PROFILES), help="which file layout to fix")
++    parser.add_argument("path", nargs="?", help="defaults to the profile's usual raw CSV path")
++    parser.add_argument("--apply", action="store_true", help="write fixes back (default: dry run)")
++    args = parser.parse_args()
++
++    path = Path(args.path) if args.path else Path(PROFILES[args.profile]["default_path"])
++    run(args.profile, path, args.apply)
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/data/scripts/fix_routes_compound_fields.py b/data/scripts/fix_routes_compound_fields.py
+deleted file mode 100644
+index 70b9799..0000000
+--- a/data/scripts/fix_routes_compound_fields.py
++++ /dev/null
+@@ -1,163 +0,0 @@
+-#!/usr/bin/env python3
+-"""
+-One-off fixer for rows in routes_production_v2_fixed.csv where a free-text
+-field (operator, operator_id_raw, notes, etc.) contains an unquoted embedded
+-comma -- e.g. `public,Samyukta Yatayat` or `OP012,OP022` -- which shifts
+-every column after it out of alignment.
+-
+-Strategy (same idea as fix_stops_aliases.py): for any row with more tokens
+-than the real header expects, brute-force search over which token(s) to
+-merge back into the preceding column, accepting only a candidate fix where
+-every column matches its expected shape (stop-id pattern, OP-code pattern,
+-boolean, timestamp, HH:MM:SS, numeric) everywhere in the row. Rows where no
+-combination validates are left untouched and reported for manual review.
+-
+-Usage:
+-    python data/scripts/fix_routes_compound_fields.py data/raw/routes_production_v2_fixed.csv           # dry run, prints proposed fixes
+-    python data/scripts/fix_routes_compound_fields.py data/raw/routes_production_v2_fixed.csv --apply    # writes the fixes back to the file (backs up first)
+-"""
+-import csv
+-import re
+-import sys
+-from itertools import combinations
+-from pathlib import Path
+-
+-REAL_HEADER = [
+-    "route_id", "route_name", "short_name", "vehicle_type", "route_type",
+-    "operator", "start_stop_id", "end_stop_id", "total_stops",
+-    "approx_distance_km", "estimated_duration_min", "service_start_time",
+-    "service_end_time", "frequency_min", "fare_type", "has_ac", "is_express",
+-    "status", "notes", "created_at", "updated_at", "operator_id",
+-    "return_leg_verified", "operator_id_raw", "is_multi_operator",
+-    "haversine_distance_km", "max_consecutive_stop_jump_km",
+-    "approx_distance_km_original", "distance_flagged_for_recompute",
+-    "status_original", "status_corrected_for_return_leg",
+-]
+-N_REAL = len(REAL_HEADER)  # 31
+-
+-STOP_ID = re.compile(r"^S\d+$")
+-OP_ID = re.compile(r"^OP\d+$")
+-BOOL = {"True", "False"}
+-TIME_HMS = re.compile(r"^\d{2}:\d{2}:\d{2}$")
+-TIMESTAMP = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z?$")
+-NUMERIC = re.compile(r"^-?\d+(\.\d+)?$")
+-INTEGER = re.compile(r"^-?\d+$")
+-
+-
+-def _blank_ok(pattern):
+-    return lambda v: v == "" or bool(pattern.fullmatch(v))
+-
+-
+-VALIDATORS = {
+-    "start_stop_id": _blank_ok(STOP_ID),
+-    "end_stop_id": _blank_ok(STOP_ID),
+-    "total_stops": _blank_ok(INTEGER),
+-    "approx_distance_km": _blank_ok(NUMERIC),
+-    "estimated_duration_min": _blank_ok(NUMERIC),
+-    "service_start_time": _blank_ok(TIME_HMS),
+-    "service_end_time": _blank_ok(TIME_HMS),
+-    "frequency_min": _blank_ok(INTEGER),
+-    "has_ac": _blank_ok(re.compile("|".join(BOOL))),
+-    "is_express": _blank_ok(re.compile("|".join(BOOL))),
+-    "created_at": _blank_ok(TIMESTAMP),
+-    "updated_at": _blank_ok(TIMESTAMP),
+-    "operator_id": _blank_ok(OP_ID),
+-    "return_leg_verified": _blank_ok(re.compile("|".join(BOOL))),
+-    "operator_id_raw": _blank_ok(OP_ID),
+-    "is_multi_operator": _blank_ok(re.compile("|".join(BOOL))),
+-    "haversine_distance_km": _blank_ok(NUMERIC),
+-    "max_consecutive_stop_jump_km": _blank_ok(NUMERIC),
+-    "approx_distance_km_original": _blank_ok(NUMERIC),
+-    "distance_flagged_for_recompute": _blank_ok(re.compile("|".join(BOOL))),
+-    "status_corrected_for_return_leg": _blank_ok(re.compile("|".join(BOOL))),
+-}
+-
+-MERGE_CANDIDATES = {"operator", "operator_id_raw", "notes", "status", "fare_type", "route_name"}
+-
+-
+-def validate(row):
+-    if len(row) != N_REAL:
+-        return False
+-    for name, value in zip(REAL_HEADER, row):
+-        v = VALIDATORS.get(name)
+-        if v and not v(value):
+-            return False
+-    return True
+-
+-
+-def try_fix(tokens):
+-    extra = len(tokens) - N_REAL
+-    if extra <= 0:
+-        return tokens if len(tokens) == N_REAL else None
+-
+-    candidate_points = list(range(1, len(tokens)))
+-
+-    for combo in combinations(candidate_points, extra):
+-        merged = list(tokens)
+-        for i in sorted(combo, reverse=True):
+-            merged[i - 1] = merged[i - 1] + "," + merged[i]
+-            del merged[i]
+-        if len(merged) == N_REAL and validate(merged):
+-            return merged
+-    return None
+-
+-
+-def main():
+-    if len(sys.argv) < 2:
+-        print(__doc__)
+-        sys.exit(1)
+-    path = Path(sys.argv[1])
+-    apply = "--apply" in sys.argv
+-
+-    with open(path, newline="", encoding="utf-8") as f:
+-        reader = csv.reader(f)
+-        header = next(reader)
+-        rows = list(reader)
+-
+-    n_pad = len(header) - N_REAL
+-
+-    fixed_count = 0
+-    unfixed = []
+-    out_rows = []
+-    for lineno, row in enumerate(rows, start=2):
+-        core = row[:]
+-        while len(core) > N_REAL and core[-1] == "":
+-            core.pop()
+-
+-        if len(core) == N_REAL:
+-            out_rows.append(row)
+-            continue
+-
+-        fix = try_fix(core)
+-        if fix is None:
+-            unfixed.append((lineno, row))
+-            out_rows.append(row)
+-            continue
+-
+-        fixed_count += 1
+-        padded = fix + [""] * n_pad
+-        print(f"Line {lineno} ({fix[0]}): FIXED")
+-        print(f"  before: {row}")
+-        print(f"  after:  {fix}")
+-        out_rows.append(padded)
+-
+-    print(f"\n{fixed_count} row(s) auto-fixed, {len(unfixed)} row(s) need manual review.")
+-    for lineno, row in unfixed:
+-        print(f"  UNFIXED line {lineno}: {row}")
+-
+-    if apply and fixed_count:
+-        backup = path.with_suffix(path.suffix + ".bak_compound")
+-        path.rename(backup)
+-        with open(path, "w", newline="", encoding="utf-8") as f:
+-            writer = csv.writer(f, quoting=csv.QUOTE_MINIMAL)
+-            writer.writerow(header)
+-            writer.writerows(out_rows)
+-        print(f"\nWrote fixes to {path} (backup saved at {backup})")
+-    elif apply:
+-        print("\n--apply given but nothing was fixed; file left unchanged.")
+-    else:
+-        print("\nDry run only -- re-run with --apply to write these fixes.")
+-
+-
+-if __name__ == "__main__":
+-    main()
+diff --git a/data/scripts/fix_stops_aliases.py b/data/scripts/fix_stops_aliases.py
+deleted file mode 100644
+index 61cb9c9..0000000
+--- a/data/scripts/fix_stops_aliases.py
++++ /dev/null
+@@ -1,75 +0,0 @@
+-#!/usr/bin/env python3
+-"""
+-Fix rows in stops_production_v2.csv where an unquoted comma inside the
+-`aliases` field caused it to split into extra columns, shifting lat/lng
+-and everything after them.
+-
+-Strategy: for each row, if `lat` (index 3) doesn't parse as a float in
+-the plausible Kathmandu-valley range, progressively merge fields starting
+-at `aliases` (index 2) until lat/lng line up as valid floats again.
+-Writes the corrected file with proper quoting (so this can't recur silently).
+-"""
+-import csv
+-import sys
+-
+-LAT_RANGE = (27.5, 27.9)
+-LNG_RANGE = (85.1, 85.6)
+-
+-def valid_lat(s):
+-    try:
+-        v = float(s)
+-        return LAT_RANGE[0] < v < LAT_RANGE[1]
+-    except ValueError:
+-        return False
+-
+-def valid_lng(s):
+-    try:
+-        v = float(s)
+-        return LNG_RANGE[0] < v < LNG_RANGE[1]
+-    except ValueError:
+-        return False
+-
+-def fix_row(row, header_len):
+-    if len(row) >= 5 and valid_lat(row[3]) and valid_lng(row[4]):
+-        return row, False
+-
+-    for k in range(2, min(8, len(row) - 3)):
+-        merged_alias = ", ".join(x for x in row[2:2 + k] if x != "")
+-        candidate = row[0:2] + [merged_alias] + row[2 + k:]
+-        if len(candidate) >= 5 and valid_lat(candidate[3]) and valid_lng(candidate[4]):
+-            return candidate, True
+-
+-    return row, None
+-
+-def main(path):
+-    with open(path, newline="", encoding="utf-8") as f:
+-        reader = csv.reader(f)
+-        header = next(reader)
+-        rows = list(reader)
+-
+-    fixed_count = 0
+-    unfixed = []
+-    out_rows = []
+-    for i, row in enumerate(rows):
+-        new_row, changed = fix_row(row, len(header))
+-        if changed is None and len(row) >= 5 and not (valid_lat(row[3]) and valid_lng(row[4])):
+-            unfixed.append((i, row[:5]))
+-        elif changed:
+-            fixed_count += 1
+-        out_rows.append(new_row)
+-
+-    with open(path, "w", newline="", encoding="utf-8") as f:
+-        writer = csv.writer(f, quoting=csv.QUOTE_MINIMAL)
+-        writer.writerow(header)
+-        writer.writerows(out_rows)
+-
+-    print(f"Fixed {fixed_count} rows automatically.")
+-    if unfixed:
+-        print(f"{len(unfixed)} rows could NOT be auto-fixed — needs manual review:")
+-        for i, snippet in unfixed:
+-            print(f"  row {i}: {snippet}")
+-    else:
+-        print("No remaining unfixed rows.")
+-
+-if __name__ == "__main__":
+-    main(sys.argv[1] if len(sys.argv) > 1 else "raw/stops_production_v2.csv")
+-- 
+2.43.0
+
