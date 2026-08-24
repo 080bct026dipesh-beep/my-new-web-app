@@ -33,6 +33,26 @@ This will:
 
 Add `--fail-on-verify-error` to exit non-zero if any check fails (used in CI).
 
+## Load into the database
+
+```bash
+python scripts/import_data.py
+```
+
+Loads `data/processed/*_clean.csv` into the schema Alembic already
+created, in the same table order and with the same COPY options as
+`data/import.sql` / `data/import_in_container.sql` -- but takes the CSV
+directory as an argument instead of requiring every hardcoded absolute
+path in those two files to be hand-edited per machine/container first.
+Reads `DATABASE_URL` from `backend/.env` by default (`--database-url` to
+override). Add `--truncate` to clear the six tables first when
+re-importing into a non-empty dev database. `data/import.sql` and
+`data/import_in_container.sql` are unchanged and still work for anyone
+who prefers running `\copy` by hand.
+
+From the repo root, `make import` (see the root `Makefile`) runs this
+plus the `pip install` step above in one go, after `make migrate`.
+
 ## Validate an already-cleaned dataset
 
 If you just want to check `data/processed/` is internally consistent —

@@ -11,6 +11,27 @@ For the full project overview (frontend, tech stack, team), see the [root README
 
 ## Setup
 
+The fastest path from a clean checkout to a running stack is the root
+`Makefile` (repo root, not `backend/`):
+
+```bash
+make setup       # data clean+validate, db up, migrations, CSV import, OSRM prep+up
+make seed-admin  # interactive -- create the first admin login
+make up          # build + start the backend on top of the stack `setup` brought up
+```
+
+Each target is also runnable on its own and safe to re-run (`make db-up`,
+`make migrate`, `make import`, `make osrm`, ...) -- see the `Makefile` at the
+repo root for the full list. This replaces manually editing
+`data/import.sql`'s hardcoded paths and running the OSRM
+extract/partition/customize/rename sequence below by hand; nothing about
+the DB schema, migrations, or API changes -- it's the same steps, wired
+together. `docker compose logs -f` / `make logs` to watch it, `make down`
+to stop everything.
+
+<details>
+<summary>Manual, step-by-step setup (what <code>make setup</code> does under the hood)</summary>
+
 ```bash
 # 1. Start Postgres + PostGIS (from the repo root, not backend/)
 cd ..
@@ -34,16 +55,24 @@ pip install -r requirements.txt
 # 4. Apply migrations (creates stops / routes / route_stops / etc.)
 alembic upgrade head
 
-# 5. Seed the first admin account (needed for POST /admin/login --
+# 5. Import the cleaned CSVs (data/scripts/import_data.py -- no path
+# editing needed; reads DATABASE_URL from backend/.env)
+cd ..
+python data/scripts/import_data.py
+cd backend
+
+# 6. Seed the first admin account (needed for POST /admin/login --
 # there's no self-registration endpoint)
 python3 -m scripts.seed_admin
 
-# 6. (Optional) Road-network route geometry via OSRM
+# 7. (Optional) Road-network route geometry via OSRM
 # Without this, /route-finder still works correctly -- it just returns
 # road_geometry: null on every leg, and the frontend falls back to
 # straight-line segments between stops.
 #
-# One-time data prep (only re-run if nepal-latest.osm.pbf changes):
+# One-time data prep (only re-run if nepal-latest.osm.pbf changes).
+# backend/scripts/prepare_osrm_data.sh does this idempotently -- car and
+# foot profiles, no manual renaming -- but the equivalent by hand is:
 wget http://download.geofabrik.de/asia/nepal-latest.osm.pbf
 docker run -t -v "${PWD}:/data" osrm/osrm-backend osrm-extract -p /opt/car.lua /data/nepal-latest.osm.pbf
 docker run -t -v "${PWD}:/data" osrm/osrm-backend osrm-partition /data/nepal-latest.osrm
@@ -52,9 +81,7 @@ docker run -t -v "${PWD}:/data" osrm/osrm-backend osrm-customize /data/nepal-lat
 # (Optional) Pedestrian routing for "walk to nearest stop" -- needs a
 # second extract with foot.lua, saved under a different name so it
 # doesn't clobber the driving one above:
-docker run -t -v "${PWD}:/data" osrm/osrm-backend osrm-extract -p /opt/foot.lua /data/nepal-latest.osm.pbf
-mv nepal-latest.osrm nepal-latest-foot.osrm  # rename before the next two steps overwrite it
-mv nepal-latest.osrm.* nepal-latest-foot.osrm.*  # move the matching sidecar files too, if any got created
+docker run -t -v "${PWD}:/data" osrm/osrm-backend osrm-extract -p /opt/foot.lua /data/nepal-latest.osm.pbf --output /data/nepal-latest-foot
 docker run -t -v "${PWD}:/data" osrm/osrm-backend osrm-partition /data/nepal-latest-foot.osrm
 docker run -t -v "${PWD}:/data" osrm/osrm-backend osrm-customize /data/nepal-latest-foot.osrm
 
@@ -68,9 +95,11 @@ cd backend
 # (restart: unless-stopped). No need to manually start it again after
 # the first time unless you stop it explicitly.
 
-# 7. Run the API
+# 8. Run the API
 uvicorn app.main:app --reload
 ```
+</details>
+
 Backend runs at `http://localhost:8000` (interactive docs at `/docs`).
 
 ## Admin API
