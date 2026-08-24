@@ -145,7 +145,14 @@ The backend talks to two independent OSRM instances over HTTP:
 
 Both are optional. If a leg's OSRM call fails or the service is unreachable, `/route-finder` still returns a correct route with `road_geometry: null` for that leg (the frontend falls back to a straight line), and `/walking-route` returns HTTP 502.
 
-Start them via Docker Compose from the repo root: `docker compose up -d osrm osrm-foot`. Each needs a one-time `.osrm` data extract built from a Nepal OSM export first — see `backend/README.md` for the exact `osrm-extract` / `osrm-partition` / `osrm-customize` commands (driving and foot use separate extracts, since one `osrm-routed` process only serves the profile it was extracted with).
+Each needs a one-time `.osrm` data extract built from a Nepal OSM export
+first (driving and foot use separate extracts, since one `osrm-routed`
+process only serves the profile it was extracted with): `make osrm`
+(repo root) does this idempotently for both profiles — see
+`backend/scripts/prepare_osrm_data.sh` and `backend/README.md` for the
+manual `osrm-extract` / `osrm-partition` / `osrm-customize` equivalent if
+you're not using `make`. Then `make osrm-up`, or
+`docker compose up -d osrm osrm-foot` directly.
 
 ## Running the Application
 

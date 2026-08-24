@@ -41,10 +41,10 @@ lives in `../scripts/` alongside the rest of the pipeline.
 | `../schema.sql` | Table definitions, indexes, triggers, constraints. Run first (via Alembic in the live app — see `data/README.md`). |
 | `../scripts/import_data.py` | Loads all 6 CSVs via `COPY` + sanity checks. Run second. |
 | `operators_clean.csv` | 29 rows — bus/microbus/tempo operators |
-| `stops_clean.csv` | 313 rows — physical stops (lat/lng, amenities) |
-| `routes_clean.csv` | 93 rows — routes (distance, timing, operator link) |
-| `route_stops_clean.csv` | 1,615 rows — ordered route ↔ stop mapping |
-| `route_operators_clean.csv` | 91 rows — route ↔ operator (M:N, one primary each) |
+| `stops_clean.csv` | 351 rows — physical stops (lat/lng, amenities) |
+| `routes_clean.csv` | 102 rows — routes (distance, timing, operator link) |
+| `route_stops_clean.csv` | 1,629 rows — ordered route ↔ stop mapping |
+| `route_operators_clean.csv` | 99 rows — route ↔ operator (M:N, one primary each) |
 | `fare_rules_clean.csv` | 5 rows — distance-banded fare lookup |
 | `report.md` / `report_v4.md` | Full audit trail — read these before trusting a number |
 

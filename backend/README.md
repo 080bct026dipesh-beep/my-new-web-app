@@ -83,14 +83,6 @@ uvicorn app.main:app --reload
 </details>
 
 Backend runs at `http://localhost:8000` (interactive docs at `/docs`).
-# the first time unless you stop it explicitly.
-
-# 8. Run the API
-uvicorn app.main:app --reload
-```
-</details>
-
-Backend runs at `http://localhost:8000` (interactive docs at `/docs`).
 
 ## Admin API
 
@@ -102,7 +94,7 @@ Two separate auth mechanisms, for two separate purposes:
   `POST /graph/reload`, and `POST /admin/rebuild-graph` (in `main.py`).
   One shared secret for the small team doing data entry — not per-user.
 - **JWT via `POST /admin/login`** — authenticates an `AdminUser` account
-  (seeded with `python3 -m scripts.seed_admin`, see Setup step 5) and
+  (seeded with `python3 -m scripts.seed_admin`, see Setup step 6) and
   returns a bearer token. Not currently required by anything in
   `admin.py` — the two systems coexist; `admin.py`'s endpoints still use
   the shared key. Rate-limited to 5 requests/minute per IP (see
@@ -191,7 +183,9 @@ backend/
 │   │                     constants, osrm_client, time_buckets)
 │   └── main.py
 ├── migrations/          Alembic migration scripts
-├── scripts/              One-off admin scripts (seed_admin.py, seed_congestion_stats.py)
+├── scripts/              One-off admin scripts (seed_admin.py, seed_congestion_stats.py,
+│                           seed_demo_congestion.py, compute_osrm_route_distances.py) +
+│                           prepare_osrm_data.sh (idempotent OSRM car+foot extract, see Setup)
 ├── tests/                DB-backed integration tests + routing unit tests
 ├── .env.example
 ├── alembic.ini

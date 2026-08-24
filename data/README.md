@@ -85,11 +85,11 @@ data/
 
 | Table              | Row count |
 |--------------------|-----------|
-| `routes`           | 93        |
-| `stops`             | 313       |
+| `routes`           | 102       |
+| `stops`             | 351       |
 | `operators`         | 29        |
-| `route_stops`       | 1,615     |
-| `route_operators`   | 91        |
+| `route_stops`       | 1,629     |
+| `route_operators`   | 99        |
 | `fare_rules`        | 5         |
 
 All of the above are confirmed loaded successfully into a live
