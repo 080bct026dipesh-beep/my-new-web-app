@@ -59,7 +59,7 @@ cd backend && alembic upgrade head && cd ..
 4. **Run tests before pushing — every time:**
 ```bash
    cd backend && pytest
-   cd ../frontend && npm test --if-present
+   cd ../frontend && npm test
 ```
 
 5. **Push and open a PR:**

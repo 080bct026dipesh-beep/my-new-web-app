@@ -32,6 +32,17 @@ npm run build
 npm run start
 ```
 
+### Tests
+
+Vitest + React Testing Library, jsdom environment. Covers `lib/` (pure
+helpers and the `fetch` wrapper in `lib/api.ts`, with `fetch` mocked) and
+`hooks/` (via `renderHook`, with `lib/api` mocked).
+
+```bash
+npm test          # single run, used in CI
+npm run test:watch
+```
+
 ## What's here
 
 ```
