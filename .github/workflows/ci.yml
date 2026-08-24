@@ -39,6 +39,25 @@ jobs:
       - run: alembic upgrade head
       - run: pytest
 
+  data-pipeline-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: data
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r scripts/requirements.txt pytest
+      - name: Run clean_data.py regression tests
+        working-directory: data/scripts
+        run: pytest test_clean_data.py
+      - name: Run the cleaning pipeline against committed raw data
+        run: python scripts/clean_data.py --raw-dir raw --out-dir processed --fail-on-verify-error
+      - name: Validate the resulting processed/ output
+        run: python scripts/validate_clean.py --dir processed
+
   frontend-checks:
     runs-on: ubuntu-latest
     defaults:
