@@ -7,6 +7,8 @@ data/
 │                   - 2013 Yatayat OSM export
 │                   - Overpass Turbo pulls
 │                   - DOTM records
+│                   - plus 3 unintegrated candidate-route CSVs the
+│                     pipeline doesn't read — see raw/README.md
 │
 ├── processed/    Cleaned, validated CSVs ready for DB import
 │                   (see processed/README.md)
@@ -42,6 +44,13 @@ data/
        --raw-dir data/raw \
        --out-dir data/processed
 ```
+
+   Produces 5 of the 6 `processed/*_clean.csv` files (`operators`, `stops`,
+   `routes`, `route_stops`, `route_operators`). `fare_rules_clean.csv` is
+   maintained separately as a static desk-estimate table (see
+   `processed/README.md`) — there's no raw fare source to derive it from,
+   so it isn't touched by this script and must already exist in
+   `--out-dir` for `validate_clean.py` / `import_data.py` to find it.
 
 2. **`scripts/validate_clean.py`** — integrity checks on `processed/*.csv`,
    no database required. Runs the same checks as the sanity-check block
@@ -105,7 +114,7 @@ there; the app's own database (Docker/CI) currently runs PostgreSQL 15.
   - `routes.total_stops` vs. actual `route_stops` count: **0 mismatches**
   - `stops` rows missing `geom`: **0**
 
-  See `processed/README.md` and `report_v4.md` for the full audit trail.
+  See `processed/README.md` and `processed/report.md` for the full audit trail.
 
 **Fare rules** — 5 distance bands, confirmed non-overlapping (enforced by
 the `EXCLUDE USING gist` constraint) and correctly computed as

@@ -342,9 +342,9 @@ def resolve_revisits(
           backtrack distance.
 
     Geometry alone can't reliably tell these apart — see report.md history
-    (Buddhanagar Stop / Jadibuti / Gopi Krishna Stop cases, all also present
-    in return_leg_verification_priority_production_fixed.csv with
-    return_leg_verified=False). So, mirroring dedup_stops()/dedup_routes():
+    (Buddhanagar Stop / Jadibuti / Gopi Krishna Stop cases, all recorded with
+    return_leg_verified=False in the routes data). So, mirroring
+    dedup_stops()/dedup_routes():
     every route with a revisit is recorded as a *candidate*, annotated with
     a backtrack-distance hint, but ONLY routes confirmed in overrides_path
     (return_leg_overrides.yaml, verdict: drop_repeats) actually get rows
@@ -838,7 +838,7 @@ def write_report(stats: CleaningStats, out_path: Path) -> None:
     lines.append(f"- Routes PENDING human review (no verdict yet, left untouched): {len(stats.revisit_pending_review)}")
     if stats.revisit_pending_review:
         lines.append("  Add a verdict (keep / drop_repeats) to data/scripts/return_leg_overrides.yaml.")
-        lines.append("  Cross-check against return_leg_verification_priority_production_fixed.csv.")
+        lines.append("  Cross-check against the route's return_leg_verified / status_corrected_for_return_leg columns.")
         for entry in stats.revisit_pending_review:
             for r in entry["revisits"]:
                 suspect_note = " [SUSPECT — short backtrack, likely splice artifact]" if r["suspect"] else ""
@@ -893,7 +893,6 @@ RAW_FILENAMES = {
     "routes": "routes_production_v2_fixed.csv",
     "route_stops": "route_stops_production_v2.csv",
     "route_operators": "route_operators_production.csv",
-    "return_leg": "return_leg_verification_priority_production_fixed.csv",
 }
 
 
@@ -968,19 +967,14 @@ def main() -> int:
     route_stops.to_csv(args.out_dir / "route_stops_clean.csv", index=False)
     route_operators.to_csv(args.out_dir / "route_operators_clean.csv", index=False)
 
-    return_leg_path = args.raw_dir / RAW_FILENAMES["return_leg"]
-    if return_leg_path.exists():
-        return_leg = load_csv(return_leg_path)
-        orphaned = return_leg[return_leg["route_id"].isin(dropped_route_ids)]
-        if len(orphaned):
-            log.info(
-                "Dropping %d return_leg_verification_priority row(s) referencing merged-away routes: %s",
-                len(orphaned), orphaned["route_id"].tolist(),
-            )
-        return_leg = return_leg[~return_leg["route_id"].isin(dropped_route_ids)]
-        return_leg.to_csv(args.out_dir / "return_leg_verification_priority_clean.csv", index=False)
-    else:
-        log.warning("Skipping return_leg_verification_priority — %s not found", return_leg_path)
+    # NOTE: an earlier revision of this pipeline also loaded a standalone
+    # `return_leg_verification_priority_production_fixed.csv` and wrote a
+    # corresponding `*_clean.csv`. That file no longer exists in data/raw --
+    # its columns (`return_leg_verified`, `status_corrected_for_return_leg`,
+    # etc.) were folded directly into routes_production_v2_fixed.csv, and
+    # `dropped_route_ids` (routes removed by dedup_routes above) is kept only
+    # so a future re-introduction of a similar side-file has something to
+    # filter against. Removed rather than left as a silently-skipped no-op.
 
     write_report(stats, args.out_dir / "report.md")
 

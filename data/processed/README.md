@@ -3,7 +3,9 @@
 Cleaned, orphan-audited CSVs plus a PostgreSQL + PostGIS schema and import
 script for the Kathmandu Bus Route Finder project. This is the *processed*
 dataset — raw/unverified sources and the full audit trail live in
-`report.md` (v3) and `report_v4.md` (this round).
+`report.md`, regenerated fresh by `scripts/clean_data.py` on every pipeline
+run (it is not versioned per-round; re-run the pipeline to refresh it, and
+diff against git history if you need a prior round's numbers).
 
 ## Requirements
 
@@ -46,7 +48,7 @@ lives in `../scripts/` alongside the rest of the pipeline.
 | `route_stops_clean.csv` | 1,629 rows — ordered route ↔ stop mapping |
 | `route_operators_clean.csv` | 99 rows — route ↔ operator (M:N, one primary each) |
 | `fare_rules_clean.csv` | 5 rows — distance-banded fare lookup |
-| `report.md` / `report_v4.md` | Full audit trail — read these before trusting a number |
+| `report.md` | Full audit trail, regenerated every run — read before trusting a number |
 
 ## Setup
 
@@ -81,12 +83,16 @@ read `0` except `fare_rules row count`, which should read `5`.
   the `[5,10)` band, not `[0,5)`). An `EXCLUDE` constraint makes overlapping
   bands physically impossible to insert.
 
-## Known data caveats (see `report_v4.md` for full detail)
+## Known data caveats (see `report.md` for full detail)
 
-- **2 routes** (`R3102124`, `R3028077`) had corrupted/invalid `is_express`
-  values in the source export. `is_express` for both was unrecoverable and
-  defaults to `False`. (No unresolved `operator_id` nulls remain as of the
-  latest cleaned dataset.)
+- `report.md` regenerates on every pipeline run and currently shows **0**
+  rows with a corrupted/invalid `is_express` value — every route in the
+  committed dataset has `is_express = False`. (An earlier round of this
+  README flagged two specific route IDs here; those IDs turned out to
+  belong to routes that were never part of the committed `data/raw`
+  export — see the "Unintegrated candidate routes" note in
+  `../raw/README.md` — so the caveat didn't describe the shipped dataset
+  and has been corrected rather than carried forward.)
 - **`fare_rules.verification_note`** flags the fare figures as a
   2026-08 desk estimate, pending confirmation against the official Bagmati
   Province gazette notice — not yet independently verified.

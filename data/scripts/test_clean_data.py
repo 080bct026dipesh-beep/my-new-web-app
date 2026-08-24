@@ -189,7 +189,7 @@ def test_dedup_routes_merges_and_sets_bidirectional(tmp_path):
     )
 
     stats = CleaningStats()
-    new_routes, new_route_stops, new_route_operators = dedup_routes(
+    new_routes, new_route_stops, new_route_operators, dropped_route_ids = dedup_routes(
         routes, route_stops, route_operators, stats, overrides_path=overrides
     )
 
@@ -197,6 +197,7 @@ def test_dedup_routes_merges_and_sets_bidirectional(tmp_path):
     assert new_routes.loc[new_routes["route_id"] == "R1", "is_bidirectional"].iloc[0] == True
     assert "R2" not in set(new_route_stops["route_id"])
     assert ("R1", "R2") in stats.route_dedup_merged
+    assert dropped_route_ids == {"R2"}
 
 
 def test_dedup_routes_warns_and_skips_unknown_route_id(tmp_path, caplog):
@@ -213,9 +214,10 @@ def test_dedup_routes_warns_and_skips_unknown_route_id(tmp_path, caplog):
     )
 
     stats = CleaningStats()
-    new_routes, _, _ = dedup_routes(
+    new_routes, _, _, dropped_route_ids = dedup_routes(
         routes, route_stops, route_operators, stats, overrides_path=overrides
     )
 
     assert list(new_routes["route_id"]) == ["R1"]  # nothing dropped, R1 untouched
     assert stats.route_dedup_merged == []
+    assert dropped_route_ids == set()
