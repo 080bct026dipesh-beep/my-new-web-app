@@ -1,14 +1,14 @@
 # Orphan-pair audit & cleanup report — Kathmandu Bus Route Finder
 
-_Generated 2026-08-19T07:31:57Z by scripts/clean_data.py_
+_Generated 2026-08-24T02:07:19Z by scripts/clean_data.py_
 
 | Table | Rows before | Rows after |
 |---|---|---|
 | operators.csv | 29 | 29 |
-| stops.csv | 329 | 313 |
-| routes.csv | 99 | 93 |
-| route_stops.csv | 1894 | 1615 |
-| route_operators.csv | 97 | 91 |
+| stops.csv | 367 | 351 |
+| routes.csv | 108 | 102 |
+| route_stops.csv | 1908 | 1629 |
+| route_operators.csv | 105 | 99 |
 
 ## 1. route_stops orphan pairs
 - Removed rows: 18
@@ -16,7 +16,7 @@ _Generated 2026-08-19T07:31:57Z by scripts/clean_data.py_
     - TBD-CHOOSE ("New Baneshwor") — referenced by 5 route(s)
 
 ## 2. route_stops re-sequencing
-- Routes re-sequenced (1..N, order preserved): 99
+- Routes re-sequenced (1..N, order preserved): 108
 
 ## 2b. Stop deduplication (~250m radius candidates)
 - Stops actually merged (human-confirmed via stop_dedup_overrides.yaml): 16
@@ -36,7 +36,7 @@ _Generated 2026-08-19T07:31:57Z by scripts/clean_data.py_
     - kept S0103, dropped ['S0175']
     - kept S0229, dropped ['S0122']
     - kept S0159, dropped ['S0215']
-- Candidate clusters PENDING human review (not merged): 45
+- Candidate clusters PENDING human review (not merged): 54
   Distance alone can't tell 'same stop, different name' from 'different nearby stops' —
   add confirmed pairs to data/scripts/stop_dedup_overrides.yaml to merge them:
     - ['S0011', 'S0182']
@@ -69,6 +69,7 @@ _Generated 2026-08-19T07:31:57Z by scripts/clean_data.py_
     - ['S0152', 'S0166']
     - ['S0154', 'S0227']
     - ['S0158', 'S0238']
+    - ['S0169', 'S0413', 'S0414']
     - ['S0172', 'S0355']
     - ['S0194', 'S0219']
     - ['S0196', 'S0382']
@@ -81,9 +82,17 @@ _Generated 2026-08-19T07:31:57Z by scripts/clean_data.py_
     - ['S0256', 'S0262']
     - ['S0081', 'S0161']
     - ['S0283', 'S0284']
+    - ['S0048', 'S0391']
     - ['S0356', 'S0357']
     - ['S0375', 'S0376']
     - ['S0377', 'S0378']
+    - ['S0393', 'S0394']
+    - ['S0399', 'S0403']
+    - ['S0404', 'S0405']
+    - ['S0406', 'S0407']
+    - ['S0411', 'S0412']
+    - ['S0415', 'S0416']
+    - ['S0417', 'S0418']
 
 ## 2c. Route deduplication (same operator + similar stop set)
 - Routes actually merged (human-confirmed via route_dedup_overrides.yaml): 6
@@ -94,16 +103,13 @@ _Generated 2026-08-19T07:31:57Z by scripts/clean_data.py_
     - kept R2301205, dropped R2301206
     - kept R3102605, dropped R2301263
 - Marked is_bidirectional as a result of merge: ['R3068536', 'R2295734', 'R2988893', 'R2988983', 'R2301205']
-- Candidate pairs PENDING human review (not merged): 9
+- Candidate pairs PENDING human review (not merged): 6
     - R2909799 ("Kamalbinayak-Ratnapark") <-> R2988890 ("Bagbazaar-Kamalbinayak") — stop-set similarity 0.85
     - R2909799 ("Kamalbinayak-Ratnapark") <-> R2988893 ("Ratnapark-Changu") — stop-set similarity 0.77
     - R2988890 ("Bagbazaar-Kamalbinayak") <-> R2988893 ("Ratnapark-Changu") — stop-set similarity 0.91
-    - R2282031 ("Ratna Park - Kirtipur") <-> R3020213 ("Ratna Park - Panga Dobato- Dhokashi") — stop-set similarity 0.82
-    - R2282031 ("Ratna Park - Kirtipur") <-> R3020231 ("Ratna Park - Panga Dobato- Nagaun- Bhatkepati") — stop-set similarity 0.88
-    - R3020212 ("Dhokashi- Chobar gate- Ratnapark") <-> R3020213 ("Ratna Park - Panga Dobato- Dhokashi") — stop-set similarity 0.75
-    - R3020213 ("Ratna Park - Panga Dobato- Dhokashi") <-> R3020231 ("Ratna Park - Panga Dobato- Nagaun- Bhatkepati") — stop-set similarity 0.82
     - R2295902 ("KattyaniChowk-Sundhara") <-> R2295903 ("Sundhara-Milanchowk-KattyaniChowk") — stop-set similarity 0.75
     - R2295902 ("KattyaniChowk-Sundhara") <-> R2295941 ("Old Baneshwar-Sundhara") — stop-set similarity 0.72
+    - R2989012 ("Ratna Park - Daksinkali") <-> R-GAP-05 ("Ratna Park-Pharping") — stop-set similarity 0.72
 
 ## 2d. Revisited-stop resolution (return-leg / splice candidates)
 - Candidate (route, stop_id) revisit pairs found: 95 across 36 route(s)

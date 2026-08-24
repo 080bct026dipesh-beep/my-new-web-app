@@ -446,6 +446,52 @@ def resolve_revisits(
     return df.reset_index(drop=True)
 
 
+def _drop_trailing_blank_columns(df: pd.DataFrame, source: Path) -> pd.DataFrame:
+    """Drop trailing columns that are blank in the header AND blank in every
+    row. This is what happens when a raw export has stray trailing commas
+    (e.g. from Excel/Sheets) — pandas names those columns 'Unnamed: N', and
+    they'd otherwise silently shift every downstream \\copy in import.sql /
+    import_in_container.sql out of alignment with the real schema. Only
+    trims from the end, and only when the column is genuinely empty
+    everywhere, so real data is never touched.
+    """
+    unnamed_cols = [c for c in df.columns if str(c).startswith("Unnamed:")]
+    if not unnamed_cols:
+        return df
+
+    def _blank(col):
+        return df[col].isna().all() or (df[col].astype(str).str.strip() == "").all()
+
+    trim = 0
+    for col in reversed(df.columns):
+        if str(col).startswith("Unnamed:") and _blank(col):
+            trim += 1
+        else:
+            break
+
+    if trim == len(unnamed_cols):
+        dropped = list(df.columns[-trim:])
+        log.warning(
+            "%s: dropped %d trailing blank column(s) %s — raw export has "
+            "stray trailing commas; consider fixing at the source.",
+            source, trim, dropped,
+        )
+        return df.iloc[:, :-trim]
+
+    bad_mask = df[unnamed_cols].notna().any(axis=1)
+    bad_rows = df.index[bad_mask].tolist()
+    lines = [f"  DataFrame row {i} (raw line {i + 2}): {df.loc[i].to_dict()}" for i in bad_rows[:10]]
+    more = f"\n  ...and {len(bad_rows) - 10} more" if len(bad_rows) > 10 else ""
+    raise ValueError(
+        f"{source}: {len(bad_rows)} row(s) have real data spilling into stray "
+        f"trailing column(s) {unnamed_cols}. This almost always means a text "
+        f"field earlier in that row has an unquoted comma, shifting every "
+        f"column after it — fix_stops_aliases.py-style corruption, but not "
+        f"necessarily in 'aliases'. Inspect and fix the raw row(s) at the "
+        f"source before re-running:\n" + "\n".join(lines) + more
+    )
+
+
 def load_csv(path: Path) -> pd.DataFrame:
     if not path.exists():
         raise FileNotFoundError(
@@ -454,7 +500,8 @@ def load_csv(path: Path) -> pd.DataFrame:
             f"the RAW_FILENAMES map at the top of clean_data.py."
         )
     log.info("Loading %s", path)
-    return pd.read_csv(path, dtype=str, keep_default_na=False, na_values=[""])
+    df = pd.read_csv(path, dtype=str, keep_default_na=False, na_values=[""])
+    return _drop_trailing_blank_columns(df, path)
 
 
 def clean_stops(stops: pd.DataFrame) -> pd.DataFrame:
