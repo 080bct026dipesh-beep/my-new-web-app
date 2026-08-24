@@ -40,17 +40,34 @@ def _thin_waypoints(stops: list[StopOut]) -> list[tuple[float, float]]:
 
 def _attach_road_geometry(legs: list[RouteLeg]) -> None:
     for leg in legs:
-        if leg.route_id == "TRANSFER":
-            continue
+        # Walking transfers get the foot profile; bus rides get the
+        # (default) driving profile. Both are real OSRM road/path
+        # distances -- neither is the straight-line haversine figure
+        # used for graph edge weights during pathfinding.
+        profile = "foot" if leg.route_id == "TRANSFER" else "driving"
 
         coords = _thin_waypoints(leg.stops)
         if len(coords) < 2:
             continue
 
         try:
-            leg.road_geometry = get_route_geometry(coords)
+            leg.road_geometry = get_route_geometry(coords, profile=profile)
         except OSRMError:
             pass
+
+
+def _total_road_distance_m(legs: list[RouteLeg]) -> float | None:
+    """Sums each leg's real OSRM road_geometry distance. Returns None
+    (rather than a partial figure) if any leg is missing road_geometry
+    -- e.g. OSRM was briefly unreachable -- so callers can fall back to
+    the graph's haversine-based total_distance_m instead of silently
+    under-reporting."""
+    total = 0.0
+    for leg in legs:
+        if leg.road_geometry is None:
+            return None
+        total += leg.road_geometry["distance_m"]
+    return total
 
 
 def _record_leg_congestion(legs: list[RouteLeg]) -> None:
@@ -204,6 +221,18 @@ def find_route(
     _attach_road_geometry(legs)
     background_tasks.add_task(_record_leg_congestion, legs)
 
+    # Prefer the real road distance OSRM returned for these legs over
+    # result.total_distance_m, which is a sum of straight-line
+    # (haversine) edge weights from the routing graph -- fine for
+    # ranking candidate paths during search, but a systematic
+    # under-estimate of how far the bus/walk actually travels, since
+    # roads curve and rarely follow the great-circle line between two
+    # stops. Only used when every leg has road_geometry; otherwise
+    # fall back so a single OSRM hiccup doesn't blank out the figure.
+    total_distance_m = _total_road_distance_m(legs)
+    if total_distance_m is None:
+        total_distance_m = result.total_distance_m
+
     alternatives: list[RouteAlternative] = [
         RouteAlternative(
             label=alt.label,
@@ -214,13 +243,13 @@ def find_route(
         for alt in result.alternatives
     ]
 
-    fare_rule = queries.fare_for_distance(db, result.total_distance_m / 1000)
+    fare_rule = queries.fare_for_distance(db, total_distance_m / 1000)
     fare = FareOut.model_validate(fare_rule) if fare_rule is not None else None
 
     return RouteFinderResult(
         origin_stop_id=origin,
         destination_stop_id=destination,
-        total_cost=result.total_distance_m,
+        total_cost=total_distance_m,
         transfer_count=result.transfer_count,
         legs=legs,
         fare=fare,

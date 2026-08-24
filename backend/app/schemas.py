@@ -40,6 +40,12 @@ class RouteOut(BaseModel):
     end_stop_id: str
     total_stops: int
     approx_distance_km: Optional[float] = None
+    # Real road distance from OSRM (see Route.osrm_distance_km) -- prefer
+    # this over approx_distance_km wherever it's available, since
+    # approx_distance_km is source-data-supplied and not reliably
+    # accurate. Null until backend/scripts/compute_osrm_route_distances.py
+    # has been run for a given route.
+    osrm_distance_km: Optional[float] = None
     status: str
     # Route.operator (the column) is the free-text name as originally
     # recorded in the source data; the *linked* operator row lives on the
@@ -107,7 +113,11 @@ class RouteAlternative(BaseModel):
         Exact, not estimated.
       - "shortest_distance": minimum total distance, ignoring the small
         per-transfer weighting the primary/recommended result applies.
-        Only appears when no direct route exists.
+        Only appears when no direct route exists. Its total_cost is the
+        routing graph's straight-line (haversine) edge-weight sum, NOT
+        an OSRM road distance -- alternatives deliberately skip OSRM
+        (see above), so treat this figure as a lower-bound estimate,
+        not the real travel distance.
       - "fastest_estimated": minimum estimated travel time, using fixed
         assumed speeds per edge kind (~12 km/h riding, ~4.7 km/h
         walking, since no per-edge duration data exists pre-search --

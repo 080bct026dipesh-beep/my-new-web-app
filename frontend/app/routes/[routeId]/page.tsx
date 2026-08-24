@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ApiError, getRoute, getRouteStops } from "@/lib/api";
+import { formatRouteDistance } from "@/lib/routeDistance";
 import { RouteOut, RouteStopEntry } from "@/types/route";
 
 export default function RouteDetailPage() {
@@ -103,7 +104,7 @@ export default function RouteDetailPage() {
         </h1>
         <p className="mt-1 font-mono text-sm text-ink-secondary">
           {route.vehicle_type} · {route.total_stops} stops
-          {route.approx_distance_km !== null && <> · {route.approx_distance_km.toFixed(1)} km</>}
+          {formatRouteDistance(route) && <> · {formatRouteDistance(route)}</>}
         </p>
         {route.operator && (
           <p className="text-sm text-ink-secondary">Operated by {route.operator.name}</p>

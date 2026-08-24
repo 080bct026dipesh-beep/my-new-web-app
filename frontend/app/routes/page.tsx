@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouteBrowser } from "@/hooks/useRouteBrowser";
+import { formatRouteDistance } from "@/lib/routeDistance";
 
 export default function RoutesPage() {
   const { routes, total, loading, loadingMore, searchQuery, setSearchQuery, hasMore, loadMore } =
@@ -56,9 +57,7 @@ export default function RoutesPage() {
                 </p>
                 <p className="font-mono text-xs text-ink-secondary">
                   {route.vehicle_type} · {route.total_stops} stops
-                  {route.approx_distance_km !== null && (
-                    <> · {route.approx_distance_km.toFixed(1)} km</>
-                  )}
+                  {formatRouteDistance(route) && <> · {formatRouteDistance(route)}</>}
                   {route.operator && <> · {route.operator.name}</>}
                 </p>
               </div>

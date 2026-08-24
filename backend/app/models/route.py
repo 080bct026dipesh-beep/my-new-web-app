@@ -42,6 +42,13 @@ class Route(Base):
     approx_distance_km = Column(Numeric(6, 2))
     approx_distance_km_original = Column(Numeric(6, 2))
     haversine_distance_km = Column(Numeric(6, 3))
+    # Real road distance for the route's full stop sequence, computed by
+    # calling OSRM (see scripts/compute_osrm_route_distances.py) --
+    # unlike approx_distance_km (source-data-supplied) and
+    # haversine_distance_km (straight-line), this follows actual roads.
+    # Nullable: only populated once the compute script has been run
+    # against a live OSRM instance for a given route.
+    osrm_distance_km = Column(Numeric(6, 2))
     max_consecutive_stop_jump_km = Column(Numeric(6, 3))
     distance_flagged_for_recompute = Column(
         Boolean, nullable=False, server_default=text("false")

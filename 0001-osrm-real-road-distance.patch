@@ -1,0 +1,396 @@
+From 05411dd0c55f0d89590bc4524a4a69da3ac987a4 Mon Sep 17 00:00:00 2001
+From: Claude <assistant@local>
+Date: Sun, 23 Aug 2026 09:10:20 +0000
+Subject: [PATCH] Use real OSRM road distance for route-finder totals/fare and
+ route list/detail pages
+
+- routing.py: attach OSRM foot-profile geometry to walking transfer
+  legs (previously skipped entirely); sum real per-leg OSRM distance
+  for the response's total_cost and fare lookup instead of the
+  routing graph's haversine (straight-line) edge-weight sum, with a
+  fallback to the old behavior if OSRM is unreachable for a leg.
+- schemas.py: correct RouteAlternative docstring -- its total_cost is
+  still haversine-based (alternatives skip OSRM by design), previously
+  mislabeled as 'exact'.
+- models/route.py + migration 9d3f1a7c2b4e: add nullable
+  Route.osrm_distance_km.
+- scripts/compute_osrm_route_distances.py: one-off/re-runnable script
+  to batch-compute osrm_distance_km per route via OSRM, using the same
+  waypoint-thinning as the live route-finder.
+- frontend: lib/routeDistance.ts picks osrm_distance_km over
+  approx_distance_km wherever available; wired into the routes list
+  and route detail pages.
+---
+ backend/app/api/routing.py                    | 39 +++++++-
+ backend/app/models/route.py                   |  7 ++
+ backend/app/schemas.py                        | 12 ++-
+ .../9d3f1a7c2b4e_add_route_osrm_distance.py   | 38 ++++++++
+ .../scripts/compute_osrm_route_distances.py   | 94 +++++++++++++++++++
+ frontend/app/routes/[routeId]/page.tsx        |  3 +-
+ frontend/app/routes/page.tsx                  |  5 +-
+ frontend/lib/routeDistance.ts                 | 21 +++++
+ frontend/types/route.ts                       |  3 +
+ 9 files changed, 212 insertions(+), 10 deletions(-)
+ create mode 100644 backend/migrations/versions/9d3f1a7c2b4e_add_route_osrm_distance.py
+ create mode 100644 backend/scripts/compute_osrm_route_distances.py
+ create mode 100644 frontend/lib/routeDistance.ts
+
+diff --git a/backend/app/api/routing.py b/backend/app/api/routing.py
+index 75488d5..7a10248 100644
+--- a/backend/app/api/routing.py
++++ b/backend/app/api/routing.py
+@@ -40,19 +40,36 @@ def _thin_waypoints(stops: list[StopOut]) -> list[tuple[float, float]]:
+ 
+ def _attach_road_geometry(legs: list[RouteLeg]) -> None:
+     for leg in legs:
+-        if leg.route_id == "TRANSFER":
+-            continue
++        # Walking transfers get the foot profile; bus rides get the
++        # (default) driving profile. Both are real OSRM road/path
++        # distances -- neither is the straight-line haversine figure
++        # used for graph edge weights during pathfinding.
++        profile = "foot" if leg.route_id == "TRANSFER" else "driving"
+ 
+         coords = _thin_waypoints(leg.stops)
+         if len(coords) < 2:
+             continue
+ 
+         try:
+-            leg.road_geometry = get_route_geometry(coords)
++            leg.road_geometry = get_route_geometry(coords, profile=profile)
+         except OSRMError:
+             pass
+ 
+ 
++def _total_road_distance_m(legs: list[RouteLeg]) -> float | None:
++    """Sums each leg's real OSRM road_geometry distance. Returns None
++    (rather than a partial figure) if any leg is missing road_geometry
++    -- e.g. OSRM was briefly unreachable -- so callers can fall back to
++    the graph's haversine-based total_distance_m instead of silently
++    under-reporting."""
++    total = 0.0
++    for leg in legs:
++        if leg.road_geometry is None:
++            return None
++        total += leg.road_geometry["distance_m"]
++    return total
++
++
+ def _record_leg_congestion(legs: list[RouteLeg]) -> None:
+     """Runs after the response is already sent (see BackgroundTasks in
+     find_route below), so this never adds latency to a user's search. Each
+@@ -204,6 +221,18 @@ def find_route(
+     _attach_road_geometry(legs)
+     background_tasks.add_task(_record_leg_congestion, legs)
+ 
++    # Prefer the real road distance OSRM returned for these legs over
++    # result.total_distance_m, which is a sum of straight-line
++    # (haversine) edge weights from the routing graph -- fine for
++    # ranking candidate paths during search, but a systematic
++    # under-estimate of how far the bus/walk actually travels, since
++    # roads curve and rarely follow the great-circle line between two
++    # stops. Only used when every leg has road_geometry; otherwise
++    # fall back so a single OSRM hiccup doesn't blank out the figure.
++    total_distance_m = _total_road_distance_m(legs)
++    if total_distance_m is None:
++        total_distance_m = result.total_distance_m
++
+     alternatives: list[RouteAlternative] = [
+         RouteAlternative(
+             label=alt.label,
+@@ -214,13 +243,13 @@ def find_route(
+         for alt in result.alternatives
+     ]
+ 
+-    fare_rule = queries.fare_for_distance(db, result.total_distance_m / 1000)
++    fare_rule = queries.fare_for_distance(db, total_distance_m / 1000)
+     fare = FareOut.model_validate(fare_rule) if fare_rule is not None else None
+ 
+     return RouteFinderResult(
+         origin_stop_id=origin,
+         destination_stop_id=destination,
+-        total_cost=result.total_distance_m,
++        total_cost=total_distance_m,
+         transfer_count=result.transfer_count,
+         legs=legs,
+         fare=fare,
+diff --git a/backend/app/models/route.py b/backend/app/models/route.py
+index 7580ce6..169715a 100644
+--- a/backend/app/models/route.py
++++ b/backend/app/models/route.py
+@@ -42,6 +42,13 @@ class Route(Base):
+     approx_distance_km = Column(Numeric(6, 2))
+     approx_distance_km_original = Column(Numeric(6, 2))
+     haversine_distance_km = Column(Numeric(6, 3))
++    # Real road distance for the route's full stop sequence, computed by
++    # calling OSRM (see scripts/compute_osrm_route_distances.py) --
++    # unlike approx_distance_km (source-data-supplied) and
++    # haversine_distance_km (straight-line), this follows actual roads.
++    # Nullable: only populated once the compute script has been run
++    # against a live OSRM instance for a given route.
++    osrm_distance_km = Column(Numeric(6, 2))
+     max_consecutive_stop_jump_km = Column(Numeric(6, 3))
+     distance_flagged_for_recompute = Column(
+         Boolean, nullable=False, server_default=text("false")
+diff --git a/backend/app/schemas.py b/backend/app/schemas.py
+index 6aae6d5..5394c93 100644
+--- a/backend/app/schemas.py
++++ b/backend/app/schemas.py
+@@ -40,6 +40,12 @@ class RouteOut(BaseModel):
+     end_stop_id: str
+     total_stops: int
+     approx_distance_km: Optional[float] = None
++    # Real road distance from OSRM (see Route.osrm_distance_km) -- prefer
++    # this over approx_distance_km wherever it's available, since
++    # approx_distance_km is source-data-supplied and not reliably
++    # accurate. Null until backend/scripts/compute_osrm_route_distances.py
++    # has been run for a given route.
++    osrm_distance_km: Optional[float] = None
+     status: str
+     # Route.operator (the column) is the free-text name as originally
+     # recorded in the source data; the *linked* operator row lives on the
+@@ -107,7 +113,11 @@ class RouteAlternative(BaseModel):
+         Exact, not estimated.
+       - "shortest_distance": minimum total distance, ignoring the small
+         per-transfer weighting the primary/recommended result applies.
+-        Only appears when no direct route exists.
++        Only appears when no direct route exists. Its total_cost is the
++        routing graph's straight-line (haversine) edge-weight sum, NOT
++        an OSRM road distance -- alternatives deliberately skip OSRM
++        (see above), so treat this figure as a lower-bound estimate,
++        not the real travel distance.
+       - "fastest_estimated": minimum estimated travel time, using fixed
+         assumed speeds per edge kind (~12 km/h riding, ~4.7 km/h
+         walking, since no per-edge duration data exists pre-search --
+diff --git a/backend/migrations/versions/9d3f1a7c2b4e_add_route_osrm_distance.py b/backend/migrations/versions/9d3f1a7c2b4e_add_route_osrm_distance.py
+new file mode 100644
+index 0000000..678dd2a
+--- /dev/null
++++ b/backend/migrations/versions/9d3f1a7c2b4e_add_route_osrm_distance.py
+@@ -0,0 +1,38 @@
++"""add osrm_distance_km to routes
++
++approx_distance_km comes from the source dataset (user-supplied /
++crowdsourced) and haversine_distance_km is a straight-line estimate --
++neither reflects the actual road distance a bus travels. This adds a
++column for the real OSRM-computed road distance over each route's full
++ordered stop sequence, populated by
++backend/scripts/compute_osrm_route_distances.py against a live OSRM
++instance. Nullable + additive: existing approx/haversine columns are
++left in place as fallbacks for routes not yet (re)computed.
++
++Revision ID: 9d3f1a7c2b4e
++Revises: 38a5d0f89268
++Create Date: 2026-08-23 00:00:00.000000
++
++"""
++from typing import Sequence, Union
++
++from alembic import op
++import sqlalchemy as sa
++
++
++# revision identifiers, used by Alembic.
++revision: str = '9d3f1a7c2b4e'
++down_revision: Union[str, None] = '38a5d0f89268'
++branch_labels: Union[str, Sequence[str], None] = None
++depends_on: Union[str, Sequence[str], None] = None
++
++
++def upgrade() -> None:
++    op.add_column(
++        'routes',
++        sa.Column('osrm_distance_km', sa.Numeric(6, 2), nullable=True),
++    )
++
++
++def downgrade() -> None:
++    op.drop_column('routes', 'osrm_distance_km')
+diff --git a/backend/scripts/compute_osrm_route_distances.py b/backend/scripts/compute_osrm_route_distances.py
+new file mode 100644
+index 0000000..c05bd7d
+--- /dev/null
++++ b/backend/scripts/compute_osrm_route_distances.py
+@@ -0,0 +1,94 @@
++"""One-off (safe to re-run) script to populate routes.osrm_distance_km --
++the real road distance for each active route's full ordered stop
++sequence, computed by calling OSRM once per route (using the same
++waypoint-thinning as the live route-finder's road_geometry, see
++api/routing.py::_thin_waypoints, so a route's summary distance matches
++what a rider would actually see per-leg).
++
++This replaces relying on approx_distance_km (source-data-supplied,
++occasionally flagged/incorrect -- see distance_flagged_for_recompute)
++or haversine_distance_km (straight-line, systematically shorter than
++real road distance) for anything shown to users as "distance".
++
++Run from backend/, against a live OSRM instance:
++    python3 scripts/compute_osrm_route_distances.py
++
++Only rewrites routes whose osrm_distance_km is still null, so it's
++cheap to re-run after adding new routes -- pass --force to recompute
++every active route instead (e.g. after a stop-coordinate correction).
++"""
++import argparse
++import sys
++import time
++
++from app.db import queries
++from app.db.session import SessionLocal
++from app.routing.graph_builder import haversine_distance_m
++from app.routing.osrm_client import OSRMError, get_route_geometry
++
++MIN_WAYPOINT_SPACING_M = 80  # mirrors api/routing.py::MIN_WAYPOINT_SPACING_M
++
++
++def _thin_waypoints(coords: list[tuple[float, float]]) -> list[tuple[float, float]]:
++    if len(coords) < 2:
++        return coords
++    thinned = [coords[0]]
++    for lat, lng in coords[1:-1]:
++        last_lat, last_lng = thinned[-1]
++        if haversine_distance_m(last_lat, last_lng, lat, lng) >= MIN_WAYPOINT_SPACING_M:
++            thinned.append((lat, lng))
++    last = coords[-1]
++    if thinned[-1] != last:
++        thinned.append(last)
++    return thinned
++
++
++def main() -> None:
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument(
++        "--force",
++        action="store_true",
++        help="Recompute even routes that already have an osrm_distance_km.",
++    )
++    args = parser.parse_args()
++
++    db = SessionLocal()
++    updated = 0
++    skipped = 0
++    try:
++        routes = queries.get_active_routes(db)
++        pending = [r for r in routes if args.force or r.osrm_distance_km is None]
++        print(f"{len(routes)} active routes, {len(pending)} to compute...")
++
++        for i, route in enumerate(pending, start=1):
++            ordered = sorted(
++                (rs for rs in route.route_stops if rs.stop is not None),
++                key=lambda rs: rs.sequence_no,
++            )
++            coords = _thin_waypoints([(rs.stop.lat, rs.stop.lng) for rs in ordered])
++            if len(coords) < 2:
++                skipped += 1
++                continue
++
++            try:
++                geometry = get_route_geometry(coords)
++            except OSRMError as exc:
++                skipped += 1
++                print(f"  [{i}/{len(pending)}] {route.route_id}: OSRM failed ({exc}), skipped")
++                continue
++
++            route.osrm_distance_km = round(geometry["distance_m"] / 1000, 2)
++            db.add(route)
++            updated += 1
++            if i % 20 == 0:
++                db.commit()
++            print(f"  [{i}/{len(pending)}] {route.route_id}: {route.osrm_distance_km} km")
++
++        db.commit()
++        print(f"Done. Updated {updated}, skipped {skipped}.")
++    finally:
++        db.close()
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+diff --git a/frontend/app/routes/[routeId]/page.tsx b/frontend/app/routes/[routeId]/page.tsx
+index c597880..04144bd 100644
+--- a/frontend/app/routes/[routeId]/page.tsx
++++ b/frontend/app/routes/[routeId]/page.tsx
+@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
+ import Link from "next/link";
+ import { useParams } from "next/navigation";
+ import { ApiError, getRoute, getRouteStops } from "@/lib/api";
++import { formatRouteDistance } from "@/lib/routeDistance";
+ import { RouteOut, RouteStopEntry } from "@/types/route";
+ 
+ export default function RouteDetailPage() {
+@@ -103,7 +104,7 @@ export default function RouteDetailPage() {
+         </h1>
+         <p className="mt-1 font-mono text-sm text-ink-secondary">
+           {route.vehicle_type} · {route.total_stops} stops
+-          {route.approx_distance_km !== null && <> · {route.approx_distance_km.toFixed(1)} km</>}
++          {formatRouteDistance(route) && <> · {formatRouteDistance(route)}</>}
+         </p>
+         {route.operator && (
+           <p className="text-sm text-ink-secondary">Operated by {route.operator.name}</p>
+diff --git a/frontend/app/routes/page.tsx b/frontend/app/routes/page.tsx
+index 99657ec..85179a5 100644
+--- a/frontend/app/routes/page.tsx
++++ b/frontend/app/routes/page.tsx
+@@ -2,6 +2,7 @@
+ 
+ import Link from "next/link";
+ import { useRouteBrowser } from "@/hooks/useRouteBrowser";
++import { formatRouteDistance } from "@/lib/routeDistance";
+ 
+ export default function RoutesPage() {
+   const { routes, total, loading, loadingMore, searchQuery, setSearchQuery, hasMore, loadMore } =
+@@ -56,9 +57,7 @@ export default function RoutesPage() {
+                 </p>
+                 <p className="font-mono text-xs text-ink-secondary">
+                   {route.vehicle_type} · {route.total_stops} stops
+-                  {route.approx_distance_km !== null && (
+-                    <> · {route.approx_distance_km.toFixed(1)} km</>
+-                  )}
++                  {formatRouteDistance(route) && <> · {formatRouteDistance(route)}</>}
+                   {route.operator && <> · {route.operator.name}</>}
+                 </p>
+               </div>
+diff --git a/frontend/lib/routeDistance.ts b/frontend/lib/routeDistance.ts
+new file mode 100644
+index 0000000..af4930b
+--- /dev/null
++++ b/frontend/lib/routeDistance.ts
+@@ -0,0 +1,21 @@
++import { RouteSummary } from "@/types/route";
++
++/**
++ * osrm_distance_km is the real road distance (computed by
++ * backend/scripts/compute_osrm_route_distances.py); approx_distance_km
++ * is source-data-supplied and not reliably accurate (see
++ * Route.distance_flagged_for_recompute in the backend). Every place
++ * that shows a route's distance should go through this so they can't
++ * drift -- one showing the OSRM figure, another the raw one.
++ *
++ * Returns null when neither is available.
++ */
++export function bestRouteDistanceKm(route: RouteSummary): number | null {
++  return route.osrm_distance_km ?? route.approx_distance_km ?? null;
++}
++
++/** Formatted "X.X km", or null if no distance is available. */
++export function formatRouteDistance(route: RouteSummary): string | null {
++  const km = bestRouteDistanceKm(route);
++  return km === null ? null : `${km.toFixed(1)} km`;
++}
+diff --git a/frontend/types/route.ts b/frontend/types/route.ts
+index 01e0889..7e2ab31 100644
+--- a/frontend/types/route.ts
++++ b/frontend/types/route.ts
+@@ -122,6 +122,9 @@ export interface RouteSummary {
+   end_stop_id: string;
+   total_stops: number;
+   approx_distance_km: number | null;
++  /** Real OSRM road distance -- prefer this over approx_distance_km
++   * (source-data-supplied, not reliably accurate) whenever it's set. */
++  osrm_distance_km: number | null;
+   status: string;
+   operator: RouteOperator | null;
+ }
+-- 
+2.43.0
+

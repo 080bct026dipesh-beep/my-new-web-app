@@ -122,6 +122,9 @@ export interface RouteSummary {
   end_stop_id: string;
   total_stops: number;
   approx_distance_km: number | null;
+  /** Real OSRM road distance -- prefer this over approx_distance_km
+   * (source-data-supplied, not reliably accurate) whenever it's set. */
+  osrm_distance_km: number | null;
   status: string;
   operator: RouteOperator | null;
 }
