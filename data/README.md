@@ -34,8 +34,8 @@ data/
      5. Flags distance outliers (haversine vs. recorded
         `approx_distance_km`)
      6. Verifies `route_operators`/`operators` have no orphan pairs
-     7. Runs the same post-cleanup integrity checks `import.sql` runs in
-        Postgres
+     7. Runs the same post-cleanup integrity checks `scripts/import_data.py`
+        runs against Postgres
 
 ```bash
    python scripts/clean_data.py \
@@ -44,9 +44,9 @@ data/
 ```
 
 2. **`scripts/validate_clean.py`** — integrity checks on `processed/*.csv`,
-   no database required. Runs the same checks as the sanity-check block at
-   the bottom of `import.sql`, so problems can be caught in CI before ever
-   touching Postgres.
+   no database required. Runs the same checks as the sanity-check block
+   `import_data.py` runs after loading, so problems can be caught in CI
+   before ever touching Postgres.
 
 ```bash
    python scripts/validate_clean.py --dir data/processed
@@ -62,15 +62,22 @@ data/
    `route_return_leg_priority` QA table existed for a time but was dropped
    in a later migration (`b3c9d1e4c6a7`) and is no longer part of the schema.
 
-4. **`import.sql`** — loads all `processed/*_clean.csv` files directly via
-   `\copy` into the schema from step 3, in dependency order (operators →
+4. **`scripts/import_data.py`** — loads all `processed/*_clean.csv` files
+   into the schema from step 3 via `COPY`, in dependency order (operators →
    stops → routes → route_stops → route_operators → fare_rules), followed
    by a built-in referential-integrity sanity check — all currently passing
    clean.
 
-   > **Before running:** paths inside `import.sql` are placeholders
-   > (`/path/to/csv/`). Replace with your local absolute path to
-   > `processed/` first.
+```bash
+   python scripts/import_data.py --processed-dir data/processed
+   # reads DATABASE_URL from backend/.env by default; --database-url to override
+   # --truncate clears the 6 tables first, for re-importing into a non-empty DB
+```
+
+   From the repo root, `make import` runs this (after `make migrate`). No
+   path editing required — the old `import.sql` / `import_in_container.sql`
+   (which needed every hardcoded absolute path hand-edited per machine) have
+   been retired now that this is proven out end-to-end.
 
 ---
 
@@ -87,9 +94,9 @@ data/
 
 All of the above are confirmed loaded successfully into a live
 PostgreSQL 15 + PostGIS 3.4 instance (matching `docker-compose.yml`/CI) via
-`import.sql`. `data/processed/README.md` lists PostgreSQL 16.14 as the
-version tested against for the standalone import path — see the note there;
-the app's own database (Docker/CI) currently runs PostgreSQL 15.
+`scripts/import_data.py`. `data/processed/README.md` lists PostgreSQL 16.14
+as the version tested against for the standalone import path — see the note
+there; the app's own database (Docker/CI) currently runs PostgreSQL 15.
 
 **Referential-integrity audit** — passed clean end-to-end:
   - `route_stops → stops` orphan check: **0**

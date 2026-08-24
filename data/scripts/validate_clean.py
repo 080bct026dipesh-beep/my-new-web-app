@@ -2,8 +2,8 @@
 """
 validate_clean.py — integrity checks on data/processed/*.csv, no database required.
 
-Runs the same checks as the sanity-check block at the bottom of import.sql,
-so you can catch problems in CI before ever touching Postgres.
+Runs the same checks as the sanity-check block import_data.py runs after
+loading, so you can catch problems in CI before ever touching Postgres.
 
 Usage:
     python scripts/validate_clean.py --dir data/processed

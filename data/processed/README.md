@@ -7,9 +7,9 @@ dataset — raw/unverified sources and the full audit trail live in
 
 ## Requirements
 
-The processed dataset and `schema.sql`/`import.sql` were validated against
-this stack (stock Ubuntu 24.04 LTS apt packages — no manual version pinning
-needed):
+The processed dataset and `schema.sql`/`scripts/import_data.py` were
+validated against this stack (stock Ubuntu 24.04 LTS apt packages — no
+manual version pinning needed):
 
 | Component  | Version |
 |---|---|
@@ -32,13 +32,14 @@ sudo apt install postgresql-16 postgresql-16-postgis-3
 
 ## Files
 
-`schema.sql` and `import.sql` live one level up, in `data/` (not in this
-folder alongside the CSVs) -- see `../schema.sql` / `../import.sql`.
+`schema.sql` lives one level up, in `data/` (not in this folder alongside
+the CSVs) -- see `../schema.sql`. The importer, `../scripts/import_data.py`,
+lives in `../scripts/` alongside the rest of the pipeline.
 
 | File | Contents |
 |---|---|
-| `../schema.sql` | Table definitions, indexes, triggers, constraints. Run first. |
-| `../import.sql` | `\copy` statements for all 6 CSVs + sanity checks. Run second. |
+| `../schema.sql` | Table definitions, indexes, triggers, constraints. Run first (via Alembic in the live app — see `data/README.md`). |
+| `../scripts/import_data.py` | Loads all 6 CSVs via `COPY` + sanity checks. Run second. |
 | `operators_clean.csv` | 29 rows — bus/microbus/tempo operators |
 | `stops_clean.csv` | 313 rows — physical stops (lat/lng, amenities) |
 | `routes_clean.csv` | 93 rows — routes (distance, timing, operator link) |
@@ -53,12 +54,14 @@ folder alongside the CSVs) -- see `../schema.sql` / `../import.sql`.
 createdb ktm_bus
 psql -d ktm_bus -f ../schema.sql
 
-# Edit ../import.sql first: replace /path/to/csv/ with the absolute path to
-# this folder (the CSVs listed above), then:
-psql -d ktm_bus -f ../import.sql
+python ../scripts/import_data.py --database-url postgresql://localhost/ktm_bus --processed-dir .
 ```
 
-The last query in `import.sql` is a sanity-check block — every row should
+No path editing needed — `import_data.py` takes the CSV directory and DB
+URL as arguments. (For the live app, `make setup` / `make import` from the
+repo root does both of the above for you against the Docker Postgres.)
+
+The importer prints a sanity-check block after loading — every row should
 read `0` except `fare_rules row count`, which should read `5`.
 
 ## Schema overview

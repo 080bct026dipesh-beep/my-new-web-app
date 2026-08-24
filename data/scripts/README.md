@@ -28,8 +28,8 @@ This will:
    (straight-line) estimate computed from stop coordinates
 6. Regenerate `processed/report.md` documenting every change, in the same
    format as the original manual audit
-7. Run the same referential-integrity checks `import.sql`'s sanity-check
-   block runs in Postgres — printed to the console as it goes
+7. Run the same referential-integrity checks `import_data.py`'s
+   sanity-check block runs in Postgres — printed to the console as it goes
 
 Add `--fail-on-verify-error` to exit non-zero if any check fails (used in CI).
 
@@ -40,15 +40,16 @@ python scripts/import_data.py
 ```
 
 Loads `data/processed/*_clean.csv` into the schema Alembic already
-created, in the same table order and with the same COPY options as
-`data/import.sql` / `data/import_in_container.sql` -- but takes the CSV
-directory as an argument instead of requiring every hardcoded absolute
-path in those two files to be hand-edited per machine/container first.
+created, in the same table order and with the same COPY options the old
+`data/import.sql` / `data/import_in_container.sql` used -- but takes the
+CSV directory as an argument instead of requiring a hardcoded absolute
+path hand-edited per machine/container first. Those two `.sql` files have
+been retired now that this path is proven out end-to-end (data clean →
+migrate → import → OSRM → backend, all via `make setup`); this script is
+the only supported way to load the dataset.
 Reads `DATABASE_URL` from `backend/.env` by default (`--database-url` to
 override). Add `--truncate` to clear the six tables first when
-re-importing into a non-empty dev database. `data/import.sql` and
-`data/import_in_container.sql` are unchanged and still work for anyone
-who prefers running `\copy` by hand.
+re-importing into a non-empty dev database.
 
 From the repo root, `make import` (see the root `Makefile`) runs this
 plus the `pip install` step above in one go, after `make migrate`.

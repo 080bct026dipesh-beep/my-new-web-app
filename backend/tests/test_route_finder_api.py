@@ -38,7 +38,8 @@ def test_route_finder_consolidates_consecutive_same_route_legs(client):
     segments must be merged into a single leg per route ridden.
 
     NOTE: this path (and the exact route_ids below) reflect the dataset as
-    of routes_clean.csv being made canonical (see data/import.sql) -- if a
+    of routes_clean.csv being made canonical (see data/scripts/import_data.py)
+    -- if a
     future data refresh changes the shortest path here, re-derive fresh
     expected values rather than trying to patch these ones, the same way
     these were derived: run the actual /route-finder call against a freshly

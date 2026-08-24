@@ -13,7 +13,7 @@ This reproduces the logic described in the original report.md:
      not recoverable from operator_id_raw or route_operators
   5. Flag distance outliers (haversine vs. recorded approx_distance_km)
   6. Verify route_operators / operators have no orphan pairs
-  7. Run the same post-cleanup integrity checks import.sql runs in Postgres
+  7. Run the same post-cleanup integrity checks import_data.py runs in Postgres
 
 Usage:
     python scripts/clean_data.py \
@@ -450,8 +450,8 @@ def _drop_trailing_blank_columns(df: pd.DataFrame, source: Path) -> pd.DataFrame
     """Drop trailing columns that are blank in the header AND blank in every
     row. This is what happens when a raw export has stray trailing commas
     (e.g. from Excel/Sheets) — pandas names those columns 'Unnamed: N', and
-    they'd otherwise silently shift every downstream \\copy in import.sql /
-    import_in_container.sql out of alignment with the real schema. Only
+    they'd otherwise silently shift every downstream COPY in
+    import_data.py out of alignment with the real schema. Only
     trims from the end, and only when the column is genuinely empty
     everywhere, so real data is never touched.
     """
@@ -744,7 +744,7 @@ def verify(
     route_operators: pd.DataFrame,
     stats: CleaningStats,
 ) -> bool:
-    """Mirror the sanity checks import.sql runs in Postgres, in pandas."""
+    """Mirror the sanity checks import_data.py runs in Postgres, in pandas."""
     checks = {
         "route_stops.stop_id not in stops": (~route_stops["stop_id"].isin(stops["stop_id"])).sum(),
         "route_stops.route_id not in routes": (~route_stops["route_id"].isin(routes["route_id"])).sum(),

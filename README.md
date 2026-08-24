@@ -55,7 +55,7 @@ The frontend calls the FastAPI backend over REST. The backend builds an in-memor
 ```
 backend/     FastAPI app, SQLAlchemy models, NetworkX routing, Alembic migrations, tests
 frontend/    Next.js + TypeScript + Leaflet UI
-data/        Raw exports, cleaning/validation scripts, processed CSVs, schema.sql, import.sql
+data/        Raw exports, cleaning/validation scripts, processed CSVs, schema.sql, import_data.py
 docs/        Project proposal, Gantt chart, defense materials, architecture diagrams
 ```
 
@@ -68,6 +68,20 @@ See `backend/README.md` and `frontend/README.md` for the folder-level breakdown 
 - Docker (Postgres/PostGIS, and optionally OSRM)
 
 ## Local Development Setup
+
+Fastest path (repo root, uses the `Makefile`):
+
+```bash
+git clone https://github.com/080bct026dipesh-beep/my-new-web-app.git
+cd my-new-web-app
+make setup       # data clean+validate, db up, migrate, CSV import, OSRM prep+up
+make seed-admin  # interactive -- create the first admin login
+make up          # build + start the backend
+
+cd frontend && npm install && npm run dev   # separate terminal
+```
+
+Or step by step, without `make`:
 
 ```bash
 # 1. Clone
@@ -83,6 +97,7 @@ python -m venv venv && source venv/bin/activate   # Windows: venv\Scripts\activa
 pip install -r requirements.txt
 cp .env.example .env
 alembic upgrade head          # applies the full migration chain (see below)
+cd .. && python data/scripts/import_data.py && cd backend  # loads the cleaned CSVs
 python3 -m scripts.seed_admin # creates the first admin account
 uvicorn app.main:app --reload
 
@@ -182,10 +197,10 @@ The routing graph is cached per worker process and rebuilt automatically wheneve
 ## Data Pipeline
 
 ```
-data/raw/  →  scripts/clean_data.py  →  data/processed/*_clean.csv  →  schema.sql + import.sql  →  PostgreSQL/PostGIS  →  routing graph
+data/raw/  →  scripts/clean_data.py  →  data/processed/*_clean.csv  →  schema.sql + scripts/import_data.py  →  PostgreSQL/PostGIS  →  routing graph
 ```
 
-`scripts/clean_data.py` removes orphaned `route_stops`, re-sequences stop order per route, recomputes each route's `start_stop_id`/`end_stop_id`/`total_stops`, resolves or nulls `operator_id`, flags distance outliers, and checks for orphan `route_operators`/`operators` pairs — writing validated CSVs plus a `processed/report.md` describing exactly what changed. `scripts/validate_clean.py` re-runs the same integrity checks against the CSVs with no database required. `schema.sql` then builds the schema and `import.sql` loads the CSVs via `\copy` in dependency order, ending with a built-in referential-integrity sanity check. See `data/README.md` and `data/scripts/README.md` for full detail and current dataset row counts.
+`scripts/clean_data.py` removes orphaned `route_stops`, re-sequences stop order per route, recomputes each route's `start_stop_id`/`end_stop_id`/`total_stops`, resolves or nulls `operator_id`, flags distance outliers, and checks for orphan `route_operators`/`operators` pairs — writing validated CSVs plus a `processed/report.md` describing exactly what changed. `scripts/validate_clean.py` re-runs the same integrity checks against the CSVs with no database required. `schema.sql` then builds the schema (via Alembic) and `scripts/import_data.py` loads the CSVs via `COPY` in dependency order, ending with a built-in referential-integrity sanity check. `make data` / `make import` (repo root) run the two scripts for you. See `data/README.md` and `data/scripts/README.md` for full detail and current dataset row counts.
 
 ## Testing
 
