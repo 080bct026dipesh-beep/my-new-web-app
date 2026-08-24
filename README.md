@@ -220,7 +220,20 @@ pytest -v
 
 - `tests/test_routing.py` — unit tests for graph construction and the pathfinder (bidirectional/one-directional edges, transfer edges, direct-vs-transfer preference, graph caching), no database required.
 - `tests/test_stops.py`, `tests/test_route_finder_api.py`, `tests/test_admin_route_status.py` — integration tests against a live database; they skip cleanly if Postgres isn't reachable (`docker compose up -d db` + `alembic upgrade head` first).
+- `tests/test_admin_auth_api.py`, `tests/test_fare_api.py`, `tests/test_admin_crud_api.py` — self-contained coverage for `POST /admin/login` (including the 5/minute rate limit and timing-safe error parity), `GET /fare` band matching, and the admin data-entry endpoints (`POST /stops`, `POST /routes`, `POST /routes/{id}/stops`), each creating and tearing down its own fixtures rather than depending on the shipped dataset.
 - CI (`.github/workflows/ci.yml`) runs the full suite against a real `postgis/postgis:15-3.4` container on every PR.
+
+Frontend tests use **Vitest + React Testing Library**:
+
+```bash
+cd frontend
+npm test          # single run, used in CI
+npm run test:watch
+```
+
+Covers `lib/` (pure helpers plus the `fetch` wrapper in `lib/api.ts`, with `fetch` mocked) and `hooks/` (via `renderHook`, with `lib/api` mocked) — see `frontend/README.md` for the full breakdown. CI's `frontend-checks` job runs `npm test` between lint and build.
+
+The data pipeline also has its own CI job, `data-pipeline-tests`: it runs `data/scripts/test_clean_data.py`, then re-runs `clean_data.py --fail-on-verify-error` and `validate_clean.py` against the committed raw data on every PR, so a regression in the cleaning/validation logic can't slip in unnoticed.
 
 ## Environment Variables
 

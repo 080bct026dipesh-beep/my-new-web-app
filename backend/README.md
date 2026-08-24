@@ -139,6 +139,8 @@ Some tests in `tests/` (e.g. `test_stops.py`) require a live database and will s
 
 Routing/pathfinder unit tests live in `tests/test_routing.py`.
 
+`tests/test_admin_auth_api.py`, `tests/test_fare_api.py`, and `tests/test_admin_crud_api.py` cover the admin-auth login flow (success, wrong password, unknown username, timing-safe error parity, and the 5/minute rate limit actually tripping), `GET /fare` band matching (inclusive-min/exclusive-max boundaries, 404 with no covering band), and the admin data-entry endpoints (`POST /stops`, `POST /routes`, `POST /routes/{id}/stops` — auth enforcement, 404s on unknown references, the 409 on duplicate `sequence_no`, and `graph_meta.version` bumping). All three create and tear down their own fixtures, so they don't depend on the shipped dataset like `test_stops.py` does.
+
 ## Inspecting the live database
 
 Useful for debugging model/schema mismatches:
