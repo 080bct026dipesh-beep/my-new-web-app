@@ -71,7 +71,7 @@ def test_status_flip_auto_invalidates_graph(client):
     """
     Setting a route to pending_release must immediately remove it (and
     any stop only reachable via it) from the live routing graph, with no
-    separate /admin/rebuild-graph call required. Flipping back to active
+    separate POST /graph/reload call required. Flipping back to active
     must restore routability. Always restores 'active' afterward.
     """
     try:

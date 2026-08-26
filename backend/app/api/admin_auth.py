@@ -1,10 +1,9 @@
 """Login endpoint for AdminUser accounts (JWT-based).
 
-Separate from app/api/admin.py: that router (and POST /admin/rebuild-graph
-in app/main.py) is protected by require_admin, which accepts this
-endpoint's JWT as well as the older shared X-Admin-Api-Key secret. This
-router itself is intentionally unprotected (you need to log in before
-you have a token).
+Separate from app/api/admin.py: that router is protected by require_admin,
+which accepts this endpoint's JWT as well as the older shared
+X-Admin-Api-Key secret. This router itself is intentionally unprotected
+(you need to log in before you have a token).
 """
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select

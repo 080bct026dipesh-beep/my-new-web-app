@@ -21,11 +21,13 @@ Kathmandu's public bus network has no unified digital route-finding tool — rid
 - Interactive Leaflet map: colored polylines per route leg (dashed for walking transfers), distinct origin/destination/transfer markers, and a legend
 - Road-following route geometry via OSRM (falls back to straight-line segments if OSRM is unavailable)
 - Historical traffic-congestion overlay — a toggleable panel showing free-flow/moderate/heavy congestion by day-of-week and time-of-day bucket, colored on the map
+- Congestion-aware routing (`avoid_congestion`) and up to 2 route alternatives (`include_alternatives`) on `/route-finder`, alongside the primary result
+- Distance-banded fare lookup (`GET /fare`), returned automatically alongside every `/route-finder` result
 - FastAPI backend with NetworkX-based graph routing
 - PostgreSQL + PostGIS spatial data layer
-- Admin data-entry API for stops, routes, and route-stop assignments, with a separate JWT-based admin-account login
+- Admin data-entry API for stops, routes, and route-stop assignments, gated by either a shared admin API key or a per-admin JWT login
 
-There is no real-time GPS bus tracking, live schedules, or fare estimation in the running app — see [Known Limitations](#known-limitations).
+There is no real-time GPS bus tracking or live schedules in the running app — see [Known Limitations](#known-limitations).
 
 ## System Architecture
 
@@ -94,7 +96,7 @@ docker compose up -d db
 # 3. Backend
 cd backend
 python -m venv venv && source venv/bin/activate   # Windows: venv\Scripts\activate
-pip install -r requirements.txt
+pip install -r requirements.txt -r requirements-dev.txt   # add -dev to run pytest locally
 cp .env.example .env
 alembic upgrade head          # applies the full migration chain (see below)
 cd .. && python data/scripts/import_data.py && cd backend  # loads the cleaned CSVs
@@ -178,17 +180,19 @@ Interactive OpenAPI/Swagger docs are available at `http://localhost:8000/docs` o
 | GET | `/routes` | List routes | — |
 | GET | `/routes/{route_id}` | Route detail | — |
 | GET | `/routes/{route_id}/stops` | Ordered stops on a route | — |
-| GET | `/route-finder` | Find a route between an origin and destination `stop_id` (direct, else single-transfer) | — |
+| GET | `/route-finder` | Find a route between an origin and destination `stop_id` (direct, else single-transfer; `avoid_congestion`/`include_alternatives` query params) | — |
 | GET | `/walking-route` | Foot-profile route between two coordinates (e.g. to the nearest stop) | — |
+| GET | `/fare` | Distance-banded fare lookup | — |
 | GET | `/congestion` | Historical congestion by day-of-week / hour-bucket (defaults to now, Nepal time) | — |
 | GET | `/congestion/buckets` | The fixed set of valid hour buckets | — |
-| POST | `/stops` | Create a stop | `X-Admin-Api-Key` |
-| POST | `/routes` | Create a route | `X-Admin-Api-Key` |
-| POST | `/routes/{route_id}/stops` | Add a stop to a route | `X-Admin-Api-Key` |
-| PATCH | `/routes/{route_id}/status` | Update a route's status | `X-Admin-Api-Key` |
-| POST | `/graph/reload` | Force-rebuild the cached routing graph | `X-Admin-Api-Key` |
-| POST | `/admin/rebuild-graph` | Same as above, defined in `main.py` | `X-Admin-Api-Key` |
+| POST | `/stops` | Create a stop | `require_admin` |
+| POST | `/routes` | Create a route | `require_admin` |
+| POST | `/routes/{route_id}/stops` | Add a stop to a route | `require_admin` |
+| PATCH | `/routes/{route_id}/status` | Update a route's status | `require_admin` |
+| POST | `/graph/reload` | Force-rebuild the cached routing graph | `require_admin` |
 | POST | `/admin/login` | Log in an `AdminUser`, returns a JWT | — |
+
+`require_admin` accepts either the shared `X-Admin-Api-Key` header or a bearer JWT from `POST /admin/login` — see [Admin/Data Management](#admindata-management) below.
 
 ## Routing Algorithm
 
@@ -218,8 +222,9 @@ cd backend
 pytest -v
 ```
 
-- `tests/test_routing.py` — unit tests for graph construction and the pathfinder (bidirectional/one-directional edges, transfer edges, direct-vs-transfer preference, graph caching), no database required.
-- `tests/test_stops.py`, `tests/test_route_finder_api.py`, `tests/test_admin_route_status.py` — integration tests against a live database; they skip cleanly if Postgres isn't reachable (`docker compose up -d db` + `alembic upgrade head` first).
+- `tests/test_routing.py`, `tests/test_pathfinder_alternatives.py` — unit tests for graph construction and the pathfinder (bidirectional/one-directional edges, transfer edges, direct-vs-transfer preference, graph caching, route alternatives), no database required.
+- `tests/test_congestion_weight_fn.py`, `tests/test_duration_weight_fn.py`, `tests/test_congestion_zones.py` — unit tests for the congestion-aware and estimated-duration edge-weighting functions used by `avoid_congestion` and the `fastest_estimated` alternative.
+- `tests/test_stops.py`, `tests/test_stops_api.py`, `tests/test_route_finder_api.py`, `tests/test_route_geometry_api.py`, `tests/test_admin_route_status.py` — integration tests against a live database; they skip cleanly if Postgres isn't reachable (`docker compose up -d db` + `alembic upgrade head` first).
 - `tests/test_admin_auth_api.py`, `tests/test_fare_api.py`, `tests/test_admin_crud_api.py` — self-contained coverage for `POST /admin/login` (including the 5/minute rate limit and timing-safe error parity), `GET /fare` band matching, and the admin data-entry endpoints (`POST /stops`, `POST /routes`, `POST /routes/{id}/stops`), each creating and tearing down its own fixtures rather than depending on the shipped dataset.
 - CI (`.github/workflows/ci.yml`) runs the full suite against a real `postgis/postgis:15-3.4` container on every PR.
 
@@ -250,17 +255,16 @@ Set in `backend/.env` (see `backend/.env.example`):
 
 ## Admin/Data Management
 
-Two independent auth mechanisms:
+The data-entry endpoints (`POST /stops`, `POST /routes`, `POST /routes/{id}/stops`, `PATCH /routes/{id}/status`, `POST /graph/reload`) are behind `require_admin`, which accepts **either** of two credentials:
 
-- **`X-Admin-Api-Key` header** — one shared secret gating the data-entry endpoints (`POST /stops`, `POST /routes`, `POST /routes/{id}/stops`, `POST /graph/reload`, `POST /admin/rebuild-graph`).
-- **JWT via `POST /admin/login`** — authenticates an `AdminUser` account (seeded with `python3 -m scripts.seed_admin`) and returns a bearer token. Not currently required by the data-entry endpoints above — the two systems coexist rather than one gating the other. Rate-limited to 5 requests/minute per IP.
+- **`X-Admin-Api-Key` header** — one shared secret, for scripted/ETL callers.
+- **JWT via `POST /admin/login`** — authenticates an `AdminUser` account (seeded with `python3 -m scripts.seed_admin`) and returns a bearer token, attaching that specific admin to the request for future per-admin authorization/audit use. Rate-limited to 5 requests/minute per IP.
 
 New `stop_id`/`route_id` values are server-generated, not caller-supplied. See `backend/README.md` for details.
 
 ## Known Limitations
 
 - No real-time bus location/GPS tracking or live schedules — routing is based on the static stop/route dataset, and the congestion overlay is historical (day-of-week/time-bucket averages), not live traffic.
-- No fare estimation in the API/frontend yet, though a `fare_rules` table (distance-banded fares) exists in the schema.
 - Route geometry depends on OSRM being reachable; without it, legs fall back to straight-line segments.
 - Dataset coverage and field verification vary by record — see `data/README.md` / `data/processed/README.md` for current caveats (e.g. fare figures are a desk estimate, not yet field-verified).
 
@@ -271,7 +275,6 @@ Not implemented — potential future work:
 - Real-time bus location tracking
 - Live traffic-aware routing (beyond the current historical congestion overlay)
 - ETA estimation
-- Fare display in the app, using the existing `fare_rules` table
 - Expanded dataset coverage
 - Mobile/PWA support
 - Route reliability metrics

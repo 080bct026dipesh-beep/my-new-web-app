@@ -1,0 +1,7 @@
+# Test/dev-only deps -- not installed in the runtime Docker image
+# (backend/Dockerfile only installs requirements.txt). Install with:
+#   pip install -r requirements.txt -r requirements-dev.txt
+-r requirements.txt
+
+pytest==8.2.2
+httpx==0.27.0

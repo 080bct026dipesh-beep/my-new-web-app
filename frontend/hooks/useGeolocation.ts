@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { LatLng, Stop, WalkingRoute } from "@/types/route";
 import { buildStopLabel } from "@/lib/stopLabel";
 import { getNearbyStops, getWalkingRoute } from "@/lib/api";
@@ -20,10 +20,11 @@ interface UseGeolocationResult {
 /**
  * Detects the browser's geolocation, finds the nearest stop via
  * /stops/nearby, and fetches a walking path to it via /walking-route.
- * Auto-runs once on mount (silently -- a denial there is a no-op, not an
- * error, since the user hasn't interacted with the page yet) and again
- * any time `useMyLocation()` is called explicitly (which does surface
- * errors).
+ * Only runs when `useMyLocation()` is called explicitly by the user (a
+ * button press) -- browsers increasingly refuse or auto-dismiss a
+ * permission prompt that wasn't triggered by a user gesture, so firing
+ * this automatically on mount could silently fail (or just look broken)
+ * depending on the browser, with no user action to retry from.
  */
 export function useGeolocation({ stops, onStopFound }: UseGeolocationOptions): UseGeolocationResult {
   const [userLocation, setUserLocation] = useState<LatLng | null>(null);
@@ -91,23 +92,6 @@ export function useGeolocation({ stops, onStopFound }: UseGeolocationOptions): U
       { timeout: 8000 }
     );
   }
-
-  // Silent auto-detect once on load -- never overwrites text the user
-  // already typed (onStopFound only fills a blank field), and a denial
-  // here doesn't surface an error message on a page they haven't
-  // interacted with yet.
-  useEffect(() => {
-    if (!navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        locateNearestStop(position.coords.latitude, position.coords.longitude);
-      },
-      () => {
-        /* permission denied or unavailable -- fine, "Use my location" is still there */
-      },
-      { timeout: 8000 }
-    );
-  }, [locateNearestStop]);
 
   return { userLocation, nearestStop, walkingRoute, locating, locateError, useMyLocation };
 }

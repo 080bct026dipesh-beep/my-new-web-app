@@ -52,7 +52,7 @@ cp .env.example .env
 # 3. Python environment
 python -m venv venv
 source venv/bin/activate      # Windows: venv\Scripts\activate
-pip install -r requirements.txt
+pip install -r requirements.txt -r requirements-dev.txt   # add -dev to run pytest locally
 
 # 4. Apply migrations (creates stops / routes / route_stops / etc.)
 alembic upgrade head
@@ -86,20 +86,19 @@ Backend runs at `http://localhost:8000` (interactive docs at `/docs`).
 
 ## Admin API
 
-Two separate auth mechanisms, for two separate purposes:
+Data-entry endpoints in `app/api/admin.py` (`POST /stops`, `POST /routes`,
+`POST /routes/{route_id}/stops`, `PATCH /routes/{route_id}/status`,
+`POST /graph/reload`) are behind `require_admin`, which accepts **either**
+of two credentials:
 
-- **`X-Admin-Api-Key` header** (`ADMIN_API_KEY` in `.env`) — gates the
-  data-entry endpoints in `app/api/admin.py`: `POST /stops`, `POST /routes`,
-  `POST /routes/{route_id}/stops`, `PATCH /routes/{route_id}/status`,
-  `POST /graph/reload`, and `POST /admin/rebuild-graph` (in `main.py`).
-  One shared secret for the small team doing data entry — not per-user.
+- **`X-Admin-Api-Key` header** (`ADMIN_API_KEY` in `.env`) — one shared
+  secret, for scripted/ETL callers.
 - **JWT via `POST /admin/login`** — authenticates an `AdminUser` account
   (seeded with `python3 -m scripts.seed_admin`, see Setup step 6) and
-  returns a bearer token. Not currently required by anything in
-  `admin.py` — the two systems coexist; `admin.py`'s endpoints still use
-  the shared key. Rate-limited to 5 requests/minute per IP (see
-  `app/core/rate_limit.py`) -- expect a 429 if you're hammering this
-  endpoint repeatedly while testing.
+  returns a bearer token, attaching that specific admin to the request
+  for future per-admin authorization/audit use. Rate-limited to 5
+  requests/minute per IP (see `app/core/rate_limit.py`) -- expect a 429
+  if you're hammering this endpoint repeatedly while testing.
 
 `stop_id`/`route_id` for newly created rows are server-generated, not
 caller-supplied: stops get the next sequential `S####` value, routes get
@@ -107,7 +106,7 @@ a reserved `M######` prefix (kept separate from the existing `R`-number
 space, which is OSM-sourced and not sequential — see
 `app/db/id_generator.py`).
 
-Flipping a route's status via `PATCH /routes/{route_id}/status`, or adding a stop to a route via `POST /routes/{route_id}/stops`, bumps a shared `graph_meta.version` counter in the database and refreshes this process's own cache immediately. Every other worker process/replica notices the version change on its own next request and rebuilds automatically -- this is what makes cache invalidation correct beyond a single-process deployment, rather than relying solely on the request that happened to make the change. See `app/models/graph_meta.py` for the full rationale. `/graph/reload` and `/admin/rebuild-graph` remain available as manual escape hatches.
+Flipping a route's status via `PATCH /routes/{route_id}/status`, or adding a stop to a route via `POST /routes/{route_id}/stops`, bumps a shared `graph_meta.version` counter in the database and refreshes this process's own cache immediately. Every other worker process/replica notices the version change on its own next request and rebuilds automatically -- this is what makes cache invalidation correct beyond a single-process deployment, rather than relying solely on the request that happened to make the change. See `app/models/graph_meta.py` for the full rationale. `POST /graph/reload` remains available as a manual escape hatch.
 
 `routes.operator_id` can legitimately be `NULL` — this isn't a data bug.
 Some routes are run by informal/unregistered local microbus services with
@@ -192,5 +191,6 @@ backend/
 ├── .env.example
 ├── alembic.ini
 ├── Dockerfile
-└── requirements.txt
+├── requirements.txt          Runtime deps only -- what the Docker image installs
+└── requirements-dev.txt      + pytest/httpx, for running tests locally
 ```

@@ -4,7 +4,7 @@ SQLAlchemy ORM model for administrator accounts.
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, Integer, String
+from sqlalchemy import Integer, String, TIMESTAMP, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
@@ -54,9 +54,13 @@ class AdminUser(Base):
     # ----------------------------------------
     # Metadata
     # ----------------------------------------
+    # DB-generated, timezone-aware, matching every other table's created_at
+    # (Route, Stop, SegmentCongestionStat) -- this used to be a Python-side
+    # `default=datetime.utcnow` on a plain (naive) DateTime, the one column
+    # in the schema that didn't follow that pattern.
     created_at: Mapped[datetime] = mapped_column(
-        DateTime,
-        default=datetime.utcnow,
+        TIMESTAMP(timezone=True),
+        server_default=text("now()"),
         nullable=False,
     )
 

@@ -138,10 +138,10 @@ def test_get_current_admin_rejects_garbage_token(client):
 
 def test_login_token_grants_access_to_admin_write_endpoint(client, admin_user):
     """require_admin (app/core/security.py), the dependency behind
-    app/api/admin.py and POST /admin/rebuild-graph, accepts a bearer
-    token from POST /admin/login as an alternative to X-Admin-Api-Key.
-    Previously nothing verified issued tokens at all -- this pins that
-    a real login token now actually grants access to a protected route."""
+    app/api/admin.py, accepts a bearer token from POST /admin/login as an
+    alternative to X-Admin-Api-Key. Previously nothing verified issued
+    tokens at all -- this pins that a real login token now actually
+    grants access to a protected route."""
     login_resp = client.post("/admin/login", json={"username": admin_user, "password": TEST_PASSWORD})
     assert login_resp.status_code == 200
     token = login_resp.json()["access_token"]

@@ -11,6 +11,7 @@ multiple times in one route, e.g. NY-03.
 """
 
 import math
+import threading
 
 import networkx as nx
 from sqlalchemy.orm import Session
@@ -21,6 +22,14 @@ from app.routing.constants import EARTH_RADIUS, INTERCHANGE_DISTANCE, TRANSFER_P
 
 _graph_cache: nx.DiGraph | None = None
 _cached_version: int | None = None
+# Guards rebuilds of the two globals above. FastAPI runs sync routes (all
+# of ours) in a threadpool, so two requests in the same worker process can
+# genuinely run concurrently -- without this, two threads that both see a
+# stale/missing cache right after a version bump would both call
+# build_graph() at once. Harmless before (just duplicated work, no
+# corruption -- reference reassignment is GIL-atomic), but cheap enough to
+# just not do twice.
+_graph_lock = threading.Lock()
 
 
 def haversine_distance_m(
@@ -271,8 +280,13 @@ def get_cached_graph(
     version_is_stale = current_version is not None and current_version != _cached_version
 
     if _graph_cache is None or refresh or version_is_stale:
-        _graph_cache = build_graph(session)
-        _cached_version = current_version
+        with _graph_lock:
+            # Re-check inside the lock: another thread may have already
+            # rebuilt while this one was waiting to acquire it.
+            version_is_stale = current_version is not None and current_version != _cached_version
+            if _graph_cache is None or refresh or version_is_stale:
+                _graph_cache = build_graph(session)
+                _cached_version = current_version
 
     return _graph_cache
 

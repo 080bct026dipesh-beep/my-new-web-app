@@ -9,7 +9,6 @@ from slowapi.errors import RateLimitExceeded
 from app.api import admin, admin_auth, congestion, fare, routes, routing, stops
 from app.core.config import get_settings
 from app.core.rate_limit import limiter
-from app.core.security import require_admin
 from app.db.session import SessionLocal
 from app.routing import graph_builder
 
@@ -43,10 +42,11 @@ app = FastAPI(
 
 # Rate limiting: currently only applied to /admin/login (see
 # app/api/admin_auth.py) -- that endpoint is intentionally unprotected by
-# require_admin_key (you need to log in before you have a token), which
-# makes it the one open door for password brute-forcing. Keyed by client
-# IP; fine for a small internal tool, revisit if this ever sits behind a
-# proxy that doesn't forward the real client IP.
+# require_admin, which makes it the one open door for password
+# brute-forcing. Keyed by client IP; fine for a small internal tool,
+# revisit if this ever sits behind a proxy that doesn't forward the real
+# client IP, or runs with multiple worker processes (the in-memory
+# storage backend below doesn't share state across workers).
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
@@ -62,16 +62,11 @@ def health_check():
     return {"status": "ok"}
 
 
-@app.post("/admin/rebuild-graph", dependencies=[Depends(require_admin)])
-def rebuild_graph():
-    db = SessionLocal()
-    try:
-        graph = graph_builder.get_cached_graph(db, refresh=True)
-        return {"status": "ok", "stops": graph.number_of_nodes(), "edges": graph.number_of_edges()}
-    finally:
-        db.close()
-
-
+# Graph-rebuild is exposed once, as POST /graph/reload (app/api/admin.py) --
+# this used to be duplicated here as /admin/rebuild-graph, doing the exact
+# same get_cached_graph(refresh=True) call. Removed rather than kept as an
+# alias: two endpoints for one action is one more thing to keep in sync and
+# one more place require_admin's auth logic has to be gotten right.
 app.include_router(stops.router)
 app.include_router(routes.router)
 app.include_router(routing.router)
