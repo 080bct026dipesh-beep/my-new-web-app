@@ -9,7 +9,7 @@ from slowapi.errors import RateLimitExceeded
 from app.api import admin, admin_auth, congestion, fare, routes, routing, stops
 from app.core.config import get_settings
 from app.core.rate_limit import limiter
-from app.core.security import require_admin_key
+from app.core.security import require_admin
 from app.db.session import SessionLocal
 from app.routing import graph_builder
 
@@ -62,7 +62,7 @@ def health_check():
     return {"status": "ok"}
 
 
-@app.post("/admin/rebuild-graph", dependencies=[Depends(require_admin_key)])
+@app.post("/admin/rebuild-graph", dependencies=[Depends(require_admin)])
 def rebuild_graph():
     db = SessionLocal()
     try:

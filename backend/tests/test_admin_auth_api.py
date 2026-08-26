@@ -119,11 +119,8 @@ def test_login_rejects_empty_password(client, admin_user):
 
 
 def test_get_current_admin_rejects_garbage_token(client):
-    """Exercises get_current_admin (app/core/security.py), the JWT-decode
-    dependency the audit flagged as written but never wired into any route.
-    Not attached to a live endpoint yet, so we drive it directly rather
-    than through app.main -- this pins its behavior for whenever it is
-    wired up."""
+    """Exercises get_current_admin (app/core/security.py) directly against
+    a garbage token, independent of any specific route wiring."""
     from fastapi import HTTPException
     from fastapi.security import HTTPAuthorizationCredentials
 
@@ -137,6 +134,49 @@ def test_get_current_admin_rejects_garbage_token(client):
         assert exc_info.value.status_code == 401
     finally:
         session.close()
+
+
+def test_login_token_grants_access_to_admin_write_endpoint(client, admin_user):
+    """require_admin (app/core/security.py), the dependency behind
+    app/api/admin.py and POST /admin/rebuild-graph, accepts a bearer
+    token from POST /admin/login as an alternative to X-Admin-Api-Key.
+    Previously nothing verified issued tokens at all -- this pins that
+    a real login token now actually grants access to a protected route."""
+    login_resp = client.post("/admin/login", json={"username": admin_user, "password": TEST_PASSWORD})
+    assert login_resp.status_code == 200
+    token = login_resp.json()["access_token"]
+
+    resp = client.post(
+        "/stops",
+        json={"stop_name": f"Test Stop JWT {uuid.uuid4().hex[:6]}", "lat": 27.7, "lng": 85.3},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 201, resp.text
+
+    # Clean up -- this test doesn't use the two_stops fixture, so delete
+    # directly.
+    from app.db.session import SessionLocal as _SessionLocal
+    from app.models import Stop
+
+    session = _SessionLocal()
+    try:
+        row = session.get(Stop, resp.json()["stop_id"])
+        if row is not None:
+            session.delete(row)
+            session.commit()
+    finally:
+        session.close()
+
+
+def test_garbage_bearer_token_rejected_by_admin_write_endpoint(client):
+    """require_admin must reject an invalid bearer token exactly like a
+    missing/wrong X-Admin-Api-Key, not silently fall through."""
+    resp = client.post(
+        "/stops",
+        json={"stop_name": "Should Not Be Created", "lat": 27.7, "lng": 85.3},
+        headers={"Authorization": "Bearer not-a-real-jwt"},
+    )
+    assert resp.status_code == 401
 
 
 def test_login_rate_limited_after_five_attempts_per_minute(client, admin_user):

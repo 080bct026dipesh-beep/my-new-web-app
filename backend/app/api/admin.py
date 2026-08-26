@@ -1,15 +1,16 @@
 """Write endpoints for populating the network (data entry / ETL use).
 
-Every route here is behind `require_admin_key` -- there's no per-user
-auth in this project, just a shared secret for the small team doing
-data entry. See app/core/security.py.
+Every route here is behind `require_admin` -- accepts either the
+shared X-Admin-Api-Key header (scripted/ETL callers, unchanged from
+before) or a per-admin bearer JWT from POST /admin/login. See
+app/core/security.py for require_admin / get_current_admin.
 """
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.core.security import require_admin_key
+from app.core.security import require_admin
 from app.db.id_generator import next_route_id, next_stop_id
 from app.db.queries import bump_graph_version
 from app.db.session import get_db
@@ -20,7 +21,7 @@ from app.models import Stop as StopORM
 
 from app.schemas import RouteCreate, RouteOut, RouteStatusUpdate, RouteStopCreate, StopCreate, StopOut
 
-router = APIRouter(dependencies=[Depends(require_admin_key)])
+router = APIRouter(dependencies=[Depends(require_admin)])
 
 
 @router.post("/stops", response_model=StopOut, status_code=status.HTTP_201_CREATED)
