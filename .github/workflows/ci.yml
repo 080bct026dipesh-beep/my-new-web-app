@@ -37,6 +37,15 @@ jobs:
           python-version: "3.11"
       - run: pip install -r requirements.txt -r requirements-dev.txt
       - run: alembic upgrade head
+      - name: Load sample dataset (data/processed/*_clean.csv)
+        # Several tests assert against real stop/route IDs from the
+        # shipped dataset (see their docstrings: "...and sample data
+        # imported"), not just a migrated-but-empty schema -- e.g.
+        # test_route_finder_api.py's S0072->S0326 case and
+        # test_admin_route_status.py's R2295986. Runs from the repo
+        # root since import_data.py resolves paths relative to it.
+        working-directory: .
+        run: python data/scripts/import_data.py
       - run: pytest
 
   data-pipeline-tests:
@@ -48,6 +57,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
+          # scipy>=1.18 (scripts/requirements.txt) requires Python >=3.12
+          # -- this used to be pinned to 3.11, which predates that pin.
           python-version: "3.12"
       - run: pip install -r scripts/requirements.txt pytest
       - name: Run clean_data.py regression tests
@@ -67,6 +78,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
+          # jsdom 30 (test dependency) pulls in undici, which requires
+          # Node >=22.14 or >=24 -- this used to be pinned to 20, which
+          # predates that jsdom bump.
           node-version: "22"
       - name: Install, lint, test, and build
         run: |
