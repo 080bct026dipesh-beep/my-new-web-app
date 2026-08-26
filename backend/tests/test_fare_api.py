@@ -33,15 +33,18 @@ def client():
 
 @pytest.fixture
 def fare_band(client):
-    """A dedicated [10.0, 20.0) km band, min_distance_km <= x < max_distance_km,
-    picked well clear of typical shipped bands so no other row can match a
-    query inside it and mask a bug in fare_for_distance()'s own filtering."""
+    """A dedicated [500.0, 510.0) km band, min_distance_km <= x < max_distance_km,
+    picked well clear of the shipped dataset's real bands (which top out at
+    99 km -- see data/processed/fare_rules_clean.csv) so no other row can
+    match a query inside it and mask a bug in fare_for_distance()'s own
+    filtering, and so this row can't collide with real bands under the
+    fare_rules_distance_range_excl exclusion constraint."""
     session = SessionLocal()
     fare_id = f"test-band-{uuid.uuid4().hex[:8]}"
     row = FareRule(
         fare_id=fare_id,
-        min_distance_km=10.0,
-        max_distance_km=20.0,
+        min_distance_km=500.0,
+        max_distance_km=510.0,
         fare_npr_min=25.0,
         fare_npr_max=40.0,
         student_discount_pct=50.0,
@@ -61,7 +64,7 @@ def fare_band(client):
 
 
 def test_fare_lookup_matches_band_containing_distance(client, fare_band):
-    resp = client.get("/fare", params={"distance_km": 15.0})
+    resp = client.get("/fare", params={"distance_km": 505.0})
     assert resp.status_code == 200
     body = resp.json()
     assert body["fare_id"] == fare_band
@@ -72,7 +75,7 @@ def test_fare_lookup_matches_band_containing_distance(client, fare_band):
 
 def test_fare_lookup_is_inclusive_of_min_distance(client, fare_band):
     """Band is [min, max) -- querying exactly at min_distance_km must match."""
-    resp = client.get("/fare", params={"distance_km": 10.0})
+    resp = client.get("/fare", params={"distance_km": 500.0})
     assert resp.status_code == 200
     assert resp.json()["fare_id"] == fare_band
 
@@ -80,7 +83,7 @@ def test_fare_lookup_is_inclusive_of_min_distance(client, fare_band):
 def test_fare_lookup_is_exclusive_of_max_distance(client, fare_band):
     """Querying exactly at max_distance_km must NOT match this band (the
     next band up, if any, owns that boundary point)."""
-    resp = client.get("/fare", params={"distance_km": 20.0})
+    resp = client.get("/fare", params={"distance_km": 510.0})
     if resp.status_code == 200:
         assert resp.json()["fare_id"] != fare_band
     else:
