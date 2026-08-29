@@ -31,6 +31,20 @@ class Settings(BaseSettings):
     DEFAULT_PAGE_SIZE: int = 50
     MAX_PAGE_SIZE: int = 200
 
+    # In-process response cache TTLs (seconds) for read-mostly GET
+    # endpoints -- see app/core/response_cache.py. Kept short since the
+    # underlying data can change via /admin writes at any time; long
+    # enough to absorb bursty repeat requests (map re-renders, pagination
+    # clicks, multiple users browsing the same route) within a session.
+    STOPS_CACHE_TTL_S: int = 30
+    ROUTES_CACHE_TTL_S: int = 30
+    # Congestion has no admin write path that should invalidate it (real
+    # traffic gets recorded on every /route-finder call -- invalidating
+    # on every write would defeat the cache), so this TTL is the only
+    # thing bounding staleness. 60s is short relative to the 3-hour
+    # buckets the data itself is aggregated into.
+    CONGESTION_CACHE_TTL_S: int = 60
+
     # Comma-separated list of allowed CORS origins, e.g.
     # "https://app.example.com,https://staging.example.com".
     # Defaults to the local Next.js dev server so `docker compose up`

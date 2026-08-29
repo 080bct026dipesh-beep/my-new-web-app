@@ -14,12 +14,15 @@ returns it, no writes.
 from fastapi import APIRouter, Query, Depends
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
+from app.core.response_cache import cached_response
 from app.db import queries
 from app.db.session import get_db
 from app.routing.time_buckets import HOUR_BUCKETS, day_and_bucket_for, hour_bucket_start, now_in_nepal
 from app.schemas import CongestionLevel, CongestionResponse, CongestionSegmentOut
 
 router = APIRouter(tags=["congestion"])
+settings = get_settings()
 
 # Ratio thresholds for avg_duration_s / free_flow_duration_s. Tuned to be
 # forgiving of GPS/OSRM noise on short segments (a 90s hop naturally has
@@ -38,6 +41,9 @@ def _classify(ratio: float) -> CongestionLevel:
 
 
 @router.get("/congestion", response_model=CongestionResponse)
+@cached_response(
+    "congestion", ttl_seconds=settings.CONGESTION_CACHE_TTL_S, key_params=("day_of_week", "hour")
+)
 def get_congestion(
     day_of_week: int | None = Query(
         None, ge=0, le=6, description="0=Monday..6=Sunday. Defaults to today (Nepal time)."

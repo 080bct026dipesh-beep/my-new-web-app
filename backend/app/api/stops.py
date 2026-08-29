@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.core.response_cache import cached_response
 from app.db import queries
 from app.db.session import get_db
 from app.schemas import RouteOut, StopListOut, StopOut
@@ -34,6 +35,9 @@ def stops_nearby(
 
 
 @router.get("/stops", response_model=StopListOut)
+@cached_response(
+    "stops", ttl_seconds=settings.STOPS_CACHE_TTL_S, key_params=("offset", "limit", "district")
+)
 def list_stops(
     offset: int = Query(0, ge=0),
     limit: int = Query(settings.DEFAULT_PAGE_SIZE, ge=1, le=settings.MAX_PAGE_SIZE),
@@ -46,6 +50,7 @@ def list_stops(
 
 
 @router.get("/stops/{stop_id}", response_model=StopOut)
+@cached_response("stops", ttl_seconds=settings.STOPS_CACHE_TTL_S, key_params=("stop_id",))
 def read_stop(stop_id: str, db: Session = Depends(get_db)):
     """Registered after /stops and /stops/nearby -- FastAPI matches those
     static path segments first, so 'nearby' can never be mis-parsed as a

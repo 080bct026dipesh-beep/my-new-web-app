@@ -10,6 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from app.core.response_cache import invalidate as invalidate_cache
 from app.core.security import require_admin
 from app.db.id_generator import next_route_id, next_stop_id
 from app.db.queries import bump_graph_version
@@ -48,6 +49,7 @@ def create_stop(payload: StopCreate, db: Session = Depends(get_db)) -> StopOut:
     db.add(row)
     db.commit()
     db.refresh(row)
+    invalidate_cache("stops")
     return StopOut.model_validate(row)
 
 
@@ -76,6 +78,7 @@ def create_route(payload: RouteCreate, db: Session = Depends(get_db)) -> RouteOu
     db.add(row)
     db.commit()
     db.refresh(row)
+    invalidate_cache("routes")
     return RouteOut.model_validate(row)
 
 
@@ -103,6 +106,8 @@ def add_route_stop(route_id: str, payload: RouteStopCreate, db: Session = Depend
     # /admin/graph/reload by hand. bump_graph_version() makes every worker
     # process notice on its next request instead of relying on that.
     bump_graph_version(db)
+    invalidate_cache("routes")
+    invalidate_cache("route_geometry")
 
     return {"route_id": route_id, "stop_id": payload.stop_id, "sequence_no": payload.sequence_no}
 
@@ -121,6 +126,7 @@ def update_route_status(route_id: str, payload: RouteStatusUpdate, db: Session =
     # whichever admin made this call sees it reflected right away too.
     bump_graph_version(db)
     get_cached_graph(db, refresh=True)
+    invalidate_cache("routes")
 
     return RouteOut.model_validate(row)
 
