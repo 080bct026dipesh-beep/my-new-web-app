@@ -77,11 +77,22 @@ them without a test failing.
 
 ## CI
 
-There's no dedicated data-pipeline CI workflow committed yet (only
-`.github/workflows/ci.yml`, which covers the backend/frontend test suites,
-not this pipeline). A workflow that re-runs the pipeline against `data/raw`,
-validates the committed `data/processed` output, and warns on drift would
-be a natural addition here.
+`.github/workflows/ci.yml` has a dedicated `data-pipeline-tests` job for
+this pipeline, run on every PR/push to `main`:
+
+1. `pytest test_clean_data.py` — the regression tests above
+2. `python scripts/clean_data.py --raw-dir raw --out-dir processed --fail-on-verify-error`
+   — re-runs cleaning against the committed `data/raw` and fails the build
+   if any referential-integrity check comes back nonzero
+3. `python scripts/validate_clean.py --dir processed` — validates the
+   resulting `data/processed` output
+
+The `backend-tests` job in the same workflow separately runs
+`python data/scripts/import_data.py` (from the repo root) to load that
+`data/processed` output into Postgres before the backend test suite runs,
+since several backend tests assert against real stop/route IDs from the
+shipped dataset (e.g. `test_route_finder_api.py`'s `S0072`,
+`test_admin_route_status.py`'s `R2295986`).
 
 ## Known caveats / things to verify against your real data
 

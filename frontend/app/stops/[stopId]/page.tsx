@@ -31,6 +31,8 @@ export default function StopDetailPage() {
         if (cancelled) return;
         if (err instanceof ApiError && err.status === 404) {
           setNotFound(true);
+        } else if (err instanceof ApiError && err.kind === "timeout") {
+          setError("This is taking longer than usual. Try again in a moment.");
         } else {
           setError("Couldn't load this stop. Try again.");
         }

@@ -46,10 +46,17 @@ export function useRouteSearch(): UseRouteSearchResult {
       }
     } catch (err) {
       if (requestIdRef.current !== requestId) return;
-      const message =
-        err instanceof ApiError && err.kind !== "network"
-          ? "Something went wrong. Try again."
-          : "Couldn't reach the server. Check your connection and try again.";
+      let message = "Couldn't reach the server. Check your connection and try again.";
+      if (err instanceof ApiError) {
+        if (err.kind === "timeout") {
+          // route-finder gets the longer 20s budget specifically because it
+          // may do OSRM-dependent work -- a timeout here most plausibly
+          // means that's running slow, not that the request is malformed.
+          message = "This is taking longer than usual. Try again in a moment.";
+        } else if (err.kind !== "network") {
+          message = "Something went wrong. Try again.";
+        }
+      }
       setError(message);
     } finally {
       if (requestIdRef.current === requestId) setLoading(false);

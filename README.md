@@ -276,8 +276,12 @@ Not implemented — potential future work:
 - Live traffic-aware routing (beyond the current historical congestion overlay)
 - ETA estimation
 - Expanded dataset coverage
-- Mobile/PWA support
 - Route reliability metrics
+
+PWA support (installable manifest + app icons, offline-capable app shell,
+stale-while-revalidate caching for `/stops` `/routes` `/congestion`) and
+mobile responsiveness have both since been implemented — see
+`frontend/public/sw.js` and `frontend/app/manifest.ts`.
 
 ## Team
 

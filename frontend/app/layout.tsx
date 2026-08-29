@@ -1,10 +1,21 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import NavBar from "@/components/layout/NavBar";
+import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 
 export const metadata: Metadata = {
   title: "Kathmandu Bus Route Finder",
   description: "Find direct and single-transfer bus routes across Kathmandu Valley",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "KTM Bus",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#2563EB",
 };
 
 export default function RootLayout({
@@ -15,6 +26,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="flex h-full flex-col">
+        <ServiceWorkerRegistration />
         <NavBar />
         <div className="min-h-0 flex-1">{children}</div>
       </body>

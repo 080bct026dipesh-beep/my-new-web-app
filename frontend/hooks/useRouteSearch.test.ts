@@ -66,6 +66,31 @@ describe("useRouteSearch", () => {
     expect(hook.current.loading).toBe(false);
   });
 
+  it("sets a distinct 'taking longer than usual' message on a timeout, not the generic error copy", async () => {
+    vi.spyOn(api, "findRoute").mockRejectedValue(new api.ApiError("boom", "timeout"));
+
+    const { result: hook } = renderHook(() => useRouteSearch());
+    await act(async () => {
+      await hook.current.search("S0001", "S0002");
+    });
+
+    expect(hook.current.error).toMatch(/taking longer than usual/i);
+    expect(hook.current.error).not.toMatch(/couldn't reach the server/i);
+    expect(hook.current.loading).toBe(false);
+  });
+
+  it("sets the generic error message on a non-timeout, non-network failure (http/parse)", async () => {
+    vi.spyOn(api, "findRoute").mockRejectedValue(new api.ApiError("boom", "http", 500));
+
+    const { result: hook } = renderHook(() => useRouteSearch());
+    await act(async () => {
+      await hook.current.search("S0001", "S0002");
+    });
+
+    expect(hook.current.error).toMatch(/something went wrong/i);
+    expect(hook.current.loading).toBe(false);
+  });
+
   it("ignores a slower, superseded search's result once a newer search has started", async () => {
     // Regression guard for the requestIdRef race guard: fire search #1
     // (slow), then immediately fire search #2 (fast) before #1 resolves.
