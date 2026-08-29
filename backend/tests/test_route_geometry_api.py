@@ -58,7 +58,9 @@ def test_geometry_returns_osrm_result_shape(client, monkeypatch):
         "duration_s": 210.0,
     }
     monkeypatch.setattr(
-        routes_api, "get_route_geometry", lambda coords, profile="driving": fake_result
+        routes_api,
+        "get_route_geometry",
+        lambda coords, profile="driving", bearings=None, radiuses=None: fake_result,
     )
 
     res = client.get(f"/routes/{route_id}/geometry")
@@ -71,7 +73,7 @@ def test_geometry_502_when_osrm_fails(client, monkeypatch):
     if route_id is None:
         pytest.skip("No route with >= 2 stops in DB to check")
 
-    def _raise(coords, profile="driving"):
+    def _raise(coords, profile="driving", bearings=None, radiuses=None):
         raise OSRMError("connection refused")
 
     monkeypatch.setattr(routes_api, "get_route_geometry", _raise)

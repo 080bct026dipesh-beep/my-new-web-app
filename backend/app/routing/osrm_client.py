@@ -56,12 +56,45 @@ def _cache_set(key: tuple, value: dict) -> None:
     _route_cache[key] = (time.monotonic(), value)
 
 
-def get_route_geometry(coords: list[tuple[float, float]], profile: str = "driving") -> dict:
-    """coords: list of (lat, lon) in travel order, at least 2 points."""
+def get_route_geometry(
+    coords: list[tuple[float, float]],
+    profile: str = "driving",
+    bearings: list[tuple[float, int] | None] | None = None,
+    radiuses: list[float | None] | None = None,
+) -> dict:
+    """coords: list of (lat, lon) in travel order, at least 2 points.
+
+    bearings: optional per-waypoint (heading_degrees, range_degrees) hint,
+    one entry per coordinate (or None for a given waypoint to leave it
+    unconstrained). Restricts OSRM's snap to road segments travelling in
+    roughly that direction -- the fix for a waypoint sitting near a
+    divided road, where the nearest edge geometrically can be the wrong
+    carriageway for the direction actually being travelled. See
+    app/api/routing.py::_bearings_for for how these get computed.
+
+    radiuses: optional per-waypoint max snap distance in meters (or None
+    for OSRM's default of unlimited). Paired with bearings so a tight
+    heading constraint can't push a snap out to some distant edge that
+    happens to match -- if nothing satisfying both is within radius,
+    OSRM returns an error, which callers already handle by falling back
+    (see _attach_road_geometry's `except OSRMError: pass`).
+
+    Both are optional and independent of each other; passing neither
+    reproduces the previous unconstrained behavior exactly.
+    """
     if len(coords) < 2:
         raise ValueError("Need at least 2 coordinates for OSRM routing")
+    if bearings is not None and len(bearings) != len(coords):
+        raise ValueError("bearings must have exactly one entry per coordinate")
+    if radiuses is not None and len(radiuses) != len(coords):
+        raise ValueError("radiuses must have exactly one entry per coordinate")
 
-    cache_key = (profile, tuple(coords))
+    cache_key = (
+        profile,
+        tuple(coords),
+        tuple(bearings) if bearings is not None else None,
+        tuple(radiuses) if radiuses is not None else None,
+    )
     cached = _cache_get(cache_key)
     if cached is not None:
         return cached
@@ -70,6 +103,14 @@ def get_route_geometry(coords: list[tuple[float, float]], profile: str = "drivin
     coord_str = ";".join(f"{lon},{lat}" for lat, lon in coords)
     url = f"{base_url}/route/v1/{profile}/{coord_str}"
     params = {"overview": "full", "geometries": "geojson"}
+    if bearings is not None:
+        params["bearings"] = ";".join(
+            f"{pair[0]:.0f},{pair[1]}" if pair is not None else "" for pair in bearings
+        )
+    if radiuses is not None:
+        params["radiuses"] = ";".join(
+            (str(r) if r is not None else "unlimited") for r in radiuses
+        )
 
     # One retry on transient network errors (connection reset, brief OSRM
     # hiccup) before giving up -- avoids surfacing a hard failure to the

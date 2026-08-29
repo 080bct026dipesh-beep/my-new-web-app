@@ -14,7 +14,7 @@ from app.schemas import RouteListOut, RouteOut, RouteStopOut, StopOut
 # for why: dense stops a few dozen metres apart can push OSRM into visible
 # zigzagging just to legally hit each one in order). Reused rather than
 # duplicated so the two endpoints can't drift out of sync.
-from app.api.routing import _thin_waypoints
+from app.api.routing import _thin_waypoints, _bearings_for, WAYPOINT_SNAP_RADIUS_M
 
 router = APIRouter(prefix="/routes", tags=["routes"])
 settings = get_settings()
@@ -84,6 +84,10 @@ def read_route_geometry(route_id: str, db: Session = Depends(get_db)):
     coords = _thin_waypoints(stops)
 
     try:
-        return get_route_geometry(coords)
+        return get_route_geometry(
+            coords,
+            bearings=_bearings_for(coords),
+            radiuses=[WAYPOINT_SNAP_RADIUS_M] * len(coords),
+        )
     except OSRMError as exc:
         raise HTTPException(status_code=502, detail=f"Couldn't compute route geometry: {exc}")

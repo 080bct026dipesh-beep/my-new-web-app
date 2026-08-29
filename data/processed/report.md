@@ -1,6 +1,6 @@
-# Orphan-pair audit & cleanup report — Kathmandu Bus Route Finder
+# Orphan-pair audit & cleanup report - Kathmandu Bus Route Finder
 
-_Generated 2026-08-29T09:34:42Z by scripts/clean_data.py_
+_Generated 2026-08-29T14:11:19Z by clean_data.py_
 
 | Table | Rows before | Rows after |
 |---|---|---|
@@ -13,7 +13,7 @@ _Generated 2026-08-29T09:34:42Z by scripts/clean_data.py_
 ## 1. route_stops orphan pairs
 - Removed rows: 18
 - Distinct phantom stop_ids (1):
-    - TBD-CHOOSE ("New Baneshwor") — referenced by 5 route(s)
+    - TBD-CHOOSE ("New Baneshwor") - referenced by 5 route(s)
 
 ## 2. route_stops re-sequencing
 - Routes re-sequenced (1..N, order preserved): 119
@@ -37,8 +37,6 @@ _Generated 2026-08-29T09:34:42Z by scripts/clean_data.py_
     - kept S0229, dropped ['S0122']
     - kept S0159, dropped ['S0215']
 - Candidate clusters PENDING human review (not merged): 74
-  Distance alone can't tell 'same stop, different name' from 'different nearby stops' —
-  add confirmed pairs to data/scripts/stop_dedup_overrides.yaml to merge them:
     - ['S0003', 'S0342']
     - ['S0004', 'S0326']
     - ['S0005', 'S0042']
@@ -124,34 +122,28 @@ _Generated 2026-08-29T09:34:42Z by scripts/clean_data.py_
     - kept R3102605, dropped R2301263
 - Marked is_bidirectional as a result of merge: ['R3068536', 'R2295734', 'R2988893', 'R2988983', 'R2301205']
 - Candidate pairs PENDING human review (not merged): 7
-    - R2909799 ("Kamalbinayak-Ratnapark") <-> R2988890 ("Bagbazaar-Kamalbinayak") — stop-set similarity 0.85
-    - R2909799 ("Kamalbinayak-Ratnapark") <-> R2988893 ("Bagbazar-Changu") — stop-set similarity 0.77
-    - R2988890 ("Bagbazaar-Kamalbinayak") <-> R2988893 ("Bagbazar-Changu") — stop-set similarity 0.91
-    - R2282031 ("Ratna Park - Kirtipur") <-> R3020231 ("Ratna Park - Panga Dobato- Nagaun- Bhatkepati") — stop-set similarity 0.81
-    - R2295902 ("KattyaniChowk-Sundhara") <-> R2295903 ("Sundhara-Milanchowk-KattyaniChowk") — stop-set similarity 0.75
-    - R2295902 ("KattyaniChowk-Sundhara") <-> R2295941 ("Old Baneshwar-Sundhara") — stop-set similarity 0.72
-    - R2989012 ("Ratna Park - Daksinkali") <-> R-GAP-05 ("Ratna Park-Pharping") — stop-set similarity 0.72
+    - R2909799 ("Kamalbinayak-Ratnapark") <-> R2988890 ("Bagbazaar-Kamalbinayak") - stop-set similarity 0.85
+    - R2909799 ("Kamalbinayak-Ratnapark") <-> R2988893 ("Bagbazar-Changu") - stop-set similarity 0.77
+    - R2988890 ("Bagbazaar-Kamalbinayak") <-> R2988893 ("Bagbazar-Changu") - stop-set similarity 0.91
+    - R2282031 ("Ratna Park - Kirtipur") <-> R3020231 ("Ratna Park - Panga Dobato- Nagaun- Bhatkepati") - stop-set similarity 0.81
+    - R2295902 ("KattyaniChowk-Sundhara") <-> R2295903 ("Sundhara-Milanchowk-KattyaniChowk") - stop-set similarity 0.75
+    - R2295902 ("KattyaniChowk-Sundhara") <-> R2295941 ("Old Baneshwar-Sundhara") - stop-set similarity 0.72
+    - R2989012 ("Ratna Park - Daksinkali") <-> R-GAP-05 ("Ratna Park-Pharping") - stop-set similarity 0.72
 
 ## 2d. Revisited-stop resolution (return-leg / splice candidates)
-- Candidate (route, stop_id) revisit pairs found: 96 across 37 route(s)
+- Candidate revisit pairs found: 96 across 37 route(s)
 - Rows dropped (human-confirmed verdict: drop_repeats): 119
-    - routes collapsed to first occurrence: ['R2276770', 'R2277212', 'R2282101', 'R2294152', 'R2295974', 'R2295986', 'R2301161', 'R2301306', 'R2301357', 'R2301358', 'R2302674', 'R2909799', 'R2975649', 'R2988806', 'R2988809', 'R2988890', 'R2988891', 'R2988893', 'R2988983', 'R2988993', 'R2989027', 'R2989036', 'R2989052', 'R2989074', 'R2989075', 'R3014451', 'R3020174', 'R3020244', 'R3070257', 'R3070262', 'R3070344', 'R3071562', 'R3072924', 'R3074202', 'R3102319']
-- Routes confirmed as genuine loop/return-leg (verdict: keep): ['R-NY-03']
-- Routes PENDING human review (no verdict yet, left untouched): 1
-  Add a verdict (keep / drop_repeats) to data/scripts/return_leg_overrides.yaml.
-  Cross-check against the route's return_leg_verified / status_corrected_for_return_leg columns.
-    - R3351751: S_418 at seq [1, 36], bridge stop S0345, backtrack 1490.1m
+- Routes collapsed to first occurrence: ['R2276770', 'R2277212', 'R2282101', 'R2294152', 'R2295974', 'R2295986', 'R2301161', 'R2301306', 'R2301357', 'R2301358', 'R2302674', 'R2909799', 'R2975649', 'R2988806', 'R2988809', 'R2988890', 'R2988891', 'R2988893', 'R2988983', 'R2988993', 'R2989027', 'R2989036', 'R2989052', 'R2989074', 'R2989075', 'R3014451', 'R3020174', 'R3020244', 'R3070257', 'R3070262', 'R3070344', 'R3071562', 'R3072924', 'R3074202', 'R3102319']
+- Routes confirmed as genuine loop/return-leg: ['R-NY-03']
+- Routes PENDING human review: 1
 
-## 3a. routes.start_stop_id / end_stop_id / total_stops recomputation
+## 3. Route start/end/total stop recomputation
 - start_stop_id corrected: 8 -> ['R2294107', 'R2988835', 'R3102605', 'R3014451', 'R3203278', 'R3232098', 'R3297080', 'R3204165']
-- end_stop_id corrected:   19 -> ['R2276770', 'R2282101', 'R2294107', 'R2295986', 'R2909799', 'R3020174', 'R3070257', 'R3070262', 'R3070344', 'R3071562', 'R3102319', 'R2295974', 'R2302674', 'R2988806', 'R3014451', 'R3283810', 'R3255302', 'R-NY-05', 'R-NY-06']
-- total_stops corrected:   38 -> ['R2276770', 'R2277212', 'R2282101', 'R2295986', 'R2301306', 'R2301357', 'R2301358', 'R2909799', 'R2975649', 'R2988809', 'R2988890', 'R2988891', 'R2988893', 'R2988983', 'R2988993', 'R2989036', 'R2989074', 'R2989075', 'R3020174', 'R3020244', 'R3070257', 'R3070262', 'R3070344', 'R3071562', 'R3074202', 'R3102319', 'R2295974', 'R2301161', 'R3072924', 'R2294152', 'R2302674', 'R2988806', 'R3014451', 'R-NY-03', 'R-NY-04', 'R-NY-05', 'R-NY-06', 'R-NY-07']
-
-## 3b. Default bidirectional/status override
-- All non-loop routes forced to is_bidirectional=True; all routes forced to status='active'. See apply_default_bidirectional_and_status() docstring for why.
+- end_stop_id corrected: 19 -> ['R2276770', 'R2282101', 'R2294107', 'R2295986', 'R2909799', 'R3020174', 'R3070257', 'R3070262', 'R3070344', 'R3071562', 'R3102319', 'R2295974', 'R2302674', 'R2988806', 'R3014451', 'R3283810', 'R3255302', 'R-NY-05', 'R-NY-06']
+- total_stops corrected: 38 -> ['R2276770', 'R2277212', 'R2282101', 'R2295986', 'R2301306', 'R2301357', 'R2301358', 'R2909799', 'R2975649', 'R2988809', 'R2988890', 'R2988891', 'R2988893', 'R2988983', 'R2988993', 'R2989036', 'R2989074', 'R2989075', 'R3020174', 'R3020244', 'R3070257', 'R3070262', 'R3070344', 'R3071562', 'R3074202', 'R3102319', 'R2295974', 'R2301161', 'R3072924', 'R2294152', 'R2302674', 'R2988806', 'R3014451', 'R-NY-03', 'R-NY-04', 'R-NY-05', 'R-NY-06', 'R-NY-07']
 
 ## 4. routes.operator_id orphan references
-- Invalid operator_id value(s): []
+- Invalid operator_id values: []
 - Routes nulled (unrecoverable): 0 -> []
 
 ## 5. Distance outlier flags
@@ -167,5 +159,5 @@ _Generated 2026-08-29T09:34:42Z by scripts/clean_data.py_
 - routes.end_stop_id not in stops: 0
 - routes.total_stops mismatched vs actual route_stops count: 0
 
-## 7. Note — revisited stops remaining after resolution (informational)
-- 5 route_stops rows still revisit a stop_id already used earlier in the same route, across 2 routes, after applying confirmed verdicts above. These are either confirmed genuine loops (verdict: keep) or still pending human review — see section 2d.
+## 7. Revisited stops remaining after resolution
+- 5 route_stops rows still revisit a stop_id across 2 route(s).

@@ -1,3 +1,5 @@
+import math
+
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Depends
 from sqlalchemy.orm import Session
 
@@ -20,6 +22,19 @@ router = APIRouter(tags=["route-finder"])
 # a sane path between waypoints that are meaningfully far apart.
 MIN_WAYPOINT_SPACING_M = 80
 
+# How far OSRM is allowed to look, per waypoint, for a road segment
+# matching the bearing hint below. Keeps a heading constraint from ever
+# pushing a snap out to some distant edge that just happens to match --
+# if nothing satisfying both is within range, OSRM errors, which
+# _attach_road_geometry already handles by falling back (see its
+# `except OSRMError: pass`), so tightening this can only fail safely.
+WAYPOINT_SNAP_RADIUS_M = 50
+
+# Tolerance either side of the computed heading. Wide enough to allow a
+# gently curving road, tight enough to reject the opposite-direction
+# carriageway of a divided road (roughly 180 degrees off).
+BEARING_RANGE_DEG = 30
+
 
 def _thin_waypoints(stops: list[StopOut]) -> list[tuple[float, float]]:
     if len(stops) < 2:
@@ -38,6 +53,50 @@ def _thin_waypoints(stops: list[StopOut]) -> list[tuple[float, float]]:
     return thinned
 
 
+def _bearing_deg(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
+    """Forward azimuth in degrees (0-360, clockwise from true north) from
+    point 1 to point 2."""
+    phi1, phi2 = math.radians(lat1), math.radians(lat2)
+    dlambda = math.radians(lng2 - lng1)
+    x = math.sin(dlambda) * math.cos(phi2)
+    y = math.cos(phi1) * math.sin(phi2) - math.sin(phi1) * math.cos(phi2) * math.cos(dlambda)
+    return (math.degrees(math.atan2(x, y)) + 360) % 360
+
+
+def _bearings_for(
+    coords: list[tuple[float, float]]
+) -> list[tuple[float, int] | None] | None:
+    """Per-waypoint (bearing, range) hints for OSRM's `bearings` param,
+    derived purely from the waypoints' own travel order in `coords` --
+    no stored heading or extra survey data needed. Each waypoint is
+    constrained to road segments travelling in roughly its direction of
+    travel, so on a divided road (the two carriageways mapped as
+    separate OSM ways) OSRM snaps to the one actually being travelled
+    instead of whichever happens to be geometrically nearest.
+
+    On an undivided road there's only one edge to snap to either way,
+    so this never changes anything there -- it only ever resolves an
+    ambiguity that existed, never introduces one.
+
+    Returns None for a single-coordinate input (nothing to compute a
+    direction from); a leg that short never reaches OSRM anyway (see
+    the `len(coords) < 2` guard in _attach_road_geometry).
+    """
+    if len(coords) < 2:
+        return None
+    bearings: list[tuple[float, int] | None] = []
+    for i, (lat, lng) in enumerate(coords):
+        if i < len(coords) - 1:
+            b = _bearing_deg(lat, lng, *coords[i + 1])
+        else:
+            # Last waypoint has no "next" point to aim at -- reuse the
+            # heading of the final approach instead of leaving it
+            # unconstrained.
+            b = _bearing_deg(*coords[i - 1], lat, lng)
+        bearings.append((b, BEARING_RANGE_DEG))
+    return bearings
+
+
 def _attach_road_geometry(legs: list[RouteLeg]) -> None:
     for leg in legs:
         # Walking transfers get the foot profile; bus rides get the
@@ -50,8 +109,22 @@ def _attach_road_geometry(legs: list[RouteLeg]) -> None:
         if len(coords) < 2:
             continue
 
+        # Bearing/radius constraints are scoped to the driving profile:
+        # the divided-road wrong-carriageway problem is a vehicle-road
+        # thing, foot paths aren't generally split into directional
+        # ways, and these are short walking transfers where there's
+        # little to gain from narrowing the snap.
+        if profile == "driving":
+            bearings = _bearings_for(coords)
+            radiuses = [WAYPOINT_SNAP_RADIUS_M] * len(coords)
+        else:
+            bearings = None
+            radiuses = None
+
         try:
-            leg.road_geometry = get_route_geometry(coords, profile=profile)
+            leg.road_geometry = get_route_geometry(
+                coords, profile=profile, bearings=bearings, radiuses=radiuses
+            )
         except OSRMError:
             pass
 
