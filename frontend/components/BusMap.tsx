@@ -481,14 +481,20 @@ export default function BusMap({
           div.style.color = "#171717";
           div.style.lineHeight = "1.6";
           div.style.boxShadow = "0 1px 3px rgba(0,0,0,0.08)";
+          // Unconstrained, this box sizes to its longest route_name and can
+          // run wider than a phone viewport (Leaflet clips overflowing
+          // controls rather than reflowing the page, so it just becomes
+          // unreadable rather than breaking layout). Cap the width relative
+          // to the viewport and let long names wrap instead of overflowing.
+          div.style.maxWidth = "min(220px, 60vw)";
           div.innerHTML = legendRows
             .map(
               (row) =>
-                `<div style="display:flex;align-items:center;gap:6px;">
-                  <span style="display:inline-block;width:14px;height:0;border-top:3px ${
+                `<div style="display:flex;align-items:flex-start;gap:6px;">
+                  <span style="display:inline-block;width:14px;height:0;margin-top:7px;flex-shrink:0;border-top:3px ${
                     row.dashed ? "dashed" : "solid"
                   } ${row.color};"></span>
-                  <span>${escapeHtml(row.label)}</span>
+                  <span style="word-break:break-word;">${escapeHtml(row.label)}</span>
                 </div>`
             )
             .join("");
