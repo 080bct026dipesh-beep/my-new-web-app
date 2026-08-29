@@ -21,7 +21,7 @@ cd my-new-web-app
 # Backend
 cd backend
 python -m venv venv && source venv/bin/activate   # Windows: venv\Scripts\activate
-pip install -r requirements.txt
+pip install -r requirements.txt -r requirements-dev.txt   # -dev is needed for pytest in step 4 below
 cp .env.example .env
 cd ..
 
