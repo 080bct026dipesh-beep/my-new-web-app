@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ChevronIcon } from "@/components/icons/TransitIcons";
 
 const LINKS = [
-  { href: "/", label: "Search" },
+  { href: "/", label: "Plan" },
   { href: "/routes", label: "Routes" },
   { href: "/stops", label: "Stops" },
 ];
@@ -15,22 +16,6 @@ const LINKS = [
 // vertical space (especially on the map-first home page on mobile), which
 // resetting on every navigation would undermine.
 const STORAGE_KEY = "ktm-transit:navbar-minimized";
-
-function ChevronIcon({ direction }: { direction: "up" | "down" }) {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      style={{ transform: direction === "up" ? "rotate(180deg)" : undefined }}
-    >
-      <path d="M6 9l6 6 6-6" />
-    </svg>
-  );
-}
 
 /**
  * Slim top bar, shared via app/layout.tsx. Kept intentionally minimal --
@@ -77,14 +62,23 @@ export default function NavBar() {
     }
   }
 
+  const brandMark = (
+    <Link href="/" className="flex items-center gap-1.5 font-semibold tracking-tight">
+      <span
+        aria-hidden
+        className="flex h-5 w-5 items-center justify-center rounded-[5px] bg-accent-blue text-[10px] font-bold text-white"
+      >
+        K
+      </span>
+      <span className="text-ink">KTM</span>
+      <span className="text-accent-blue">Transit</span>
+    </Link>
+  );
+
   if (minimized && hydrated) {
     return (
-      <header className="flex h-7 shrink-0 items-center justify-between border-b border-route-line bg-surface px-4">
-        <Link href="/" className="flex items-center gap-1.5 text-xs font-semibold tracking-tight">
-          <span aria-hidden>🚌</span>
-          <span className="text-ink">KTM</span>
-          <span className="text-accent-blue">TRANSIT</span>
-        </Link>
+      <header className="flex h-7 shrink-0 items-center justify-between border-b border-route-line bg-surface-raised px-4 text-xs">
+        {brandMark}
         <button
           type="button"
           onClick={toggleMinimized}
@@ -99,16 +93,11 @@ export default function NavBar() {
   }
 
   return (
-    <header className="flex h-12 shrink-0 items-center justify-between border-b border-route-line bg-surface px-4">
-      <Link href="/" className="flex items-center gap-1.5 text-sm font-semibold tracking-tight">
-        <span aria-hidden>🚌</span>
-        <span className="text-ink">KTM</span>
-        <span className="text-accent-blue">TRANSIT</span>
-      </Link>
-      <nav className="flex items-center gap-5 text-sm">
+    <header className="flex h-12 shrink-0 items-center justify-between border-b border-route-line bg-surface-raised px-4 text-sm">
+      {brandMark}
+      <nav className="flex items-center gap-5">
         {LINKS.map((link) => {
-          const isActive =
-            link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
+          const isActive = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
           return (
             <Link
               key={link.href}
@@ -128,7 +117,7 @@ export default function NavBar() {
       <div className="flex items-center gap-3">
         <span className="hidden items-center gap-1.5 text-xs text-ink-secondary sm:flex">
           <span className="h-1.5 w-1.5 rounded-full bg-accent-green" aria-hidden />
-          Kathmandu
+          Kathmandu Valley
         </span>
         <button
           type="button"

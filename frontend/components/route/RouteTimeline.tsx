@@ -1,5 +1,6 @@
 import { RouteLeg } from "@/types/route";
 import { LEG_COLORS } from "@/lib/constants";
+import { BusIcon, WalkIcon } from "@/components/icons/TransitIcons";
 
 interface RouteTimelineProps {
   legs: RouteLeg[];
@@ -44,14 +45,14 @@ export default function RouteTimeline({ legs }: RouteTimelineProps) {
               />
             )}
             <span
-              className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs"
+              className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
               style={{
                 backgroundColor: isWalk ? "#EEEEE8" : LEG_COLORS[i % LEG_COLORS.length],
-                color: isWalk ? "#666666" : "#FFFFFF",
+                color: isWalk ? "#5B6169" : "#FFFFFF",
               }}
               aria-hidden
             >
-              {isWalk ? "🚶" : "🚌"}
+              {isWalk ? <WalkIcon size={13} /> : <BusIcon size={13} />}
             </span>
             <div className="flex-1 pt-0.5">
               {isWalk ? (

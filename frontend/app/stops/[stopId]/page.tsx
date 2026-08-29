@@ -1,10 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ApiError, getStop, getStopRoutes } from "@/lib/api";
 import { RouteOut, Stop } from "@/types/route";
+
+const BusMap = dynamic(() => import("@/components/BusMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-full w-full items-center justify-center text-sm text-ink-secondary">
+      Loading map…
+    </div>
+  ),
+});
 
 export default function StopDetailPage() {
   const params = useParams<{ stopId: string }>();
@@ -132,6 +142,10 @@ export default function StopDetailPage() {
         {stop.lat.toFixed(5)}, {stop.lng.toFixed(5)}
       </p>
 
+      <div className="h-48 overflow-hidden rounded-xl border border-route-line shadow-card sm:h-56">
+        <BusMap browseRouteStops={[{ sequence_no: 1, stop }]} />
+      </div>
+
       <div className="flex flex-wrap gap-2">
         <Link
           href={`/?origin=${encodeURIComponent(stop.stop_id)}`}
@@ -141,7 +155,7 @@ export default function StopDetailPage() {
         </Link>
         <Link
           href={`/?destination=${encodeURIComponent(stop.stop_id)}`}
-          className="rounded-md border border-route-line px-4 py-2 text-sm text-ink hover:border-accent-green hover:text-accent-green"
+          className="rounded-md border border-route-line px-4 py-2 text-sm text-ink hover:border-accent-red hover:text-accent-red"
         >
           Set as destination
         </Link>

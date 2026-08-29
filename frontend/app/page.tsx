@@ -14,6 +14,7 @@ import { useGeolocation } from "@/hooks/useGeolocation";
 import { useRouteSearch } from "@/hooks/useRouteSearch";
 import { useCongestion } from "@/hooks/useCongestion";
 import { useRouteBrowser } from "@/hooks/useRouteBrowser";
+import { ChevronIcon } from "@/components/icons/TransitIcons";
 
 // Leaflet touches `window`, so the map must load client-side only.
 const BusMap = dynamic(() => import("@/components/BusMap"), {
@@ -24,22 +25,6 @@ const BusMap = dynamic(() => import("@/components/BusMap"), {
     </div>
   ),
 });
-
-function ChevronIcon({ direction }: { direction: "up" | "down" }) {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      style={{ transform: direction === "up" ? "rotate(180deg)" : undefined }}
-    >
-      <path d="M6 9l6 6 6-6" />
-    </svg>
-  );
-}
 
 // Persisted so a minimized panel stays minimized across reloads -- same
 // rationale as NavBar's minimize toggle (components/layout/NavBar.tsx),
@@ -193,21 +178,26 @@ function HomeInner() {
   }
 
   return (
-    <main className="flex h-full w-full flex-col md:flex-row">
+    <main className="relative flex h-full w-full flex-col md:flex-row">
+      {/* Mobile: full-screen map under the navbar, with the planner floating
+          as a bottom sheet on top. Desktop: the classic two-column layout
+          (planner column left, map fills the rest) -- see the suggested
+          structure in the redesign brief. */}
       <aside
-        className={`flex w-full flex-col overflow-y-auto border-b border-route-line bg-surface transition-[max-width,padding] md:h-full md:border-b-0 md:border-r ${
-          showMinimized ? "gap-0 p-2 md:max-w-[52px]" : "gap-5 p-4 md:max-w-sm"
+        className={`absolute inset-x-0 bottom-0 z-[500] flex flex-col overflow-y-auto rounded-t-2xl border border-route-line bg-surface-raised shadow-sheet transition-[max-height,padding] md:static md:inset-auto md:z-auto md:h-full md:w-full md:max-w-sm md:rounded-none md:border-b-0 md:border-l-0 md:border-r md:shadow-none ${
+          showMinimized ? "max-h-14 gap-0 p-2 md:max-w-[52px]" : "max-h-[75vh] gap-5 p-4 md:max-h-none"
         }`}
       >
+        <span className="sheet-handle mx-auto md:hidden" aria-hidden />
+
         <div className="flex items-center justify-between gap-2">
           {!showMinimized && (
             <div>
-              <h1 className="text-xl font-semibold leading-tight tracking-tight">
-                <span className="text-accent-blue">Plan</span>{" "}
-                <span className="text-accent-purple">your journey</span>
+              <h1 className="text-xl font-semibold leading-tight tracking-tight text-ink">
+                Plan your journey
               </h1>
               <p className="mt-1 text-sm text-ink-secondary">
-                Kathmandu Valley public transit navigator — direct or single-transfer routes.
+                Kathmandu Valley public transit — direct or single-transfer routes.
               </p>
             </div>
           )}
@@ -277,7 +267,7 @@ function HomeInner() {
         )}
       </aside>
 
-      <div className="min-h-[50vh] flex-1 md:min-h-0">
+      <div className="h-full w-full flex-1 md:min-h-0">
         <BusMap
           key="bus-map"
           result={mapResult}

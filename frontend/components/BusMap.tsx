@@ -24,7 +24,8 @@ const CONGESTION_COLORS: Record<string, string> = {
 };
 
 // Route-browser overlay (numbered stops + connecting line for whichever
-// route is toggled visible in RoutesPanel) gets its own color too, distinct
+// route is toggled visible on /routes, or embedded on a route/stop detail
+// page) gets its own color too, distinct
 // from every other layer this map draws.
 const BROWSE_ROUTE_COLOR = "#7C3AED";
 
@@ -55,9 +56,9 @@ function dotIcon(color: string, size: number): L.DivIcon {
 // Origin/destination get bigger, high-contrast markers so the start and end
 // of a route are unambiguous at a glance; transfer points sit in between.
 // Colors follow the app-wide semantic mapping: origin = blue, destination =
-// green, transfer = purple.
+// red, transfer = purple.
 const originIcon = dotIcon("#2563EB", 18);
-const destinationIcon = dotIcon("#16A34A", 18);
+const destinationIcon = dotIcon("#DC2626", 18);
 const transferIcon = dotIcon("#7C3AED", 14);
 
 // Pulsing blue dot for "you are here", the same visual language every map
@@ -91,7 +92,8 @@ interface BusMapProps {
    * whether a route is currently searched. */
   congestionSegments?: CongestionSegment[];
   /** Route browser overlay: whichever route is toggled visible via the eye
-   * button in RoutesPanel, drawn as numbered stops in ride order + a
+   * toggle on /routes (or a route/stop detail page embed), drawn as
+   * numbered stops in ride order + a
    * connecting line. Independent of `result` and congestion. */
   browseRouteStops?: RouteStopEntry[];
   /** Road-following OSRM geometry for browseRouteStops, when available --
@@ -242,7 +244,7 @@ export default function BusMap({
   }, [congestionSegments, allStops]);
 
   // Route-browser overlay: numbered markers in ride order + a connecting
-  // line for whichever route is toggled visible via RoutesPanel's eye
+  // line for whichever route is toggled visible via /routes' eye
   // button. Straight lines between consecutive stops, same tradeoff as the
   // congestion overlay -- no per-hop road geometry is fetched just to
   // preview a route's stop order. Auto-fits the map to the route so the

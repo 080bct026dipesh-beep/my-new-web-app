@@ -1,5 +1,7 @@
 "use client";
 
+import { LayersIcon } from "@/components/icons/TransitIcons";
+
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const HOUR_BUCKETS = [0, 3, 6, 9, 12, 15, 18, 21];
 
@@ -37,13 +39,16 @@ export default function CongestionPanel({
   const isCustomTime = dayOfWeek !== null || hourBucket !== null;
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-route-line bg-white p-4">
+    <div className="flex flex-col gap-3 rounded-xl border border-route-line bg-surface-raised p-4 shadow-card">
       <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-accent-orange">
-            Traffic conditions
-          </p>
-          <p className="mt-0.5 text-xs text-ink-secondary">Historical traffic pattern</p>
+        <div className="flex items-center gap-2">
+          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-accent-orange/10 text-accent-orange">
+            <LayersIcon size={14} />
+          </span>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-ink-secondary">Map layers</p>
+            <p className="text-sm text-ink">Traffic conditions</p>
+          </div>
         </div>
         <button
           type="button"
@@ -61,6 +66,11 @@ export default function CongestionPanel({
 
       {enabled && (
         <>
+          <p className="text-xs text-ink-secondary">
+            Historical traffic pattern by segment. Shown as an overlay only -- routes below aren&apos;t
+            re-ranked by it.
+          </p>
+
           <div className="flex flex-wrap items-center gap-2 text-xs">
             <select
               value={dayOfWeek ?? "now"}

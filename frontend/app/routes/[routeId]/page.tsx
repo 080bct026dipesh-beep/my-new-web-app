@@ -1,11 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ApiError, getRoute, getRouteStops } from "@/lib/api";
+import { ApiError, getRoute, getRouteGeometry, getRouteStops } from "@/lib/api";
 import { formatRouteDistance } from "@/lib/routeDistance";
-import { RouteOut, RouteStopEntry } from "@/types/route";
+import { RouteGeometry, RouteOut, RouteStopEntry } from "@/types/route";
+
+const BusMap = dynamic(() => import("@/components/BusMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-full w-full items-center justify-center text-sm text-ink-secondary">
+      Loading map…
+    </div>
+  ),
+});
 
 export default function RouteDetailPage() {
   const params = useParams<{ routeId: string }>();
@@ -13,6 +23,7 @@ export default function RouteDetailPage() {
 
   const [route, setRoute] = useState<RouteOut | null>(null);
   const [stops, setStops] = useState<RouteStopEntry[]>([]);
+  const [geometry, setGeometry] = useState<RouteGeometry | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +58,21 @@ export default function RouteDetailPage() {
       }
     }
 
+    // Road-following geometry is a nice-to-have for the map preview -- if
+    // OSRM is unavailable or the request fails, BusMap falls back to
+    // straight lines between stops, so this failure is swallowed rather
+    // than surfaced as a page-level error.
+    async function loadGeometry() {
+      try {
+        const data = await getRouteGeometry(routeId);
+        if (!cancelled) setGeometry(data);
+      } catch {
+        // fall back to straight-line connectors
+      }
+    }
+
     load();
+    loadGeometry();
     return () => {
       cancelled = true;
     };
@@ -56,11 +81,11 @@ export default function RouteDetailPage() {
   if (loading) {
     return (
       <div className="mx-auto flex h-full max-w-2xl flex-col gap-3 overflow-y-auto p-4">
-        <div className="h-6 w-1/2 animate-pulse rounded bg-surface" />
-        <div className="h-4 w-1/3 animate-pulse rounded bg-surface" />
+        <div className="h-6 w-1/2 animate-pulse rounded bg-surface-sunken" />
+        <div className="h-4 w-1/3 animate-pulse rounded bg-surface-sunken" />
         <div className="mt-4 flex flex-col gap-2">
           {[...Array(8)].map((_, i) => (
-            <div key={i} className="h-10 animate-pulse rounded bg-surface" />
+            <div key={i} className="h-10 animate-pulse rounded bg-surface-sunken" />
           ))}
         </div>
       </div>
@@ -118,11 +143,15 @@ export default function RouteDetailPage() {
         )}
       </div>
 
+      <div className="h-56 overflow-hidden rounded-xl border border-route-line shadow-card sm:h-72">
+        <BusMap browseRouteStops={stops} browseRouteGeometry={geometry} />
+      </div>
+
       <Link
         href={`/?route=${encodeURIComponent(route.route_id)}`}
         className="self-start rounded-md bg-accent-blue px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
       >
-        View on map
+        View on full map
       </Link>
 
       <div>

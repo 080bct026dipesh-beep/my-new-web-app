@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouteBrowser } from "@/hooks/useRouteBrowser";
 import { formatRouteDistance } from "@/lib/routeDistance";
+import { BusIcon } from "@/components/icons/TransitIcons";
 
 export default function RoutesPage() {
   const { routes, total, loading, loadingMore, searchQuery, setSearchQuery, hasMore, loadMore } =
@@ -11,10 +12,7 @@ export default function RoutesPage() {
   return (
     <div className="mx-auto flex h-full max-w-3xl flex-col gap-4 overflow-y-auto p-4">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight">
-          <span className="text-accent-green">Browse</span>{" "}
-          <span className="text-ink">routes</span>
-        </h1>
+        <h1 className="text-xl font-semibold tracking-tight text-ink">Browse routes</h1>
         <p className="mt-1 text-sm text-ink-secondary">
           {total > 0 ? `${total} routes across the Valley` : "Browse every route in the network"}
         </p>
@@ -24,13 +22,13 @@ export default function RoutesPage() {
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
         placeholder="Search by route name or number…"
-        className="w-full rounded-md border border-route-line bg-white px-3 py-2 text-sm text-ink outline-none focus:border-accent-green"
+        className="w-full rounded-md border border-route-line bg-surface-raised px-3 py-2 text-sm text-ink outline-none focus:border-accent-green"
       />
 
       {loading && routes.length === 0 && (
         <div className="flex flex-col gap-2">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-16 animate-pulse rounded-lg border border-route-line bg-surface" />
+            <div key={i} className="h-16 animate-pulse rounded-xl border border-route-line bg-surface-sunken" />
           ))}
         </div>
       )}
@@ -43,19 +41,22 @@ export default function RoutesPage() {
         </p>
       )}
 
-      <ul className="flex flex-col divide-y divide-route-line rounded-lg border border-route-line">
+      <ul className="flex flex-col divide-y divide-route-line rounded-xl border border-route-line bg-surface-raised shadow-card">
         {routes.map((route) => (
           <li key={route.route_id}>
             <Link
               href={`/routes/${encodeURIComponent(route.route_id)}`}
-              className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-surface"
+              className="flex items-center gap-3 px-4 py-3 hover:bg-surface"
             >
-              <div>
-                <p className="text-sm font-medium text-ink">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-green/10 text-accent-green">
+                <BusIcon size={15} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-ink">
                   {route.short_name ? `${route.short_name} — ` : ""}
                   {route.route_name}
                 </p>
-                <p className="font-mono text-xs text-ink-secondary">
+                <p className="truncate font-mono text-xs text-ink-secondary">
                   {route.vehicle_type} · {route.total_stops} stops
                   {formatRouteDistance(route) && <> · {formatRouteDistance(route)}</>}
                   {route.operator && <> · {route.operator.name}</>}
