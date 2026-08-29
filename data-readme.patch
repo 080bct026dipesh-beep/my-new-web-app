@@ -1,0 +1,31 @@
+--- a/data/README.md
++++ b/data/README.md
+@@ -13,6 +13,12 @@
+ ├── processed/    Cleaned, validated CSVs ready for DB import
+ │                   (see processed/README.md)
+ │
++├── congestion_zones.csv         Zone definitions feeding the
++├── congestion_loss_table.csv    congestion/duration edge-weight
++├── stop_congestion_scores.csv   functions behind `avoid_congestion`
++│                                  and `fastest_estimated` (see
++│                                  backend/app/routing/graph_builder.py)
++│
+ └── scripts/      Data-cleaning and validation pipeline — see
+                     data/scripts/README.md for the full file list
+                     (clean_data.py, validate_clean.py, merge_stops.py,
+@@ -94,11 +100,11 @@
+ 
+ | Table              | Row count |
+ |--------------------|-----------|
+-| `routes`           | 102       |
+-| `stops`             | 351       |
++| `routes`           | 113       |
++| `stops`             | 376       |
+ | `operators`         | 29        |
+-| `route_stops`       | 1,629     |
+-| `route_operators`   | 99        |
++| `route_stops`       | 1,849     |
++| `route_operators`   | 106       |
+ | `fare_rules`        | 5         |
+ 
+ All of the above are confirmed loaded successfully into a live

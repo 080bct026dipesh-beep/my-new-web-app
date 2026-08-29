@@ -48,8 +48,21 @@ npm run test:watch
 ```
 app/            layout, global styles, and page.tsx (composes the hooks
                   and components below into the actual search UI)
+                    - routes/page.tsx, routes/[routeId]/page.tsx --
+                      route list/browse and single-route detail pages
+                    - stops/page.tsx, stops/[stopId]/page.tsx -- stop
+                      list/browse and single-stop detail pages
+                    - manifest.ts, icon.tsx, apple-icon.tsx -- PWA web
+                      app manifest + generated icons (see PWA below)
+                    - offline/page.tsx -- fallback shown for an
+                      uncached navigation while offline
 components/
   route/          route-result rendering once a search succeeds
+                    - RouteResultPanel.tsx -- top-level result view:
+                      primary result + up to 2 alternatives
+                      (alternate_direct_route / shortest_distance /
+                      fastest_estimated), fare display, selection state
+                      shared with the map (see app/page.tsx)
                     - RouteTimeline.tsx -- leg-by-leg breakdown (ride vs.
                       walking transfer), colored per LEG_COLORS
   search/          origin/destination input UI
@@ -57,6 +70,8 @@ components/
                       location" button (backed by /stops/nearby)
                     - StopAutocomplete.tsx -- the <datalist>-driven
                       autocomplete dropdown
+  layout/
+    NavBar.tsx    top nav, mounted in app/layout.tsx
   BusMap.tsx      imperative Leaflet map: colored polylines per route leg
                     (dashed for walking transfers), distinct origin/
                     destination/transfer markers, road-following geometry
@@ -67,6 +82,8 @@ components/
                           time), calls /congestion
   RoutesPanel.tsx  route list/browse view, separate from a single
                     origin->destination search result
+  ServiceWorkerRegistration.tsx  registers public/sw.js on mount; see
+                    PWA below
 hooks/          one hook per concern, holding the state + fetch logic
                   that used to live inline in page.tsx
                     - useStops.ts -- loads and paginates the full stop
@@ -75,6 +92,7 @@ hooks/          one hook per concern, holding the state + fetch logic
                       browser geolocation -> nearest stop via
                       /stops/nearby -> labeled via lib/stopLabel.ts
                     - useRouteSearch.ts -- the /route-finder search flow
+                      (avoid_congestion, include_alternatives)
                     - useRouteBrowser.ts -- the routes-list browsing flow
                     - useCongestion.ts -- /congestion fetching for the
                       overlay
@@ -86,6 +104,8 @@ lib/
                     components, e.g. LEG_COLORS (BusMap.tsx and
                     RouteTimeline.tsx both import from here rather than
                     each defining their own copy)
+  routeDistance.ts  shared distance-formatting helpers used by
+                    RouteResultPanel/RouteTimeline
   stopLabel.ts    stop_name isn't guaranteed unique across the valley
                     (e.g. duplicate "Chowk"/"Bus Park" names); this
                     builds a disambiguated label (name + district/
@@ -97,6 +117,20 @@ lib/
 types/route.ts  mirrors backend/app/schemas.py. Keep in sync if the
                   backend's response shapes change.
 ```
+
+## PWA
+
+`app/manifest.ts` generates the web app manifest (installable, standalone
+display), `app/icon.tsx`/`app/apple-icon.tsx` generate the icons it
+references, and `ServiceWorkerRegistration.tsx` registers
+`public/sw.js` on mount (fails silently if unsupported -- progressive
+enhancement, not a requirement). The service worker cache-first-serves
+the app shell and stale-while-revalidates `/stops`, `/routes`, and
+`/congestion`; live/OSRM-dependent calls (`/route-finder`,
+`/walking-route`, `/routes/{id}/geometry`) are deliberately left
+network-only so a stale cached response can't show a wrong route. See
+`public/sw.js` for the full rationale, and `app/offline/page.tsx` for
+what an uncached navigation shows while offline.
 
 ## Notes
 

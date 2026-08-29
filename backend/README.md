@@ -128,6 +128,14 @@ can also be pre-populated with `scripts/seed_congestion_stats.py` — seeded
 rows are flagged `is_seeded=true` so real samples aren't confused with them.
 See `app/api/congestion.py` and `app/routing/time_buckets.py`.
 
+These aggregates also feed routing itself: `GET /route-finder`'s
+`avoid_congestion` flag weights the transfer-search fallback's ride
+edges by current historical congestion instead of raw distance alone
+(direct routes are unaffected — a direct route always wins regardless).
+See `app/routing/graph_builder.py`'s congestion/duration weight
+functions and `tests/test_congestion_weight_fn.py` /
+`tests/test_duration_weight_fn.py` / `tests/test_congestion_zones.py`.
+
 ## Running tests
 
 ```bash
@@ -136,9 +144,20 @@ pytest -v
 
 Some tests in `tests/` (e.g. `test_stops.py`) require a live database and will skip cleanly if one isn't reachable — make sure `docker compose up -d db` has been run first and migrations are applied, or those tests will just no-op.
 
-Routing/pathfinder unit tests live in `tests/test_routing.py`.
+Routing/pathfinder unit tests live in `tests/test_routing.py` and
+`tests/test_pathfinder_alternatives.py` (route alternatives: `alternate_direct_route`,
+`shortest_distance`, `fastest_estimated`). `tests/test_congestion_weight_fn.py`,
+`tests/test_duration_weight_fn.py`, and `tests/test_congestion_zones.py` cover the
+edge-weighting functions behind `avoid_congestion` and the `fastest_estimated`
+alternative.
 
 `tests/test_admin_auth_api.py`, `tests/test_fare_api.py`, and `tests/test_admin_crud_api.py` cover the admin-auth login flow (success, wrong password, unknown username, timing-safe error parity, and the 5/minute rate limit actually tripping), `GET /fare` band matching (inclusive-min/exclusive-max boundaries, 404 with no covering band), and the admin data-entry endpoints (`POST /stops`, `POST /routes`, `POST /routes/{id}/stops` — auth enforcement, 404s on unknown references, the 409 on duplicate `sequence_no`, and `graph_meta.version` bumping). All three create and tear down their own fixtures, so they don't depend on the shipped dataset like `test_stops.py` does.
+
+`tests/test_stops_api.py`, `tests/test_route_finder_api.py`, and
+`tests/test_route_geometry_api.py` are DB-backed integration tests for
+`GET /stops`/`GET /stops/{stop_id}`, `GET /route-finder` (including
+`avoid_congestion`/`include_alternatives`), and `GET /routes/{route_id}/geometry`
+respectively — same live-database caveat as `test_stops.py` above.
 
 ## Inspecting the live database
 
@@ -176,7 +195,7 @@ docker exec -it ktm_bus_db psql -U ktm_bus -d ktm_bus_route_finder -c "\d <table
 backend/
 ├── app/
 │   ├── api/            FastAPI route handlers (stops, routes, routing,
-│   │                     congestion, admin, admin_auth)
+│   │                     fare, congestion, admin, admin_auth)
 │   ├── core/            Config, security (shared-key + JWT auth), rate_limit (slowapi Limiter shared across endpoints)
 │   ├── db/               Session, queries, id_generator, base
 │   ├── models/          SQLAlchemy ORM models (hand-synced with migrations — see above; includes graph_meta, the routing-graph cache version counter)
