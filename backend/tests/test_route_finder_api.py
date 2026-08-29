@@ -32,20 +32,24 @@ def client():
 
 def test_route_finder_consolidates_consecutive_same_route_legs(client):
     """
-    S0072 -> S0326 is a known multi-transfer path riding 4 distinct routes.
-    Before the fix, each raw graph edge became its own leg, several sharing
-    the same route_id back-to-back. After the fix, consecutive same-route
-    segments must be merged into a single leg per route ridden.
+    S0384 -> S0408 is a known multi-transfer path riding 4 distinct routes,
+    none of the connections being a walking transfer (every leg boundary is
+    a route change made at a shared stop). Before the fix, each raw graph
+    edge became its own leg, several sharing the same route_id back-to-back.
+    After the fix, consecutive same-route segments must be merged into one
+    leg per route ridden.
 
     NOTE: this path (and the exact route_ids below) reflect the dataset as
-    of routes_clean.csv being made canonical (see data/scripts/import_data.py)
-    -- if a
-    future data refresh changes the shortest path here, re-derive fresh
-    expected values rather than trying to patch these ones, the same way
-    these were derived: run the actual /route-finder call against a freshly
-    loaded DB and record what it returns.
+    of the current data/processed/*_clean.csv import -- if a future data
+    refresh changes the shortest path here, re-derive fresh expected values
+    rather than trying to patch these ones, the same way these were
+    derived: run the actual /route-finder call against a freshly loaded DB
+    and record what it returns. (The previous fixture pair, S0072/S0326,
+    stopped being connected by any route after a later data refresh --
+    S0072 has zero route_stops rows in the current dataset -- which is why
+    this pair replaces it.)
     """
-    resp = client.get("/route-finder", params={"origin": "S0072", "destination": "S0326"})
+    resp = client.get("/route-finder", params={"origin": "S0384", "destination": "S0408"})
     assert resp.status_code == 200
     body = resp.json()
 
@@ -61,10 +65,10 @@ def test_route_finder_consolidates_consecutive_same_route_legs(client):
 
     # Known shape of this specific path as of the current dataset.
     assert route_ids == [
-        "R3102124",
-        "R2975649",
-        "R3020174",
-        "R3014451",
+        "R-NY-05",
+        "R-NY-06",
+        "R2295734",
+        "R-GAP-12",
     ]
 
 
@@ -75,7 +79,7 @@ def test_route_finder_transfer_count_matches_leg_boundaries(client):
     connecting them was flagged is_transfer (walking) or not (same-stop
     route change).
     """
-    resp = client.get("/route-finder", params={"origin": "S0072", "destination": "S0326"})
+    resp = client.get("/route-finder", params={"origin": "S0384", "destination": "S0408"})
     assert resp.status_code == 200
     body = resp.json()
 
@@ -90,14 +94,14 @@ def test_route_finder_leg_num_ride_segments_reflects_consolidated_hops(client):
     internally consistent (each leg's num_ride_segments counts the hops
     folded into it, not just always 1 as it did pre-fix).
     """
-    resp = client.get("/route-finder", params={"origin": "S0072", "destination": "S0326"})
+    resp = client.get("/route-finder", params={"origin": "S0384", "destination": "S0408"})
     assert resp.status_code == 200
     legs = resp.json()["legs"]
 
-    # Second leg on R2975649 covers 8 raw hops per the known shape of this
+    # Second leg on R-NY-06 covers 9 raw hops per the known shape of this
     # path -- the clearest example of consolidation in this dataset.
-    assert legs[1]["route_id"] == "R2975649"
-    assert legs[1]["num_ride_segments"] == 8
+    assert legs[1]["route_id"] == "R-NY-06"
+    assert legs[1]["num_ride_segments"] == 9
 
     # At least one leg must have been consolidated (num_ride_segments > 1) --
     # guards against a future regression back to "always 1".
