@@ -6,10 +6,19 @@ import { buildStopLabel, buildStopLabelIndex } from "@/lib/stopLabel";
 import StopAutocomplete from "./StopAutocomplete";
 import { CrosshairIcon, LocationIcon, SwapIcon } from "@/components/icons/TransitIcons";
 
+/** One intermediate "via" stop row. `id` is a stable React key (not the
+ * stop_id -- the text may not resolve to a stop yet while the user is
+ * typing), independent of insertion order so rows don't jump around as
+ * the list is edited. */
+export interface ViaStopField {
+  id: string;
+  text: string;
+}
+
 interface SearchFormProps {
   stops: Stop[];
   stopsLoading?: boolean;
-  onSearch: (originId: string, destinationId: string) => void;
+  onSearch: (originId: string, destinationId: string, viaIds: string[]) => void;
   loading?: boolean;
   // Map-click stop picking is owned by the parent (it also drives the map),
   // so origin/destination text are controlled from there rather than kept
@@ -18,6 +27,10 @@ interface SearchFormProps {
   destinationText: string;
   onOriginTextChange: (value: string) => void;
   onDestinationTextChange: (value: string) => void;
+  // Same reasoning as origin/destination -- kept in the parent so a
+  // future map-click-to-add-a-stop flow can write to it too.
+  viaStops: ViaStopField[];
+  onViaStopsChange: (viaStops: ViaStopField[]) => void;
   pickTarget: StopPickTarget;
   onPickTargetChange: (target: StopPickTarget) => void;
   locating?: boolean;
@@ -25,7 +38,13 @@ interface SearchFormProps {
   onUseMyLocation: () => void;
 }
 
-type FieldError = "origin" | "destination" | "both" | null;
+type FieldError = "origin" | "destination" | "both" | "via" | null;
+
+let viaIdCounter = 0;
+function nextViaId(): string {
+  viaIdCounter += 1;
+  return `via-${viaIdCounter}`;
+}
 
 export default function SearchForm({
   stops,
@@ -36,6 +55,8 @@ export default function SearchForm({
   destinationText,
   onOriginTextChange,
   onDestinationTextChange,
+  viaStops,
+  onViaStopsChange,
   pickTarget,
   onPickTargetChange,
   locating = false,
@@ -51,6 +72,25 @@ export default function SearchForm({
 
   function resolveStop(typedLabel: string): Stop | null {
     return labelToStop.get(typedLabel.trim().toLowerCase()) ?? null;
+  }
+
+  function addViaStop() {
+    // Cap at 3 -- each extra via stop is a full extra leg the backend
+    // has to solve independently (see find_route_via_stops), and a
+    // rider planning more than a handful of forced stops is really
+    // planning a multi-leg trip by hand rather than using this field.
+    if (viaStops.length >= 3) return;
+    onViaStopsChange([...viaStops, { id: nextViaId(), text: "" }]);
+  }
+
+  function removeViaStop(id: string) {
+    onViaStopsChange(viaStops.filter((v) => v.id !== id));
+    if (fieldError === "via") setFieldError(null);
+  }
+
+  function updateViaStop(id: string, text: string) {
+    onViaStopsChange(viaStops.map((v) => (v.id === id ? { ...v, text } : v)));
+    if (fieldError === "via") setFieldError(null);
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -75,8 +115,32 @@ export default function SearchForm({
       return;
     }
 
+    // Blank via rows are just an unfinished "+ Add stop" click -- ignore
+    // them rather than erroring, so someone doesn't have to remove an
+    // empty row before they can search.
+    const filledVias = viaStops.filter((v) => v.text.trim() !== "");
+    const viaResolved: Stop[] = [];
+    for (const via of filledVias) {
+      const stop = resolveStop(via.text);
+      if (!stop) {
+        setFieldError("via");
+        return;
+      }
+      viaResolved.push(stop);
+    }
+    const viaIds = viaResolved.map((s) => s.stop_id);
+    // A via stop identical to the origin, the destination, or another
+    // via stop isn't a real waypoint -- it wouldn't add anything to the
+    // trip and would just make find_route_via_stops solve a pointless
+    // zero-length leg.
+    const allIds = [origin.stop_id, ...viaIds, destination.stop_id];
+    if (new Set(allIds).size !== allIds.length) {
+      setFieldError("via");
+      return;
+    }
+
     setFieldError(null);
-    onSearch(origin.stop_id, destination.stop_id);
+    onSearch(origin.stop_id, destination.stop_id, viaIds);
   }
 
   function handleSwap() {
@@ -198,9 +262,55 @@ export default function SearchForm({
         </button>
       </div>
 
+      {viaStops.length > 0 && (
+        <div className="flex flex-col gap-2 border-t border-route-line pt-3">
+          {viaStops.map((via, i) => (
+            <div key={via.id} className="flex items-center gap-2">
+              <span
+                className="flex h-2 w-2 shrink-0 items-center justify-center rounded-full border-2 border-accent-purple"
+                aria-hidden
+              />
+              <div className="min-w-0 flex-1">
+                <StopAutocomplete
+                  id={`via-${i}`}
+                  label={`Via stop ${i + 1}`}
+                  stops={stops}
+                  stopsLoading={stopsLoading}
+                  value={via.text}
+                  onChange={(v) => updateViaStop(via.id, v)}
+                  onSelect={(stop) => updateViaStop(via.id, buildStopLabel(stop, stops))}
+                  invalid={fieldError === "via"}
+                  placeholder={`Via stop ${i + 1}…`}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => removeViaStop(via.id)}
+                aria-label={`Remove via stop ${i + 1}`}
+                title="Remove this stop"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-ink-secondary hover:bg-surface-sunken hover:text-accent-red"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={addViaStop}
+        disabled={viaStops.length >= 3}
+        className="self-start text-xs font-medium text-accent-blue hover:underline disabled:cursor-not-allowed disabled:opacity-50 disabled:no-underline"
+      >
+        + Add a stop along the way
+      </button>
+
       {fieldError && (
         <p className="text-xs text-accent-red" role="alert">
-          {fieldError === "both" && originText.trim() && originText === destinationText
+          {fieldError === "via"
+            ? "Pick a valid, unique stop from the suggestions for each via stop."
+            : fieldError === "both" && originText.trim() && originText === destinationText
             ? "Origin and destination can't be the same stop."
             : "Pick a valid stop from the suggestions for both fields."}
         </p>

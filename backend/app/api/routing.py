@@ -8,7 +8,13 @@ from app.routing.graph_builder import haversine_distance_m
 from app.routing.time_buckets import day_and_bucket_for, now_in_nepal
 from app.db.session import get_db, SessionLocal
 from app.db import queries
-from app.routing.pathfinder import find_shortest_path, NoRouteFoundError, PathSegment, RouteAlternative as PFRouteAlternative
+from app.routing.pathfinder import (
+    find_shortest_path,
+    find_route_via_stops,
+    NoRouteFoundError,
+    PathSegment,
+    RouteAlternative as PFRouteAlternative,
+)
 from app.schemas import FareOut, RouteAlternative, RouteFinderResult, RouteLeg, StopOut
 
 router = APIRouter(tags=["route-finder"])
@@ -267,22 +273,43 @@ def find_route(
             "When true, up to 2 additional options are returned in "
             "`alternatives` alongside the primary result -- see "
             "RouteAlternative's docstring in app/schemas.py for what each "
-            "label means. Alternatives skip OSRM road_geometry (to avoid "
-            "multiplying external API calls per search), so their "
-            "distance/transfer numbers are exact but they carry no "
-            "duration or polyline."
+            "label means. Each alternative is a genuinely different "
+            "physical path (deduplicated by stop sequence, not just by "
+            "route_id -- two route numbers covering the identical "
+            "corridor don't count as separate options) and now carries "
+            "its own real OSRM road_geometry, same as the primary "
+            "result. Ignored (alternatives are always empty) when `via` "
+            "is given -- see `via`'s description."
+        ),
+    ),
+    via: list[str] = Query(
+        [],
+        description=(
+            "Zero or more intermediate stop_ids the trip must pass "
+            "through, in order, between origin and destination (e.g. "
+            "?via=S0042&via=S0107). Each origin->via->...->destination "
+            "leg is solved independently and chained together, the same "
+            "way an \"add a stop\" feature works in a driving-directions "
+            "app. `include_alternatives` is ignored when this is set -- "
+            "chaining per-leg alternatives would combinatorially explode "
+            "into a confusing number of whole-trip options."
         ),
     ),
     db: Session = Depends(get_db),
 ):
     try:
-        result = find_shortest_path(
-            db,
-            origin,
-            destination,
-            avoid_congestion=avoid_congestion,
-            include_alternatives=include_alternatives,
-        )
+        if via:
+            result = find_route_via_stops(
+                db, [origin, *via, destination], avoid_congestion=avoid_congestion
+            )
+        else:
+            result = find_shortest_path(
+                db,
+                origin,
+                destination,
+                avoid_congestion=avoid_congestion,
+                include_alternatives=include_alternatives,
+            )
     except NoRouteFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
 
@@ -306,15 +333,18 @@ def find_route(
     if total_distance_m is None:
         total_distance_m = result.total_distance_m
 
-    alternatives: list[RouteAlternative] = [
-        RouteAlternative(
-            label=alt.label,
-            total_cost=alt.total_distance_m,
-            transfer_count=alt.transfer_count,
-            legs=_build_legs(db, alt.segments, route_names),
+    alternatives: list[RouteAlternative] = []
+    for alt in result.alternatives:
+        alt_legs = _build_legs(db, alt.segments, route_names)
+        _attach_road_geometry(alt_legs)
+        alternatives.append(
+            RouteAlternative(
+                label=alt.label,
+                total_cost=alt.total_distance_m,
+                transfer_count=alt.transfer_count,
+                legs=alt_legs,
+            )
         )
-        for alt in result.alternatives
-    ]
 
     fare_rule = queries.fare_for_distance(db, total_distance_m / 1000)
     fare = FareOut.model_validate(fare_rule) if fare_rule is not None else None
@@ -322,6 +352,7 @@ def find_route(
     return RouteFinderResult(
         origin_stop_id=origin,
         destination_stop_id=destination,
+        via_stop_ids=via,
         total_cost=total_distance_m,
         transfer_count=result.transfer_count,
         legs=legs,

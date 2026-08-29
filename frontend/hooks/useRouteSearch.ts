@@ -6,7 +6,11 @@ interface UseRouteSearchResult {
   result: RouteSearchResult | null;
   loading: boolean;
   error: string | null;
-  search: (originId: string, destinationId: string) => Promise<void>;
+  /** viaIds: intermediate stop_ids the trip must pass through, in
+   * order. include_alternatives is still requested, but the backend
+   * ignores it (and returns no alternatives) whenever viaIds is
+   * non-empty -- see findRoute's `via` param doc. */
+  search: (originId: string, destinationId: string, viaIds?: string[]) => Promise<void>;
   reset: () => void;
 }
 
@@ -25,7 +29,7 @@ export function useRouteSearch(): UseRouteSearchResult {
   // if the user fires two searches back-to-back.
   const requestIdRef = useRef(0);
 
-  async function search(originId: string, destinationId: string) {
+  async function search(originId: string, destinationId: string, viaIds: string[] = []) {
     const requestId = ++requestIdRef.current;
     setLoading(true);
     setError(null);
@@ -36,6 +40,7 @@ export function useRouteSearch(): UseRouteSearchResult {
         origin: originId,
         destination: destinationId,
         include_alternatives: true,
+        via: viaIds,
       });
       if (requestIdRef.current !== requestId) return;
 

@@ -10,7 +10,7 @@ from types import SimpleNamespace
 import pytest
 
 from app.routing import graph_builder as gb
-from app.routing.pathfinder import find_shortest_path
+from app.routing.pathfinder import find_shortest_path, find_route_via_stops, NoRouteFoundError
 
 
 def make_stop(stop_id, name, lat, lng):
@@ -131,3 +131,61 @@ def test_transfer_scenario_alternatives_dedupe_to_empty_when_only_one_path_exist
     )
     assert result.stop_sequence == ["S1", "S2", "S5", "S6"]
     assert result.alternatives == []
+
+
+def test_direct_route_alternatives_dedupe_same_corridor_different_route_id(monkeypatch):
+    """Two DIFFERENT route_ids that happen to run the exact same physical
+    stop-for-stop corridor (e.g. two operators sharing a road) should
+    collapse to one option, not appear as a fake second alternative --
+    same as the loop-route case above, but keyed on the real difference
+    that matters to a rider (the path), not on route_id."""
+    s1 = make_stop("S1", "A", 27.7000, 85.3100)
+    s2 = make_stop("S2", "B", 27.7010, 85.3110)
+    s3 = make_stop("S3", "C", 27.7020, 85.3120)
+    # Same stops, same order, different route_id/operator.
+    route_x = make_route("R_X", [s1, s2, s3])
+    route_y = make_route("R_Y", [s1, s2, s3])
+
+    monkeypatch.setattr(gb, "get_active_routes", lambda session: [route_x, route_y])
+
+    result = find_shortest_path(
+        session=None,
+        origin_stop_id="S1",
+        destination_stop_id="S3",
+        include_alternatives=True,
+    )
+    assert result.alternatives == []
+
+
+def test_find_route_via_stops_chains_legs_in_order(monkeypatch):
+    """origin -> via -> destination should chain two independent
+    find_shortest_path calls and concatenate them into one result,
+    without duplicating the via stop in stop_sequence."""
+    s1 = make_stop("S1", "A", 27.7000, 85.3100)
+    s2 = make_stop("S2", "B", 27.7010, 85.3110)
+    s3 = make_stop("S3", "C", 27.7020, 85.3120)
+    route = make_route("R_A", [s1, s2, s3])
+    monkeypatch.setattr(gb, "get_active_routes", lambda session: [route])
+
+    result = find_route_via_stops(session=None, stop_ids=["S1", "S2", "S3"])
+
+    assert result.stop_sequence == ["S1", "S2", "S3"]
+    # Forced re-board at the via stop (S2), on top of each leg's own
+    # (zero) transfer_count.
+    assert result.transfer_count == 1
+    assert len(result.segments) == 2
+
+
+def test_find_route_via_stops_requires_at_least_origin_and_destination():
+    with pytest.raises(ValueError):
+        find_route_via_stops(session=None, stop_ids=["S1"])
+
+
+def test_find_route_via_stops_reports_which_leg_failed(monkeypatch):
+    s1 = make_stop("S1", "A", 27.7000, 85.3100)
+    s2 = make_stop("S2", "B", 27.7010, 85.3110)
+    route = make_route("R_A", [s1, s2])
+    monkeypatch.setattr(gb, "get_active_routes", lambda session: [route])
+
+    with pytest.raises(NoRouteFoundError, match="last stop and destination"):
+        find_route_via_stops(session=None, stop_ids=["S1", "S2", "S_UNKNOWN"])

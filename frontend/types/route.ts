@@ -52,6 +52,12 @@ export interface RouteAlternative {
 export interface RouteFinderResult {
   origin_stop_id: string;
   destination_stop_id: string;
+  // Intermediate stop_ids the search was asked to pass through, in
+  // order. Empty/absent for a plain origin->destination search. Optional
+  // here (even though the backend always sends it) so existing fixtures
+  // and hand-built results elsewhere in the frontend don't all need
+  // updating just to satisfy this new field.
+  via_stop_ids?: string[];
   total_cost: number;
   transfer_count: number;
   legs: RouteLeg[];

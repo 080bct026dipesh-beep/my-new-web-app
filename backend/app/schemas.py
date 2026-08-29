@@ -103,9 +103,12 @@ class RouteAlternative(BaseModel):
     """A secondary option alongside the primary route-finder result.
     Deliberately flat (no nested `alternatives` of its own, no `fare` --
     callers show fare/details for the primary result and let the person
-    switch to an alternative if they prefer it) and skips road_geometry
-    to avoid tripling OSRM calls per search; see 'fastest_estimated'
-    below for what that means for its accuracy.
+    switch to an alternative if they prefer it). Each alternative is a
+    genuinely different physical path -- deduplicated by stop sequence,
+    not just by route_id, so two route numbers covering the identical
+    stop-for-stop corridor collapse into a single option rather than
+    showing up as two -- and carries real OSRM road_geometry per leg,
+    same as the primary result.
 
     label meanings:
       - "alternate_direct_route": a different real bus route that also
@@ -113,11 +116,10 @@ class RouteAlternative(BaseModel):
         Exact, not estimated.
       - "shortest_distance": minimum total distance, ignoring the small
         per-transfer weighting the primary/recommended result applies.
-        Only appears when no direct route exists. Its total_cost is the
-        routing graph's straight-line (haversine) edge-weight sum, NOT
-        an OSRM road distance -- alternatives deliberately skip OSRM
-        (see above), so treat this figure as a lower-bound estimate,
-        not the real travel distance.
+        Only appears when no direct route exists. total_cost here is
+        still the routing graph's straight-line (haversine) edge-weight
+        sum, not an OSRM road distance -- prefer summing each leg's own
+        road_geometry.distance_m for the real travel distance.
       - "fastest_estimated": minimum estimated travel time, using fixed
         assumed speeds per edge kind (~12 km/h riding, ~4.7 km/h
         walking, since no per-edge duration data exists pre-search --
@@ -135,6 +137,10 @@ class RouteAlternative(BaseModel):
 class RouteFinderResult(BaseModel):
     origin_stop_id: str
     destination_stop_id: str
+    # Intermediate stop_ids the request asked to pass through, in order
+    # (empty for a plain origin->destination search). Echoed back so the
+    # frontend can label the trip without re-deriving it from `legs`.
+    via_stop_ids: list[str] = []
     total_cost: float
     transfer_count: int
     legs: list[RouteLeg]

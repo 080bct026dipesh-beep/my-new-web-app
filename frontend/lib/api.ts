@@ -214,7 +214,16 @@ export function getRouteGeometry(
  * (network/timeout/5xx) still throws.
  */
 export async function findRoute(
-  params: { origin: string; destination: string; include_alternatives?: boolean },
+  params: {
+    origin: string;
+    destination: string;
+    include_alternatives?: boolean;
+    /** Intermediate stop_ids the trip must pass through, in order. The
+     * backend ignores include_alternatives when this is non-empty (see
+     * /route-finder's `via` docstring), so callers shouldn't rely on
+     * `alternatives` coming back populated for a via search. */
+    via?: string[];
+  },
   options?: RequestOptions
 ): Promise<{ found: true; result: RouteFinderResult } | { found: false }> {
   const controller = new AbortController();
@@ -225,9 +234,21 @@ export async function findRoute(
   const onExternalAbort = () => controller.abort();
   options?.signal?.addEventListener("abort", onExternalAbort);
 
+  const { via, ...scalarParams } = params;
+  // qs() only handles scalar values -- `via` is a repeated query param
+  // (?via=A&via=B), so it's appended separately rather than folded into
+  // the URLSearchParams qs() builds.
+  const search = new URLSearchParams(qs(scalarParams).replace(/^\?/, ""));
+  for (const stopId of via ?? []) {
+    search.append("via", stopId);
+  }
+  const queryString = search.toString();
+
   let res: Response;
   try {
-    res = await fetch(`${API_BASE}/route-finder${qs(params)}`, { signal: controller.signal });
+    res = await fetch(`${API_BASE}/route-finder${queryString ? `?${queryString}` : ""}`, {
+      signal: controller.signal,
+    });
   } catch {
     if (controller.signal.aborted) {
       throw new ApiError("Request timed out or was cancelled.", "timeout");

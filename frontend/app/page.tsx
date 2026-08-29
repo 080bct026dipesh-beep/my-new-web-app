@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
-import SearchForm from "@/components/search/SearchForm";
+import SearchForm, { ViaStopField } from "@/components/search/SearchForm";
 import CongestionPanel from "@/components/CongestionPanel";
 import RouteResultPanel from "@/components/route/RouteResultPanel";
 import { Stop, StopPickTarget } from "@/types/route";
@@ -50,6 +50,7 @@ function HomeInner() {
   // form and a map click can write to it.
   const [originText, setOriginText] = useState("");
   const [destinationText, setDestinationText] = useState("");
+  const [viaStops, setViaStops] = useState<ViaStopField[]>([]);
   const [pickTarget, setPickTarget] = useState<StopPickTarget>(null);
 
   const { userLocation, nearestStop, walkingRoute, locating, locateError, useMyLocation } =
@@ -223,6 +224,8 @@ function HomeInner() {
               destinationText={destinationText}
               onOriginTextChange={setOriginText}
               onDestinationTextChange={setDestinationText}
+              viaStops={viaStops}
+              onViaStopsChange={setViaStops}
               pickTarget={pickTarget}
               onPickTargetChange={setPickTarget}
               locating={locating}

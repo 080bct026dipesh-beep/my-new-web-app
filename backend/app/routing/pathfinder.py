@@ -477,21 +477,30 @@ def _alternatives_from_direct_candidates(
 ) -> list[RouteAlternative]:
     """candidates[0] is always the primary result (see the STEP 1/STEP 2
     handling in find_shortest_path); this turns candidates[1:] into up
-    to max_count alternatives, one per distinct real route_id (skipping
-    a second candidate on the same route_id -- e.g. a loop route
-    matching twice -- since that's not a meaningfully different option
-    for a rider)."""
+    to max_count alternatives.
 
-    seen_route_ids = {candidates[0].segments[0].route_id} if candidates[0].segments else set()
+    Deduplicated by *physical stop sequence*, not by route_id: two
+    different bus routes (different operators, different route_id) can
+    still run the identical corridor between two stops -- same stops,
+    same order, same road. That's not a meaningfully different option
+    for a rider, even though it's technically a different route_id, so
+    it's skipped just like a literal repeat would be. This also
+    incidentally still catches the old case this replaced (a loop route
+    matching twice under the same route_id), since that produces the
+    same stop_sequence too."""
+
+    seen_sequences = (
+        {tuple(candidates[0].stop_sequence)} if candidates[0].segments else set()
+    )
     alternatives: list[RouteAlternative] = []
 
     for candidate in candidates[1:]:
         if not candidate.segments:
             continue
-        route_id = candidate.segments[0].route_id
-        if route_id in seen_route_ids:
+        sequence = tuple(candidate.stop_sequence)
+        if sequence in seen_sequences:
             continue
-        seen_route_ids.add(route_id)
+        seen_sequences.add(sequence)
         alternatives.append(
             RouteAlternative(
                 label="alternate_direct_route",
@@ -553,6 +562,86 @@ def _alternatives_from_dijkstra(
         )
 
     return alternatives
+
+
+def find_route_via_stops(
+    session: Session,
+    stop_ids: List[str],
+    avoid_congestion: bool = False,
+) -> RouteFinderResult:
+    """Chain find_shortest_path across consecutive waypoints, so a rider
+    can require the trip to pass through one or more intermediate stops
+    in order (origin -> via_1 -> via_2 -> ... -> destination), the same
+    way an "add a stop" feature works in a driving-directions app.
+
+    `stop_ids` must have at least 2 entries (origin, ..., destination);
+    each consecutive pair is solved independently with the existing
+    direct-route-first-then-Dijkstra logic and the results are
+    concatenated. No alternatives are computed for a via search -- with
+    N legs already chained together, "up to 2 alternatives" per leg
+    would combinatorially explode into a confusing number of whole-trip
+    options, so callers should not pass include_alternatives-style
+    behavior on top of this.
+
+    transfer_count is the sum of each leg's own transfer_count, PLUS one
+    per waypoint boundary: forcing the path through a specific stop is
+    treated as always requiring the rider to at least re-board there,
+    even in the edge case where the same bus happens to continue past
+    it -- simpler and safer to over-count than to silently assume
+    continuity that isn't guaranteed by the data.
+    """
+
+    if len(stop_ids) < 2:
+        raise ValueError("find_route_via_stops needs at least an origin and a destination")
+
+    segments: list[PathSegment] = []
+    stop_sequence: list[str] = []
+    total_distance_m = 0.0
+    transfer_count = 0
+
+    for i, (leg_origin, leg_destination) in enumerate(zip(stop_ids, stop_ids[1:])):
+        if leg_origin == leg_destination:
+            # Same physical stop requested twice in a row (e.g. a
+            # duplicate via) -- nothing to route, just fold it in.
+            if not stop_sequence:
+                stop_sequence.append(leg_origin)
+            continue
+
+        try:
+            leg_result = find_shortest_path(
+                session, leg_origin, leg_destination, avoid_congestion=avoid_congestion
+            )
+        except NoRouteFoundError as exc:
+            waypoint_desc = (
+                "origin and first stop" if i == 0
+                else "last stop and destination" if i == len(stop_ids) - 2
+                else "two of the requested stops"
+            )
+            raise NoRouteFoundError(
+                f"No route found between {waypoint_desc} "
+                f"('{leg_origin}' -> '{leg_destination}')"
+            ) from exc
+
+        segments.extend(leg_result.segments)
+        total_distance_m += leg_result.total_distance_m
+        transfer_count += leg_result.transfer_count
+        if i > 0:
+            transfer_count += 1  # forced re-board at this waypoint, see docstring
+
+        if not stop_sequence:
+            stop_sequence.extend(leg_result.stop_sequence)
+        else:
+            # leg_result.stop_sequence[0] is leg_origin, already the last
+            # entry in stop_sequence from the previous leg -- don't
+            # duplicate it.
+            stop_sequence.extend(leg_result.stop_sequence[1:])
+
+    return RouteFinderResult(
+        segments=segments,
+        total_distance_m=total_distance_m,
+        transfer_count=transfer_count,
+        stop_sequence=stop_sequence,
+    )
 
 
 def find_shortest_path(
