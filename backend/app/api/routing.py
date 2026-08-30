@@ -1,4 +1,5 @@
 import math
+import logging
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Depends
 from sqlalchemy.orm import Session
@@ -16,6 +17,8 @@ from app.routing.pathfinder import (
     RouteAlternative as PFRouteAlternative,
 )
 from app.schemas import FareOut, RouteAlternative, RouteFinderResult, RouteLeg, StopOut
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["route-finder"])
 
@@ -131,8 +134,39 @@ def _attach_road_geometry(legs: list[RouteLeg]) -> None:
             leg.road_geometry = get_route_geometry(
                 coords, profile=profile, bearings=bearings, radiuses=radiuses
             )
-        except OSRMError:
-            pass
+            continue
+        except OSRMError as exc:
+            if bearings is None:
+                # Unconstrained request already failed -- nothing looser
+                # left to try (genuine OSRM/network failure, or these
+                # coordinates truly have no matchable road nearby).
+                logger.warning(
+                    "OSRM road_geometry failed for leg %s (%s -> %s), "
+                    "falling back to a straight line: %s",
+                    leg.route_id, leg.board_stop.stop_id, leg.alight_stop.stop_id, exc,
+                )
+                continue
+            logger.info(
+                "OSRM road_geometry failed under bearing/radius constraints for "
+                "leg %s (%s -> %s), retrying unconstrained: %s",
+                leg.route_id, leg.board_stop.stop_id, leg.alight_stop.stop_id, exc,
+            )
+
+        # Constrained attempt failed -- most often this means the
+        # WAYPOINT_SNAP_RADIUS_M=50m radius didn't have a bearing-
+        # matching edge nearby, not that no route exists at all. A
+        # straight-line fallback for the whole leg is a worse outcome
+        # than the rare case this constraint exists to prevent (snapping
+        # to the wrong carriageway of a divided road), so retry once
+        # fully unconstrained before giving up.
+        try:
+            leg.road_geometry = get_route_geometry(coords, profile=profile)
+        except OSRMError as exc:
+            logger.warning(
+                "OSRM road_geometry failed for leg %s (%s -> %s) even "
+                "unconstrained, falling back to a straight line: %s",
+                leg.route_id, leg.board_stop.stop_id, leg.alight_stop.stop_id, exc,
+            )
 
 
 def _total_road_distance_m(legs: list[RouteLeg]) -> float | None:
