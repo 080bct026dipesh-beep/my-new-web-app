@@ -95,15 +95,20 @@ export default function RouteResultPanel({
   const rideLegs = legs.filter((leg) => leg.route_id !== "TRANSFER");
   const walkLegs = legs.filter((leg) => leg.route_id === "TRANSFER");
 
-  // Alternatives never carry road_geometry (OSRM is only called for the
-  // primary result, to avoid tripling external calls per search), so
-  // duration/walking-time stats only apply when viewing the primary.
-  const allLegsHaveGeometry = isPrimary && legs.every((leg) => leg.road_geometry);
+  // Backend now attaches real OSRM road_geometry to alternatives too
+  // (deduplicated to genuinely distinct paths, capped at 2, so it's no
+  // longer the tripled-OSRM-calls cost it used to be) -- so this checks
+  // the data itself rather than assuming only the primary result has
+  // it. Kept as a per-leg check (not just "isPrimary") because OSRM can
+  // still fail for an individual leg at request time (see
+  // _attach_road_geometry's `except OSRMError: pass`), leaving that
+  // leg's road_geometry null regardless of which option it's on.
+  const allLegsHaveGeometry = legs.every((leg) => leg.road_geometry);
   const totalDurationS = allLegsHaveGeometry
     ? legs.reduce((sum, leg) => sum + (leg.road_geometry?.duration_s ?? 0), 0)
     : null;
   const walkDurationS = walkLegs.reduce((sum, leg) => sum + (leg.road_geometry?.duration_s ?? 0), 0);
-  const hasWalkDuration = isPrimary && walkLegs.length > 0 && walkLegs.every((leg) => leg.road_geometry);
+  const hasWalkDuration = walkLegs.length > 0 && walkLegs.every((leg) => leg.road_geometry);
 
   const activeAlt = isPrimary ? null : result.alternatives[selectedIndex];
   const duration = totalDurationS !== null ? formatDuration(totalDurationS) : null;
