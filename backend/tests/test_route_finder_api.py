@@ -47,7 +47,11 @@ def test_route_finder_consolidates_consecutive_same_route_legs(client):
     and record what it returns. (The previous fixture pair, S0072/S0326,
     stopped being connected by any route after a later data refresh --
     S0072 has zero route_stops rows in the current dataset -- which is why
-    this pair replaces it.)
+    this pair replaces it. Likewise, the second leg used to ride R-NY-06,
+    Gopi Krishna-Balkumari, but a later data refresh added R3213434,
+    Kalanki-Koteshwor, which the pathfinder now prefers for this stretch
+    instead -- R-NY-06 is still a real, separate route in the dataset;
+    this is a shortest-path choice changing, not a route being renamed.)
     """
     resp = client.get("/route-finder", params={"origin": "S0384", "destination": "S0408"})
     assert resp.status_code == 200
@@ -66,7 +70,7 @@ def test_route_finder_consolidates_consecutive_same_route_legs(client):
     # Known shape of this specific path as of the current dataset.
     assert route_ids == [
         "R-NY-05",
-        "R-NY-06",
+        "R3213434",
         "R2295734",
         "R-GAP-12",
     ]
@@ -98,10 +102,11 @@ def test_route_finder_leg_num_ride_segments_reflects_consolidated_hops(client):
     assert resp.status_code == 200
     legs = resp.json()["legs"]
 
-    # Second leg on R-NY-06 covers 9 raw hops per the known shape of this
-    # path -- the clearest example of consolidation in this dataset.
-    assert legs[1]["route_id"] == "R-NY-06"
-    assert legs[1]["num_ride_segments"] == 9
+    # Second leg on R3213434 (Kalanki-Koteshwor) covers 10 raw hops per
+    # the known shape of this path -- the clearest example of
+    # consolidation in this dataset.
+    assert legs[1]["route_id"] == "R3213434"
+    assert legs[1]["num_ride_segments"] == 10
 
     # At least one leg must have been consolidated (num_ride_segments > 1) --
     # guards against a future regression back to "always 1".
