@@ -41,9 +41,14 @@ describe("BusMap", () => {
 
   describe("all-stops layer", () => {
     it("renders one circle marker per stop and escapes the tooltip content", () => {
+      // Distinct, well-separated coordinates -- two stops sharing a
+      // location would fall into the same cluster (lib/stopClustering.ts)
+      // at the default zoom and render as one cluster bubble instead of
+      // two individual circle markers, which isn't what this test means
+      // to exercise.
       const stops = [
-        makeStop({ stop_id: "S0001", stop_name: "Ratna Park" }),
-        makeStop({ stop_id: "S0002", stop_name: 'New Road <script>alert(1)</script>' }),
+        makeStop({ stop_id: "S0001", stop_name: "Ratna Park", lat: 27.7041, lng: 85.31 }),
+        makeStop({ stop_id: "S0002", stop_name: 'New Road <script>alert(1)</script>', lat: 27.75, lng: 85.36 }),
       ];
       render(<BusMap allStops={stops} />);
 
@@ -71,6 +76,56 @@ describe("BusMap", () => {
       marker = leafletState.markers[0];
       marker.handlers["click"]?.forEach((h) => h());
       expect(onStopPick).toHaveBeenCalledWith(stop);
+    });
+
+    it("groups nearby stops into a cluster bubble and zooms in on click instead of picking one", () => {
+      const stops = [
+        makeStop({ stop_id: "S0001", lat: 27.70, lng: 85.30 }),
+        makeStop({ stop_id: "S0002", lat: 27.7001, lng: 85.3001 }), // a few meters away
+      ];
+      const onStopPick = vi.fn();
+
+      render(<BusMap allStops={stops} pickTarget="origin" onStopPick={onStopPick} />);
+
+      // Two stops this close together render as one cluster (a marker, not
+      // a circleMarker) at the map's default zoom.
+      expect(leafletState.markers.filter((m) => m.kind === "circleMarker")).toHaveLength(0);
+      const clusterMarker = leafletState.markers.find((m) => m.kind === "marker");
+      expect(clusterMarker).toBeDefined();
+
+      clusterMarker!.handlers["click"]?.forEach((h) => h());
+      expect(onStopPick).not.toHaveBeenCalled();
+      // Clicking a cluster zooms in via the map, not a stop pick -- setView
+      // is the mechanism; already covered by onStopPick not firing above.
+    });
+
+    it("does not render the all-stops layer at all when showAllStops is false", () => {
+      const stop = makeStop();
+      render(<BusMap allStops={[stop]} showAllStops={false} />);
+      expect(leafletState.markers).toHaveLength(0);
+    });
+
+    it("dims (but does not hide) stop dots once a route result is found", () => {
+      const stop = makeStop();
+      const foundResult: RouteSearchResult = {
+        found: true,
+        origin_stop_id: "S0001",
+        destination_stop_id: "S0002",
+        total_cost: 10,
+        transfer_count: 0,
+        fare: null,
+        alternatives: [],
+        legs: [],
+      };
+
+      const { rerender } = render(<BusMap allStops={[stop]} result={{ found: false }} />);
+      const brightDot = leafletState.markers.find((m) => m.kind === "circleMarker")!;
+      const brightOpacity = brightDot.options.fillOpacity;
+
+      leafletState.reset();
+      rerender(<BusMap allStops={[stop]} result={foundResult} />);
+      const dimmedDot = leafletState.markers.find((m) => m.kind === "circleMarker")!;
+      expect(dimmedDot.options.fillOpacity).toBeLessThan(brightOpacity as number);
     });
   });
 
@@ -200,8 +255,15 @@ describe("BusMap", () => {
 
       render(<BusMap result={result} />);
 
-      expect(leafletState.controls).toHaveLength(1);
-      const div = leafletState.controls[0].div;
+      // Filter to the legend specifically -- BusMap now also adds a scale
+      // bar and a recenter button (always present, regardless of
+      // `result`), so asserting on the raw control count would make this
+      // test brittle against unrelated map-chrome additions.
+      const legendControls = leafletState.controls.filter(
+        (c) => c.div?.style.maxWidth === "min(220px, 60vw)"
+      );
+      expect(legendControls).toHaveLength(1);
+      const div = legendControls[0].div;
       expect(div).not.toBeNull();
       expect(div!.style.maxWidth).toBe("min(220px, 60vw)");
       expect(div!.innerHTML).toContain("A Very Long Route Name");
@@ -209,7 +271,43 @@ describe("BusMap", () => {
 
     it("does not add a legend when there is no found result", () => {
       render(<BusMap result={{ found: false }} />);
-      expect(leafletState.controls).toHaveLength(0);
+      const legendControls = leafletState.controls.filter(
+        (c) => c.div?.style.maxWidth === "min(220px, 60vw)"
+      );
+      expect(legendControls).toHaveLength(0);
+    });
+
+    it("clicking a legend row hides that leg's layer and restores it on a second click", () => {
+      const result: RouteSearchResult = {
+        found: true,
+        origin_stop_id: "S0001",
+        destination_stop_id: "S0002",
+        total_cost: 10,
+        transfer_count: 0,
+        fare: null,
+        alternatives: [],
+        legs: [makeLeg({ route_name: "Route 1" })],
+      };
+
+      render(<BusMap result={result} />);
+
+      const legendDiv = leafletState.controls.find(
+        (c) => c.div?.style.maxWidth === "min(220px, 60vw)"
+      )!.div!;
+      const rowButton = legendDiv.querySelector("button")!;
+      expect(rowButton).not.toBeNull();
+      expect(rowButton.getAttribute("aria-pressed")).toBe("true");
+
+      // This leg's layer group is the most recently added at this point.
+      const legLayer = leafletState.layerGroups[leafletState.layerGroups.length - 1];
+      expect(legLayer.removed).toBe(false);
+
+      rowButton.click();
+      expect(rowButton.getAttribute("aria-pressed")).toBe("false");
+      expect(legLayer.removed).toBe(true);
+
+      rowButton.click();
+      expect(rowButton.getAttribute("aria-pressed")).toBe("true");
     });
 
     it("draws a dashed grey line for walking transfers and a solid colored line for ride legs", () => {

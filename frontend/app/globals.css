@@ -59,3 +59,25 @@ body {
 .leaflet-container a.leaflet-popup-close-button:hover {
   color: #171717;
 }
+
+/* Tooltips (stop names on hover, cluster bubble hints, browse-route
+   numbered stops) previously used Leaflet's stock look, which reads as
+   visually bolted-on next to the rest of the app's crisp-border, subtle
+   background aesthetic used for popups above and cards throughout
+   app/page.tsx. Same treatment, applied to tooltips. */
+.leaflet-tooltip {
+  background: #ffffff;
+  color: #14171c;
+  border: 1px solid #e3e4de;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  font-size: 12px;
+  padding: 3px 8px;
+}
+
+.leaflet-tooltip-top:before,
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+  border-top-color: #e3e4de;
+}

@@ -5,7 +5,7 @@ export interface MockMarker {
   latlng: unknown;
   options: Record<string, unknown>;
   tooltip: { content: string; options?: unknown } | null;
-  popup: string | null;
+  popup: { content: string; options?: unknown } | null;
   handlers: Record<string, (() => void)[]>;
   removed: boolean;
 }
@@ -13,7 +13,7 @@ export interface MockMarker {
 export interface MockPolyline {
   points: unknown;
   options: Record<string, unknown>;
-  popup: string | null;
+  popup: { content: string; options?: unknown } | null;
 }
 
 export interface MockLayerGroup {
@@ -29,13 +29,21 @@ export interface MockControl {
   removed: boolean;
 }
 
+export interface MockMapInstance {
+  fitBoundsCalls: unknown[][];
+  zoom: number;
+  handlers: Record<string, (() => void)[]>;
+  /** Test helper: simulate the map firing "zoomend" after a zoom change. */
+  fireZoomEnd(newZoom: number): void;
+}
+
 /** Reset before each test via `leafletState.reset()`. */
 export const leafletState = {
   markers: [] as MockMarker[],
   polylines: [] as MockPolyline[],
   layerGroups: [] as MockLayerGroup[],
   controls: [] as MockControl[],
-  mapInstances: [] as { fitBoundsCalls: unknown[][] }[],
+  mapInstances: [] as MockMapInstance[],
   reset() {
     this.markers = [];
     this.polylines = [];
@@ -63,8 +71,8 @@ function makeMarker(kind: MockMarker["kind"], latlng: unknown, options: Record<s
       marker.tooltip = { content, options: tooltipOptions };
       return api;
     },
-    bindPopup: (content: string) => {
-      marker.popup = content;
+    bindPopup: (content: string, popupOptions?: unknown) => {
+      marker.popup = { content, options: popupOptions };
       return api;
     },
     on: (event: string, handler: () => void) => {
@@ -84,17 +92,38 @@ function makeMarker(kind: MockMarker["kind"], latlng: unknown, options: Record<s
 }
 
 export function createLeafletMock() {
-  const mapApi = {
-    setView: vi.fn().mockReturnThis(),
-    on: vi.fn().mockReturnThis(),
-    remove: vi.fn(),
-    fitBounds: vi.fn(),
-    addLayer: vi.fn(),
-  };
+  function makeMapApi(): MockMapInstance & Record<string, unknown> {
+    const instance: MockMapInstance = {
+      fitBoundsCalls: [],
+      zoom: 12,
+      handlers: {},
+      fireZoomEnd(newZoom: number) {
+        this.zoom = newZoom;
+        (this.handlers["zoomend"] ?? []).forEach((h) => h());
+      },
+    };
+    const api = {
+      ...instance,
+      setView: vi.fn().mockReturnThis(),
+      on: vi.fn((event: string, handler: () => void) => {
+        (instance.handlers[event] ??= []).push(handler);
+        return api;
+      }),
+      remove: vi.fn(),
+      fitBounds: vi.fn((bounds: unknown) => {
+        instance.fitBoundsCalls.push([bounds]);
+      }),
+      addLayer: vi.fn(),
+      getZoom: vi.fn(() => instance.zoom),
+      fireZoomEnd: (newZoom: number) => instance.fireZoomEnd(newZoom),
+    };
+    return api as unknown as MockMapInstance & Record<string, unknown>;
+  }
 
   const L = {
     map: vi.fn(() => {
-      leafletState.mapInstances.push({ fitBoundsCalls: [] });
+      const mapApi = makeMapApi();
+      leafletState.mapInstances.push(mapApi);
       return mapApi;
     }),
     tileLayer: vi.fn(() => ({ addTo: vi.fn().mockReturnThis() })),
@@ -127,8 +156,8 @@ export function createLeafletMock() {
       leafletState.polylines.push(poly);
       const api = {
         ...poly,
-        bindPopup: (content: string) => {
-          poly.popup = content;
+        bindPopup: (content: string, popupOptions?: unknown) => {
+          poly.popup = { content, options: popupOptions };
           return api;
         },
         addTo: () => api,
@@ -139,6 +168,26 @@ export function createLeafletMock() {
     divIcon: vi.fn((opts: Record<string, unknown>) => ({ __divIcon: true, ...opts })),
     DomUtil: {
       create: vi.fn((tag: string) => document.createElement(tag)),
+    },
+    DomEvent: {
+      disableClickPropagation: vi.fn(),
+      disableScrollPropagation: vi.fn(),
+    },
+    control: {
+      scale: vi.fn((options: Record<string, unknown> = {}) => {
+        const control: MockControl = { options, div: null, addedToMap: false, removed: false };
+        leafletState.controls.push(control);
+        const api = {
+          addTo: () => {
+            control.addedToMap = true;
+            return api;
+          },
+          remove: () => {
+            control.removed = true;
+          },
+        };
+        return api;
+      }),
     },
     Control: Object.assign(
       class {

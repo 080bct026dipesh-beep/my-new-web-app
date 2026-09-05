@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import { CongestionSegment, LatLng, RouteGeometry, RouteSearchResult, RouteStopEntry, Stop, StopPickTarget, WalkingRoute } from "@/types/route";
 import { LEG_COLORS } from "@/lib/constants";
+import { clusterStops } from "@/lib/stopClustering";
 
 const VALLEY_CENTER: [number, number] = [27.7041, 85.32];
 
@@ -73,11 +74,29 @@ const userLocationIcon = L.divIcon({
   iconAnchor: [8, 8],
 });
 
+// Cluster bubble for the all-stops layer (lib/stopClustering.ts) -- a
+// plain numbered circle, distinct from every route-specific icon above so
+// it reads as "N stops here, zoom in" rather than being mistaken for a
+// route marker.
+function clusterIcon(count: number): L.DivIcon {
+  const size = count >= 100 ? 34 : count >= 10 ? 30 : 26;
+  return L.divIcon({
+    className: "",
+    html: `<span style="display:flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;border-radius:9999px;background:#4B5563;color:#ffffff;font-size:11px;font-weight:600;border:2px solid #ffffff;box-shadow:0 0 0 1px rgba(0,0,0,0.25);">${count}</span>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  });
+}
+
 interface BusMapProps {
   result?: RouteSearchResult | null;
   /** All stops, drawn as small clickable dots so the user can pick a stop
    * directly on the map instead of typing its name. */
   allStops?: Stop[];
+  /** Master on/off for the all-stops layer -- separate from the automatic
+   * dimming that happens once a route is found (see `dimmed` below).
+   * Defaults on so map-click stop-picking keeps working out of the box. */
+  showAllStops?: boolean;
   /** Which field (origin/destination) a stop click should fill; null disables
    * map-click selection (dots still render, just aren't wired to onStopPick). */
   pickTarget?: StopPickTarget;
@@ -106,6 +125,7 @@ interface BusMapProps {
 export default function BusMap({
   result,
   allStops = [],
+  showAllStops = true,
   pickTarget = null,
   onStopPick,
   userLocation,
@@ -117,6 +137,12 @@ export default function BusMap({
 }: BusMapProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
+
+  // Current zoom, mirrored into React state so the all-stops effect
+  // re-clusters when it changes. Only zoom triggers a recompute (not
+  // pan) -- see lib/stopClustering.ts for why that's a deliberate
+  // simplification, not an oversight.
+  const [zoom, setZoom] = useState(12);
 
   // Mutable refs so the stops-layer effect (below) always calls the latest
   // pickTarget/onStopPick without needing to rebuild ~1000s of markers on
@@ -131,6 +157,16 @@ export default function BusMap({
     onStopPickRef.current = onStopPick;
   }, [onStopPick]);
 
+  // Latest user location + the current route's bounds, both read (not
+  // reacted to) by the recenter control's click handler below -- same
+  // ref-mirroring pattern as pickTargetRef, so the control doesn't need
+  // to be torn down and recreated every time either of these changes.
+  const userLocationRef = useRef(userLocation);
+  useEffect(() => {
+    userLocationRef.current = userLocation;
+  }, [userLocation]);
+  const routeBoundsRef = useRef<L.LatLngBounds | null>(null);
+
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) {
       return;
@@ -143,47 +179,129 @@ export default function BusMap({
       attribution: "&copy; OpenStreetMap contributors",
     }).addTo(map);
 
+    // Distance reference -- standard on every consumer map product, and
+    // this app had no way to gauge scale at all before this.
+    L.control.scale({ position: "bottomright", imperial: false }).addTo(map);
+
+    // Re-cluster the all-stops layer on zoom change (see zoom state above
+    // and lib/stopClustering.ts).
+    map.on("zoomend", () => setZoom(map.getZoom()));
+
+    // Recenter control: one button, three behaviors depending on what's
+    // currently shown, checked in priority order at click time via refs
+    // (not props) so this control -- created once, here -- doesn't need
+    // to be torn down and rebuilt every time a route or location changes.
+    const RecenterControl = L.Control.extend({
+      onAdd: () => {
+        const button = L.DomUtil.create("button") as HTMLButtonElement;
+        button.type = "button";
+        button.setAttribute("aria-label", "Recenter map");
+        button.title = "Recenter map";
+        button.style.width = "34px";
+        button.style.height = "34px";
+        button.style.background = "#ffffff";
+        button.style.border = "1px solid #E4E4DF";
+        button.style.borderRadius = "8px";
+        button.style.boxShadow = "0 1px 3px rgba(0,0,0,0.08)";
+        button.style.display = "flex";
+        button.style.alignItems = "center";
+        button.style.justifyContent = "center";
+        button.style.cursor = "pointer";
+        button.innerHTML =
+          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#14171C" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>';
+        button.addEventListener("click", () => {
+          if (routeBoundsRef.current) {
+            map.fitBounds(routeBoundsRef.current, { padding: [40, 40] });
+          } else if (userLocationRef.current) {
+            map.setView([userLocationRef.current.lat, userLocationRef.current.lng], 15);
+          } else {
+            map.setView(VALLEY_CENTER, 12);
+          }
+        });
+        L.DomEvent.disableClickPropagation(button);
+        return button;
+      },
+    });
+    new RecenterControl({ position: "bottomright" }).addTo(map);
+
     return () => {
       map.remove();
       mapRef.current = null;
     };
   }, []);
 
-  // All-stops layer: small dots, always present, clickable whenever a
-  // pickTarget is active. Kept in its own effect/layer so it doesn't get
-  // wiped every time the route result changes.
+  // All-stops layer: small dots (or numbered cluster bubbles when zoomed
+  // out -- see lib/stopClustering.ts), clickable whenever a pickTarget is
+  // active. Kept in its own effect/layer so it doesn't get wiped every
+  // time the route result changes.
+  //
+  // Dims (not hides) once a route is found, so the highlighted route
+  // stands out without losing the surrounding stops for context; the
+  // showAllStops prop is the separate, explicit on/off a person can
+  // choose themselves (see the toggle in app/page.tsx).
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    if (!map || !showAllStops) return;
 
     const stopsLayer = L.layerGroup().addTo(map);
+    const dimmed = Boolean(result?.found);
+    const dotFillOpacity = dimmed ? 0.35 : 0.85;
+    const dotColor = dimmed ? "#D1D5DB" : "#4b5563";
+    const dotFill = dimmed ? "#E5E7EB" : "#9CA3AF";
 
-    allStops.forEach((stop) => {
-      const dot = L.circleMarker([stop.lat, stop.lng], {
-        radius: 4,
-        weight: 1,
-        color: "#4b5563",
-        fillColor: "#9CA3AF",
-        fillOpacity: 0.85,
+    const clusters = clusterStops(allStops, zoom);
+
+    clusters.forEach((cluster) => {
+      if (cluster.stops.length === 1) {
+        const stop = cluster.stops[0];
+        const dot = L.circleMarker([stop.lat, stop.lng], {
+          radius: 4,
+          weight: 1,
+          color: dotColor,
+          fillColor: dotFill,
+          fillOpacity: dotFillOpacity,
+        });
+        dot.bindTooltip(escapeHtml(stop.stop_name), {
+          direction: "top",
+          offset: [0, -4],
+          className: "ktm-tooltip",
+        });
+        dot.on("click", () => {
+          const target = pickTargetRef.current;
+          if (target) onStopPickRef.current?.(stop);
+        });
+        dot.on("mouseover", () => {
+          if (pickTargetRef.current) dot.setStyle({ radius: 6, fillColor: "#2563EB" });
+        });
+        dot.on("mouseout", () => {
+          dot.setStyle({ radius: 4, fillColor: dotFill });
+        });
+        stopsLayer.addLayer(dot);
+        return;
+      }
+
+      // A cluster bubble isn't a stand-in for any one of its stops, so it
+      // isn't wired to onStopPick even when a pickTarget is active --
+      // clicking it zooms in instead, splitting it back into individually
+      // pickable dots.
+      const marker = L.marker([cluster.lat, cluster.lng], {
+        icon: clusterIcon(cluster.stops.length),
       });
-      dot.bindTooltip(escapeHtml(stop.stop_name), { direction: "top", offset: [0, -4] });
-      dot.on("click", () => {
-        const target = pickTargetRef.current;
-        if (target) onStopPickRef.current?.(stop);
+      marker.bindTooltip(`${cluster.stops.length} stops -- click to zoom in`, {
+        direction: "top",
+        offset: [0, -12],
+        className: "ktm-tooltip",
       });
-      dot.on("mouseover", () => {
-        if (pickTargetRef.current) dot.setStyle({ radius: 6, fillColor: "#2563EB" });
+      marker.on("click", () => {
+        map.setView([cluster.lat, cluster.lng], Math.min(zoom + 3, 18));
       });
-      dot.on("mouseout", () => {
-        dot.setStyle({ radius: 4, fillColor: "#9CA3AF" });
-      });
-      stopsLayer.addLayer(dot);
+      stopsLayer.addLayer(marker);
     });
 
     return () => {
       stopsLayer.remove();
     };
-  }, [allStops]);
+  }, [allStops, showAllStops, zoom, result?.found]);
 
   // Congestion overlay: one straight line per segment (from_stop_id ->
   // to_stop_id), colored by congestion_level. Straight lines rather than
@@ -377,14 +495,21 @@ export default function BusMap({
     const map = mapRef.current;
     if (!map) return;
 
-    const routeLayer = L.layerGroup().addTo(map);
+    // One layer group per leg (rather than one shared group for the whole
+    // route) so the legend below can toggle a single leg's visibility
+    // in/out of the map independently of the others.
+    const legLayers: L.LayerGroup[] = [];
     let legend: L.Control | null = null;
+    routeBoundsRef.current = null;
 
     if (result?.found && result.legs.length > 0) {
       const bounds: L.LatLngExpression[] = [];
       const legendRows: { label: string; color: string; dashed: boolean }[] = [];
 
       result.legs.forEach((leg, i) => {
+        const legLayer = L.layerGroup().addTo(map);
+        legLayers.push(legLayer);
+
         const isWalk = leg.route_id === "TRANSFER";
         const color = isWalk ? "#9CA3AF" : LEG_COLORS[i % LEG_COLORS.length];
         const isFirstLeg = i === 0;
@@ -410,7 +535,7 @@ export default function BusMap({
             isFirstLeg ? "Origin" : "Transfer point"
           }`
         );
-        routeLayer.addLayer(fromMarker);
+        legLayer.addLayer(fromMarker);
 
         const toMarker = L.marker([leg.alight_stop.lat, leg.alight_stop.lng], {
           icon: toIcon,
@@ -420,7 +545,7 @@ export default function BusMap({
             isLastLeg ? "Destination" : "Transfer point"
           }`
         );
-        routeLayer.addLayer(toMarker);
+        legLayer.addLayer(toMarker);
 
         // Small dot for every intermediate stop (skip first/last — those
         // already have a marker above).
@@ -433,7 +558,7 @@ export default function BusMap({
             weight: 2,
           });
           dot.bindPopup(escapeHtml(stop.stop_name));
-          routeLayer.addLayer(dot);
+          legLayer.addLayer(dot);
         });
 
         // GeoJSON coordinates are [lng, lat]; Leaflet wants [lat, lng].
@@ -463,13 +588,15 @@ export default function BusMap({
             kmLabel ? `<br/>${kmLabel}` : ""
           }`
         );
-        routeLayer.addLayer(polyline);
+        legLayer.addLayer(polyline);
 
         bounds.push(...points);
       });
 
       if (bounds.length > 0) {
-        map.fitBounds(L.latLngBounds(bounds), { padding: [40, 40] });
+        const latLngBounds = L.latLngBounds(bounds);
+        routeBoundsRef.current = latLngBounds;
+        map.fitBounds(latLngBounds, { padding: [40, 40] });
       }
 
       const LegendControl = L.Control.extend({
@@ -489,17 +616,70 @@ export default function BusMap({
           // unreadable rather than breaking layout). Cap the width relative
           // to the viewport and let long names wrap instead of overflowing.
           div.style.maxWidth = "min(220px, 60vw)";
-          div.innerHTML = legendRows
-            .map(
-              (row) =>
-                `<div style="display:flex;align-items:flex-start;gap:6px;">
-                  <span style="display:inline-block;width:14px;height:0;margin-top:7px;flex-shrink:0;border-top:3px ${
-                    row.dashed ? "dashed" : "solid"
-                  } ${row.color};"></span>
-                  <span style="word-break:break-word;">${escapeHtml(row.label)}</span>
-                </div>`
-            )
-            .join("");
+
+          // Built as real DOM nodes with real click listeners (rather than
+          // one innerHTML string) so each row can toggle its own leg's
+          // layer on/off. A row is a button, not just styled text, so it's
+          // keyboard-reachable and has a real click target -- clicking
+          // hides that leg from the map and gives the row itself a muted,
+          // struck-through look as feedback.
+          legendRows.forEach((row, i) => {
+            const rowButton = document.createElement("button");
+            rowButton.type = "button";
+            rowButton.style.display = "flex";
+            rowButton.style.alignItems = "flex-start";
+            rowButton.style.gap = "6px";
+            rowButton.style.width = "100%";
+            rowButton.style.background = "none";
+            rowButton.style.border = "none";
+            rowButton.style.padding = "2px 0";
+            rowButton.style.cursor = "pointer";
+            rowButton.style.textAlign = "left";
+            rowButton.style.font = "inherit";
+            rowButton.style.color = "inherit";
+            rowButton.setAttribute(
+              "aria-label",
+              `Toggle ${row.label} on the map`
+            );
+            rowButton.setAttribute("aria-pressed", "true");
+
+            const swatch = document.createElement("span");
+            swatch.style.display = "inline-block";
+            swatch.style.width = "14px";
+            swatch.style.height = "0px";
+            swatch.style.marginTop = "7px";
+            swatch.style.flexShrink = "0";
+            swatch.style.borderTop = `3px ${row.dashed ? "dashed" : "solid"} ${row.color}`;
+
+            const labelSpan = document.createElement("span");
+            labelSpan.style.wordBreak = "break-word";
+            labelSpan.textContent = row.label;
+
+            rowButton.appendChild(swatch);
+            rowButton.appendChild(labelSpan);
+
+            let visible = true;
+            rowButton.addEventListener("click", () => {
+              visible = !visible;
+              rowButton.setAttribute("aria-pressed", String(visible));
+              if (visible) {
+                legLayers[i].addTo(map);
+                rowButton.style.opacity = "1";
+                labelSpan.style.textDecoration = "none";
+              } else {
+                legLayers[i].remove();
+                rowButton.style.opacity = "0.45";
+                labelSpan.style.textDecoration = "line-through";
+              }
+            });
+
+            div.appendChild(rowButton);
+          });
+
+          // Without this, a click on the legend (which sits on top of the
+          // map) falls through to the map underneath and pans/zooms it --
+          // a well-known Leaflet control gotcha, not just a hypothetical.
+          L.DomEvent.disableClickPropagation(div);
           return div;
         },
       });
@@ -508,7 +688,7 @@ export default function BusMap({
     }
 
     return () => {
-      routeLayer.remove();
+      legLayers.forEach((layer) => layer.remove());
       legend?.remove();
     };
   }, [result]);
