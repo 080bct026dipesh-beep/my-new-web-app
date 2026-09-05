@@ -1,9 +1,17 @@
 """Write endpoints for populating the network (data entry / ETL use).
 
-Every route here is behind `require_admin` -- accepts either the
-shared X-Admin-Api-Key header (scripted/ETL callers, unchanged from
-before) or a per-admin bearer JWT from POST /admin/login. See
-app/core/security.py for require_admin / get_current_admin.
+Every route here requires valid admin credentials (shared
+X-Admin-Api-Key header, or a per-admin bearer JWT from POST
+/admin/login) plus a role check on the JWT path -- see
+app/core/security.py's require_admin / require_role for the mechanism,
+and require_role's docstring there for the editor/admin role split.
+Each route below is gated to the narrowest role that still covers its
+actual blast radius:
+
+  editor: create_stop, create_route, add_route_stop -- additive dataset
+    growth, easy to undo if wrong.
+  admin:  update_route_status, reload_graph_cache -- these can
+    immediately change what /route-finder returns to real users.
 """
 
 from sqlalchemy.exc import IntegrityError
@@ -11,7 +19,7 @@ from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.response_cache import invalidate as invalidate_cache
-from app.core.security import require_admin
+from app.core.security import require_role, ROLE_ADMIN, ROLE_EDITOR
 from app.db.id_generator import next_route_id, next_stop_id
 from app.db.queries import bump_graph_version
 from app.db.session import get_db
@@ -22,10 +30,16 @@ from app.models import Stop as StopORM
 
 from app.schemas import RouteCreate, RouteOut, RouteStatusUpdate, RouteStopCreate, StopCreate, StopOut
 
-router = APIRouter(dependencies=[Depends(require_admin)])
+router = APIRouter()
+
+# editor and admin can both do routine data entry; admin can additionally
+# do anything editor can, so it's listed on every gate below rather than
+# implying a role hierarchy the code would otherwise have to compute.
+_EDIT = Depends(require_role(ROLE_EDITOR, ROLE_ADMIN))
+_ADMIN_ONLY = Depends(require_role(ROLE_ADMIN))
 
 
-@router.post("/stops", response_model=StopOut, status_code=status.HTTP_201_CREATED)
+@router.post("/stops", response_model=StopOut, status_code=status.HTTP_201_CREATED, dependencies=[_EDIT])
 def create_stop(payload: StopCreate, db: Session = Depends(get_db)) -> StopOut:
     row = StopORM(
         stop_id=next_stop_id(db),
@@ -60,7 +74,7 @@ def create_stop(payload: StopCreate, db: Session = Depends(get_db)) -> StopOut:
     return StopOut.model_validate(row)
 
 
-@router.post("/routes", response_model=RouteOut, status_code=status.HTTP_201_CREATED)
+@router.post("/routes", response_model=RouteOut, status_code=status.HTTP_201_CREATED, dependencies=[_EDIT])
 def create_route(payload: RouteCreate, db: Session = Depends(get_db)) -> RouteOut:
     if db.get(StopORM, payload.start_stop_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Stop {payload.start_stop_id} not found.")
@@ -93,7 +107,7 @@ def create_route(payload: RouteCreate, db: Session = Depends(get_db)) -> RouteOu
     return RouteOut.model_validate(row)
 
 
-@router.post("/routes/{route_id}/stops", status_code=status.HTTP_201_CREATED)
+@router.post("/routes/{route_id}/stops", status_code=status.HTTP_201_CREATED, dependencies=[_EDIT])
 def add_route_stop(route_id: str, payload: RouteStopCreate, db: Session = Depends(get_db)) -> dict:
     if db.get(RouteORM, route_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Route {route_id} not found.")
@@ -122,7 +136,7 @@ def add_route_stop(route_id: str, payload: RouteStopCreate, db: Session = Depend
 
     return {"route_id": route_id, "stop_id": payload.stop_id, "sequence_no": payload.sequence_no}
 
-@router.patch("/routes/{route_id}/status", response_model=RouteOut)
+@router.patch("/routes/{route_id}/status", response_model=RouteOut, dependencies=[_ADMIN_ONLY])
 def update_route_status(route_id: str, payload: RouteStatusUpdate, db: Session = Depends(get_db)) -> RouteOut:
     row = db.get(RouteORM, route_id)
     if row is None:
@@ -146,7 +160,7 @@ def update_route_status(route_id: str, payload: RouteStatusUpdate, db: Session =
 
     return RouteOut.model_validate(row)
 
-@router.post("/graph/reload", status_code=status.HTTP_200_OK)
+@router.post("/graph/reload", status_code=status.HTTP_200_OK, dependencies=[_ADMIN_ONLY])
 def reload_graph_cache(db: Session = Depends(get_db)) -> dict:
     """Rebuild the in-memory routing graph from the current DB state.
 

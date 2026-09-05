@@ -133,3 +133,48 @@ def require_admin(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid or missing admin credentials (X-Admin-Api-Key header or bearer token).",
     )
+
+
+# ---------------------------------------------------------------------------
+# Role-based authorization on top of require_admin above.
+#
+# Two roles (matches AdminUser.role, a free-text column that already
+# defaults to "admin" -- see app/models/admin_user.py):
+#
+#   editor: create_stop, create_route, add_route_stop -- routine dataset
+#     growth/fixes. Additive and easy to undo if wrong.
+#   admin:  everything editor can do, plus update_route_status and
+#     reload_graph_cache -- these can immediately change what
+#     /route-finder returns to real users, so they're held to a
+#     narrower set of accounts.
+#
+# See app/api/admin.py for which endpoint requires which role.
+# ---------------------------------------------------------------------------
+ROLE_EDITOR = "editor"
+ROLE_ADMIN = "admin"
+
+
+def require_role(*allowed_roles: str):
+    """FastAPI dependency factory: gate a route to callers whose
+    AdminUser.role is one of allowed_roles. Use as e.g.
+    `Depends(require_role(ROLE_EDITOR, ROLE_ADMIN))` on a route.
+
+    The shared X-Admin-Api-Key path (require_admin returns None for it
+    -- see above) carries no per-admin identity at all, so it has no
+    role to check and keeps the same unrestricted access it has always
+    had; this only adds enforcement on the JWT/AdminUser path. Splitting
+    the shared key itself into role-scoped keys would be a bigger change
+    than this taxonomy covers -- a reasonable follow-up if scripted/ETL
+    callers ever need restricting too, but out of scope here since that
+    key has always meant "full access" for those callers.
+    """
+
+    def _check(admin: Optional[AdminUser] = Depends(require_admin)) -> Optional[AdminUser]:
+        if admin is not None and admin.role not in allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"This action requires one of these roles: {', '.join(allowed_roles)}.",
+            )
+        return admin
+
+    return _check
