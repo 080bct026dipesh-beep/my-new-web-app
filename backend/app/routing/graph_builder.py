@@ -200,48 +200,71 @@ def build_graph(session: Session) -> nx.DiGraph:
 
     # ------------------------------------------------------------
     # Walking/interchange edges between different physical stops.
+    #
+    # Bucket stops into a coarse lat/lng grid and only compare each stop
+    # against others sharing its cell or an adjacent one. This replaces
+    # an all-pairs O(n^2) scan (a bounding-box check made each individual
+    # comparison cheap, but there were still n*(n-1)/2 of them) with an
+    # approach that's linear in stop count as long as stops are spread
+    # roughly evenly across the valley -- which they are, since transit
+    # stops don't cluster into a single tiny area. Cell size (0.01 deg,
+    # ~1.1km at this latitude) is chosen so INTERCHANGE_DISTANCE (100m)
+    # can never span more than one adjacent cell in either direction, so
+    # checking the 3x3 neighborhood around a stop's own cell can't miss a
+    # true interchange pair.
     # ------------------------------------------------------------
+    GRID_CELL_DEG = 0.01
     stop_ids = list(stop_coords.keys())
 
-    for i, sid_a in enumerate(stop_ids):
+    def _grid_key(lat: float, lng: float) -> tuple[int, int]:
+        return (int(lat // GRID_CELL_DEG), int(lng // GRID_CELL_DEG))
+
+    grid: dict[tuple[int, int], list[str]] = {}
+    for sid in stop_ids:
+        lat, lng = stop_coords[sid]
+        grid.setdefault(_grid_key(lat, lng), []).append(sid)
+
+    seen_pairs: set[tuple[str, str]] = set()
+
+    for sid_a in stop_ids:
         lat_a, lng_a = stop_coords[sid_a]
+        gx, gy = _grid_key(lat_a, lng_a)
 
-        for sid_b in stop_ids[i + 1:]:
-            lat_b, lng_b = stop_coords[sid_b]
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                for sid_b in grid.get((gx + dx, gy + dy), ()):
+                    if sid_b == sid_a:
+                        continue
+                    pair = (sid_a, sid_b) if sid_a < sid_b else (sid_b, sid_a)
+                    if pair in seen_pairs:
+                        continue
+                    seen_pairs.add(pair)
 
-            # Cheap bounding-box rejection.
-            if abs(lat_a - lat_b) > 0.01 or abs(lng_a - lng_b) > 0.01:
-                continue
+                    lat_b, lng_b = stop_coords[sid_b]
+                    dist = haversine_distance_m(lat_a, lng_a, lat_b, lng_b)
 
-            dist = haversine_distance_m(
-                lat_a,
-                lng_a,
-                lat_b,
-                lng_b,
-            )
+                    if dist > INTERCHANGE_DISTANCE:
+                        continue
 
-            if dist > INTERCHANGE_DISTANCE:
-                continue
+                    graph.add_edge(
+                        sid_a,
+                        sid_b,
+                        weight=dist,
+                        distance_m=dist,
+                        route_id=None,
+                        kind="walk",
+                        is_transfer=True,
+                    )
 
-            graph.add_edge(
-                sid_a,
-                sid_b,
-                weight=dist,
-                distance_m=dist,
-                route_id=None,
-                kind="walk",
-                is_transfer=True,
-            )
-
-            graph.add_edge(
-                sid_b,
-                sid_a,
-                weight=dist,
-                distance_m=dist,
-                route_id=None,
-                kind="walk",
-                is_transfer=True,
-            )
+                    graph.add_edge(
+                        sid_b,
+                        sid_a,
+                        weight=dist,
+                        distance_m=dist,
+                        route_id=None,
+                        kind="walk",
+                        is_transfer=True,
+                    )
 
     return graph
 

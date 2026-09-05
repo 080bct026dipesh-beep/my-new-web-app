@@ -1,4 +1,5 @@
 import os
+import threading
 import time
 import requests
 
@@ -34,26 +35,37 @@ _ROUTE_CACHE_TTL_S = 300
 _ROUTE_CACHE_MAX_ENTRIES = 500
 _route_cache: dict[tuple, tuple[float, dict]] = {}
 
+# FastAPI runs sync routes (all of ours) in a threadpool, so concurrent
+# requests can genuinely hit _cache_get/_cache_set on different threads
+# at once. Unlike a plain dict get/set (atomic under the GIL),
+# _cache_set's eviction iterates the dict via min(...) -- if another
+# thread mutates it mid-iteration, that raises "dictionary changed size
+# during iteration". This lock is the same fix graph_builder.py already
+# applies to its own cache/version globals, for the same reason.
+_cache_lock = threading.Lock()
+
 
 def _cache_get(key: tuple) -> dict | None:
-    entry = _route_cache.get(key)
-    if entry is None:
-        return None
-    cached_at, value = entry
-    if time.monotonic() - cached_at > _ROUTE_CACHE_TTL_S:
-        del _route_cache[key]
-        return None
-    return value
+    with _cache_lock:
+        entry = _route_cache.get(key)
+        if entry is None:
+            return None
+        cached_at, value = entry
+        if time.monotonic() - cached_at > _ROUTE_CACHE_TTL_S:
+            del _route_cache[key]
+            return None
+        return value
 
 
 def _cache_set(key: tuple, value: dict) -> None:
-    if len(_route_cache) >= _ROUTE_CACHE_MAX_ENTRIES:
-        # Cheap eviction: drop the oldest entry rather than maintaining a
-        # full LRU structure -- this cache is a latency/load optimization,
-        # not a correctness requirement, so approximate is fine.
-        oldest_key = min(_route_cache, key=lambda k: _route_cache[k][0])
-        del _route_cache[oldest_key]
-    _route_cache[key] = (time.monotonic(), value)
+    with _cache_lock:
+        if len(_route_cache) >= _ROUTE_CACHE_MAX_ENTRIES:
+            # Cheap eviction: drop the oldest entry rather than maintaining a
+            # full LRU structure -- this cache is a latency/load optimization,
+            # not a correctness requirement, so approximate is fine.
+            oldest_key = min(_route_cache, key=lambda k: _route_cache[k][0])
+            del _route_cache[oldest_key]
+        _route_cache[key] = (time.monotonic(), value)
 
 
 def get_route_geometry(

@@ -49,6 +49,13 @@ def create_stop(payload: StopCreate, db: Session = Depends(get_db)) -> StopOut:
     db.add(row)
     db.commit()
     db.refresh(row)
+    # Not linked to any route yet, so this alone can't change routing
+    # results -- but bump anyway so the code matches what
+    # bump_graph_version's own docstring already promises callers, and so
+    # a stop created and linked to a route in quick succession can't ever
+    # race a stale cache. Cheap: a no-op rebuild if nothing actually
+    # changed graph shape.
+    bump_graph_version(db)
     invalidate_cache("stops")
     return StopOut.model_validate(row)
 
@@ -78,6 +85,10 @@ def create_route(payload: RouteCreate, db: Session = Depends(get_db)) -> RouteOu
     db.add(row)
     db.commit()
     db.refresh(row)
+    # Same reasoning as create_stop above: harmless no-op until stops are
+    # linked via add_route_stop, but keeps the code honest against
+    # bump_graph_version's documented contract.
+    bump_graph_version(db)
     invalidate_cache("routes")
     return RouteOut.model_validate(row)
 
@@ -127,6 +138,11 @@ def update_route_status(route_id: str, payload: RouteStatusUpdate, db: Session =
     bump_graph_version(db)
     get_cached_graph(db, refresh=True)
     invalidate_cache("routes")
+    # A status flip (e.g. active -> inactive) changes which routes
+    # /route-finder considers, and route_geometry responses are keyed by
+    # route_id -- an inactive route's last-cached geometry would otherwise
+    # keep being served as if it were still a valid option.
+    invalidate_cache("route_geometry")
 
     return RouteOut.model_validate(row)
 
